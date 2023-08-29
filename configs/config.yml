@@ -1,0 +1,32 @@
+db:
+  dbname: "api_db"
+  sslmode: "disable"
+mongodb:
+  dbname: "geoinfo_api_db"
+  dbtest: "geoinfo_api_db_test"
+  sslmode: false
+auth:
+  accessTokenTTL: 120m
+  refreshTokenTTL: 43200m #30 days
+oauth:
+  timeExpireCookie: 900
+i18n:
+  prefix: __i18n__
+  default: ru
+images:
+  sizes:
+    - size: 30
+      prefix: "thumb"
+      quality: 40
+    - size: 320
+      prefix: "xs"
+      quality: 70
+    - size: 768
+      prefix: "md"
+      quality: 70
+    - size: 1024
+      prefix: "lg"
+      quality: 70
+    - size: 1280
+      prefix: "xl"
+      quality: 70

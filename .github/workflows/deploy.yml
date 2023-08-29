@@ -48,13 +48,13 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/${{ github.repository }}
             ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:latest
+          permissions:
+            contents: read
+            packages: write
           # secrets: |
           #   "MODE=Release"
           # build-args: |
           #   build_mode=Release
-          permissions:
-            contents: read
-            packages: write
   deploy:
     name: "Deploy"
     runs-on: ubuntu-latest

@@ -1,0 +1,18 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+
+type Like {
+  id: ID!
+  userId: String!
+  nodeId: String!
+  status: Int!
+
+  createdAt:String!
+  updatedAt:DATETIME!
+}
+
+extend type Query {
+  like(nodeId: String!): Like @auth
+}

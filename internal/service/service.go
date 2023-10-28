@@ -3,6 +3,7 @@ package service
 import (
 	"time"
 
+	"github.com/mikalai2006/geoinfo-api/graph/model"
 	"github.com/mikalai2006/geoinfo-api/internal/config"
 	"github.com/mikalai2006/geoinfo-api/internal/domain"
 	"github.com/mikalai2006/geoinfo-api/internal/repository"
@@ -11,6 +12,13 @@ import (
 	"github.com/mikalai2006/geoinfo-api/pkg/hasher"
 )
 
+type Action interface {
+	FindAction(params domain.RequestParams) (domain.Response[model.Action], error)
+	GetAllAction(params domain.RequestParams) (domain.Response[model.Action], error)
+	CreateAction(userID string, data *model.ActionInput) (*model.Action, error)
+	UpdateAction(id string, userID string, data *model.ActionInput) (*model.Action, error)
+	DeleteAction(id string) (model.Action, error)
+}
 type Address interface {
 	FindAddress(params domain.RequestParams) (domain.Response[domain.Address], error)
 	GetAllAddress(params domain.RequestParams) (domain.Response[domain.Address], error)
@@ -27,17 +35,25 @@ type Authorization interface {
 	RemoveRefreshTokens(refreshToken string) (string, error)
 }
 
-type Shop interface {
-	FindShop(params domain.RequestParams) (domain.Response[domain.Shop], error)
-
-	GetAllShops(params domain.RequestParams) (domain.Response[domain.Shop], error)
-	CreateShop(userID string, shop *domain.Shop) (*domain.Shop, error)
-}
-
 type Track interface {
 	FindTrack(params domain.RequestParams) (domain.Response[domain.Track], error)
 	GetAllTrack(params domain.RequestParams) (domain.Response[domain.Track], error)
 	CreateTrack(userID string, track *domain.Track) (*domain.Track, error)
+}
+
+type Node interface {
+	FindNode(params domain.RequestParams) (domain.Response[model.Node], error)
+	GetAllNode(params domain.RequestParams) (domain.Response[model.Node], error)
+	CreateNode(userID string, node *model.Node) (*model.Node, error)
+	UpdateNode(id string, userID string, data *model.Node) (*model.Node, error)
+	DeleteNode(id string) (model.Node, error)
+}
+type Nodedata interface {
+	FindNodedata(params domain.RequestParams) (domain.Response[model.Nodedata], error)
+	GetAllNodedata(params domain.RequestParams) (domain.Response[model.Nodedata], error)
+	CreateNodedata(userID string, data *model.NodedataInput) (*model.Nodedata, error)
+	UpdateNodedata(id string, userID string, data *model.Nodedata) (*model.Nodedata, error)
+	DeleteNodedata(id string) (model.Nodedata, error)
 }
 
 type Review interface {
@@ -47,78 +63,20 @@ type Review interface {
 	CreateReview(userID string, review *domain.Review) (*domain.Review, error)
 }
 type User interface {
-	GetUser(id string) (domain.User, error)
-	FindUser(params domain.RequestParams) (domain.Response[domain.User], error)
-	CreateUser(userID string, user *domain.User) (*domain.User, error)
-	DeleteUser(id string) (domain.User, error)
-	UpdateUser(id string, user *domain.User) (domain.User, error)
-	Iam(userID string) (domain.User, error)
-}
-
-type Page interface {
-	GetPageForRouters() (domain.Response[domain.PageRoutes], error)
-	// GetPage(id string) (domain.Page, error)
-	GetStory(params domain.RequestParams) (domain.Page, error)
-	FindPage(params domain.RequestParams) (domain.Response[domain.Page], error)
-	CreatePage(userID string, page *domain.PageInputData) (*domain.Page, error)
-	DeletePage(id string) (domain.Page, error)
-	UpdatePage(id string, data interface{}) (domain.Page, error)
-	UpdatePageWithContent(id string, data map[string]interface{}) (domain.Page, error)
-}
-
-type Story interface {
-	PublishStory(id string, data domain.StoryInputData) (domain.Story, error)
-	GetStory(params domain.RequestParams) (domain.Story, error)
-}
-
-type Component interface {
-	GetComponent(id string) (domain.Component, error)
-	FindComponent(params domain.RequestParams) (domain.Response[domain.Component], error)
-	CreateComponent(userID string, component *domain.ComponentInput) (*domain.Component, error)
-	DeleteComponent(id string) (domain.Component, error)
-	UpdateComponent(id string, data interface{}) (domain.Component, error)
-	FindByPopulate(params domain.RequestParams) (domain.Response[domain.Component], error)
-	FindGroupComponent(params domain.RequestParams) (domain.Response[domain.Component], error)
-
-	FindLibrarys(params domain.RequestParams) (domain.Response[domain.Library], error)
-}
-
-type ComponentGroup interface {
-	FindComponentGroup(params domain.RequestParams) (domain.Response[domain.ComponentGroup], error)
-	CreateComponentGroup(userID string, component *domain.ComponentGroup) (*domain.ComponentGroup, error)
-	UpdateComponentGroup(id string, data interface{}) (domain.ComponentGroup, error)
-	DeleteComponentGroup(id string) (domain.ComponentGroup, error)
-}
-
-type ComponentPreset interface {
-	FindComponentPreset(params domain.RequestParams) (domain.Response[domain.ComponentPreset], error)
-	CreateComponentPreset(userID string, preset *domain.ComponentPresetInput) (*domain.ComponentPreset, error)
-	UpdateComponentPreset(id string, data interface{}) (domain.ComponentPreset, error)
-	DeleteComponentPreset(id string) (domain.ComponentPreset, error)
-}
-
-type Partner interface {
-	CreatePartner(userID string, data *domain.PartnerInput) (domain.Partner, error)
-	GetPartner(id string) (domain.Partner, error)
-	FindPartner(params domain.RequestParams) (domain.Response[domain.PartnerPopulate], error)
-	UpdatePartner(id string, data *domain.PartnerInput) (domain.Partner, error)
-	DeletePartner(id string) (domain.Partner, error)
-}
-
-type Product interface {
-	CreateProduct(userID string, data *domain.ProductInput) (domain.Product, error)
-	GetProduct(id string) (domain.Product, error)
-	FindProduct(params domain.RequestParams) (domain.Response[domain.Product], error)
-	UpdateProduct(id string, data interface{}) (domain.Product, error)
-	DeleteProduct(id string) (domain.Product, error)
+	GetUser(id string) (model.User, error)
+	FindUser(params domain.RequestParams) (domain.Response[model.User], error)
+	CreateUser(userID string, user *model.User) (*model.User, error)
+	DeleteUser(id string) (model.User, error)
+	UpdateUser(id string, user *model.User) (model.User, error)
+	Iam(userID string) (model.User, error)
 }
 
 type Image interface {
-	CreateImage(userID string, data *domain.ImageInput) (domain.Image, error)
-	GetImage(id string) (domain.Image, error)
+	CreateImage(userID string, data *model.ImageInput) (model.Image, error)
+	GetImage(id string) (model.Image, error)
 	GetImageDirs(id string) ([]interface{}, error)
-	FindImage(params domain.RequestParams) (domain.Response[domain.Image], error)
-	DeleteImage(id string) (domain.Image, error)
+	FindImage(params domain.RequestParams) (domain.Response[model.Image], error)
+	DeleteImage(id string) (model.Image, error)
 }
 
 type Apps interface {
@@ -129,40 +87,58 @@ type Apps interface {
 	DeleteLanguage(id string) (domain.Language, error)
 }
 
-type Space interface {
-	CreateSpace(userID string, space *domain.SpaceInput) (*domain.Space, error)
-	GetSpace(id string) (domain.Space, error)
-	FindSpace(params domain.RequestParams) (domain.Response[domain.Space], error)
-	UpdateSpace(id string, data interface{}) (domain.Space, error)
-	DeleteSpace(id string) (domain.Space, error)
+type Tag interface {
+	FindTag(params domain.RequestParams) (domain.Response[model.Tag], error)
+	GetAllTag(params domain.RequestParams) (domain.Response[model.Tag], error)
+	CreateTag(userID string, tag *model.Tag) (*model.Tag, error)
+	UpdateTag(id string, userID string, data *model.Tag) (*model.Tag, error)
+	DeleteTag(id string) (model.Tag, error)
+}
+type Tagopt interface {
+	FindTagopt(params domain.RequestParams) (domain.Response[model.Tagopt], error)
+	GetAllTagopt(params domain.RequestParams) (domain.Response[model.Tagopt], error)
+	CreateTagopt(userID string, tagopt *model.TagoptInput) (*model.Tagopt, error)
+	UpdateTagopt(id string, userID string, data *model.TagoptInput) (*model.Tagopt, error)
+	DeleteTagopt(id string) (model.Tagopt, error)
+}
+type Ticket interface {
+	FindTicket(params domain.RequestParams) (domain.Response[model.Ticket], error)
+	GetAllTicket(params domain.RequestParams) (domain.Response[model.Ticket], error)
+	CreateTicket(userID string, ticket *model.Ticket) (*model.Ticket, error)
+	DeleteTicket(id string) (model.Ticket, error)
 }
 
-type Plugin interface {
-	CreatePlugin(userID string, plugin *domain.PluginInput) (*domain.Plugin, error)
-	GetPlugin(id string) (domain.Plugin, error)
-	FindPlugin(params domain.RequestParams) (domain.Response[domain.Plugin], error)
-	UpdatePlugin(id string, data interface{}) (domain.Plugin, error)
-	DeletePlugin(id string) (domain.Plugin, error)
+type Like interface {
+	FindLike(params domain.RequestParams) (domain.Response[model.Like], error)
+	CreateLike(userID string, like *model.LikeInput) (*model.Like, error)
+	UpdateLike(id string, userID string, data *model.Like) (*model.Like, error)
+	DeleteLike(id string) (model.Like, error)
+}
+type Amenity interface {
+	FindAmenity(params domain.RequestParams) (domain.Response[model.Amenity], error)
+	GetAllAmenity(params domain.RequestParams) (domain.Response[model.Amenity], error)
+	CreateAmenity(userID string, Amenity *model.Amenity) (*model.Amenity, error)
+	UpdateAmenity(id string, userID string, data *model.Amenity) (*model.Amenity, error)
+	DeleteAmenity(id string) (model.Amenity, error)
 }
 
 type Services struct {
+	Action
 	Address
+	Amenity
 	Authorization
 	Apps
-	Component
-	ComponentGroup
-	ComponentPreset
 	Image
-	Page
-	Partner
-	Product
-	Plugin
 	Review
-	Shop
-	Space
-	Story
 	User
 	Track
+	Node
+	Nodedata
+	Tag
+	Tagopt
+	Ticket
+
+	Like
 }
 
 type ConfigServices struct {
@@ -187,21 +163,20 @@ func NewServices(cfgService *ConfigServices) *Services {
 			cfgService.OtpGenerator,
 			cfgService.VerificationCodeLength,
 		),
-		Address:         NewAddressService(cfgService.Repositories.Address, cfgService.I18n),
-		Review:          NewReviewService(cfgService.Repositories.Review),
-		Shop:            NewShopService(cfgService.Repositories.Shop),
-		Apps:            NewAppsService(cfgService.Repositories, cfgService.I18n),
-		Component:       NewComponentService(cfgService.Repositories.Component, cfgService.I18n),
-		ComponentGroup:  NewComponentGroupService(cfgService.Repositories.ComponentGroup, cfgService.I18n),
-		ComponentPreset: NewComponentPresetService(cfgService.Repositories.ComponentPreset, cfgService.I18n),
-		Image:           NewImageService(cfgService.Repositories.Image),
-		Page:            NewPageService(cfgService.Repositories.Page, cfgService.I18n),
-		Partner:         NewPartnerService(cfgService.Repositories.Partner, cfgService.I18n),
-		Product:         NewProductService(cfgService.Repositories, cfgService.I18n),
-		Plugin:          NewPluginService(cfgService.Repositories.Plugin, cfgService.I18n),
-		Space:           NewSpaceService(cfgService.Repositories.Space, cfgService.I18n),
-		Story:           NewStoryService(cfgService.Repositories.Story, cfgService.I18n),
-		User:            NewUserService(cfgService.Repositories.User),
-		Track:           NewTrackService(cfgService.Repositories.Track),
+		Action:   NewActionService(cfgService.Repositories.Action, cfgService.I18n),
+		Address:  NewAddressService(cfgService.Repositories.Address, cfgService.I18n),
+		Amenity:  NewAmenityService(cfgService.Repositories.Amenity, cfgService.I18n),
+		Review:   NewReviewService(cfgService.Repositories.Review),
+		Apps:     NewAppsService(cfgService.Repositories, cfgService.I18n),
+		Image:    NewImageService(cfgService.Repositories.Image),
+		User:     NewUserService(cfgService.Repositories.User),
+		Track:    NewTrackService(cfgService.Repositories.Track),
+		Node:     NewNodeService(cfgService.Repositories.Node),
+		Nodedata: NewNodedataService(cfgService.Repositories.Nodedata),
+		Tag:      NewTagService(cfgService.Repositories.Tag),
+		Tagopt:   NewTagoptService(cfgService.Repositories.Tagopt),
+		Ticket:   NewTicketService(cfgService.Repositories.Ticket),
+
+		Like: NewLikeService(cfgService.Repositories.Like),
 	}
 }

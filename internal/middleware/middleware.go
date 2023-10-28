@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -78,6 +79,64 @@ func SetUserIdentity(c *gin.Context) {
 	// logrus.Printf("user session= %s", user)
 	// // Continue down the chain to handler etc
 	// c.Next()
+}
+
+func SetUserIdentityGraphql(c *gin.Context) {
+	appG := app.Gin{C: c}
+
+	header := c.GetHeader(authorizationHeader)
+	// fmt.Println("header=", header)
+	// jwtCookie, _ := c.Cookie("jwt-handmade")
+	// fmt.Println("jwtCookie=", jwtCookie)
+
+	authError := false
+
+	if header == "" {
+		// // c.AbortWithStatusJSON(http.StatusUnauthorized, errors.New("empty auth header"))
+		// appG.ResponseError(http.StatusUnauthorized, errors.New("empty auth header"), nil)
+		// return
+		authError = true
+	}
+
+	headerParts := strings.Split(header, " ")
+	countParts := 2
+	if len(headerParts) != countParts || headerParts[1] == "" {
+		// // c.AbortWithError(http.StatusUnauthorized, errors.New("invalid auth header"))
+		// appG.ResponseError(http.StatusUnauthorized, errors.New("invalid auth header"), nil)
+		// return
+		authError = true
+	}
+
+	if !authError {
+		tokenManager, err := auths.NewManager(os.Getenv("SIGNING_KEY"))
+		if err != nil {
+			// c.AbortWithError(http.StatusUnauthorized, err)
+			appG.ResponseError(http.StatusUnauthorized, err, nil)
+			return
+		}
+
+		claims, err := tokenManager.Parse(string(headerParts[1]))
+		if err != nil {
+			// c.AbortWithError(http.StatusUnauthorized, err)
+			appG.ResponseError(http.StatusUnauthorized, err, nil)
+			return
+		}
+		c.Set(userCtx, claims.Subject)
+		c.Set(userRoles, claims.Roles)
+		c.Set(uid, claims.Uid)
+	} else {
+		c.Set(userCtx, nil)
+		c.Set(userRoles, nil)
+		c.Set(uid, nil)
+
+	}
+
+	id, ok := GetUserID(c)
+	if ok != nil {
+		fmt.Println("SetUserIdentityGraphql::: Not auth")
+	} else {
+		fmt.Println("SetUserIdentityGraphql::: AuthID=", id)
+	}
 }
 
 func GetUserID(c *gin.Context) (string, error) {

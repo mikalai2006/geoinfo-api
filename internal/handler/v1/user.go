@@ -1,10 +1,11 @@
 package v1
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mikalai2006/geoinfo-api/internal/domain"
+	"github.com/mikalai2006/geoinfo-api/graph/model"
 	"github.com/mikalai2006/geoinfo-api/internal/middleware"
 	"github.com/mikalai2006/geoinfo-api/internal/utils"
 	"github.com/mikalai2006/geoinfo-api/pkg/app"
@@ -26,7 +27,7 @@ func (h *HandlerV1) RegisterUser(router *gin.RouterGroup) {
 // @Accept  json
 // @Produce  json
 // @Param id path string true "user id"
-// @Success 200 {object} domain.User
+// @Success 200 {object} model.User
 // @Failure 400,404 {object} domain.ErrorResponse
 // @Failure 500 {object} domain.ErrorResponse
 // @Failure default {object} domain.ErrorResponse
@@ -47,7 +48,7 @@ func (h *HandlerV1) GetUser(c *gin.Context) {
 
 // type InputUser struct {
 // 	domain.RequestParams
-// 	domain.User
+// 	model.User
 // }
 
 // @Summary Find few users
@@ -57,8 +58,8 @@ func (h *HandlerV1) GetUser(c *gin.Context) {
 // @ModuleID user
 // @Accept  json
 // @Produce  json
-// @Param input query domain.UserInput true "params for search users"
-// @Success 200 {object} []domain.User
+// @Param input query model.UserInput true "params for search users"
+// @Success 200 {object} []model.User
 // @Failure 400,404 {object} domain.ErrorResponse
 // @Failure 500 {object} domain.ErrorResponse
 // @Failure default {object} domain.ErrorResponse
@@ -66,7 +67,7 @@ func (h *HandlerV1) GetUser(c *gin.Context) {
 func (h *HandlerV1) FindUser(c *gin.Context) {
 	appG := app.Gin{C: c}
 
-	params, err := utils.GetParamsFromRequest(c, domain.UserInput{}, &h.i18n)
+	params, err := utils.GetParamsFromRequest(c, model.UserInput{}, &h.i18n)
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
 		return
@@ -90,7 +91,7 @@ func (h *HandlerV1) CreateUser(c *gin.Context) {
 		return
 	}
 
-	var input *domain.User
+	var input *model.User
 	if er := c.BindJSON(&input); er != nil {
 		appG.ResponseError(http.StatusBadRequest, er, nil)
 		return
@@ -113,7 +114,7 @@ func (h *HandlerV1) CreateUser(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param id path string true "user id"
-// @Success 200 {object} []domain.User
+// @Success 200 {object} []model.User
 // @Failure 400,404 {object} domain.ErrorResponse
 // @Failure 500 {object} domain.ErrorResponse
 // @Failure default {object} domain.ErrorResponse
@@ -123,7 +124,7 @@ func (h *HandlerV1) DeleteUser(c *gin.Context) {
 
 	id := c.Param("id")
 
-	// var input domain.User
+	// var input model.User
 	// if err := c.BindJSON(&input); err != nil {
 	// 	newErrorResponse(c, http.StatusInternalServerError, err.Error())
 
@@ -147,8 +148,8 @@ func (h *HandlerV1) DeleteUser(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param id path string true "user id"
-// @Param input body domain.User true "body for update user"
-// @Success 200 {object} []domain.User
+// @Param input body model.User true "body for update user"
+// @Success 200 {object} []model.User
 // @Failure 400,404 {object} domain.ErrorResponse
 // @Failure 500 {object} domain.ErrorResponse
 // @Failure default {object} domain.ErrorResponse
@@ -157,13 +158,14 @@ func (h *HandlerV1) UpdateUser(c *gin.Context) {
 	appG := app.Gin{C: c}
 
 	id := c.Param("id")
+	fmt.Println("UpdateUser: ", id)
 
 	userID, err := middleware.GetUID(c)
 	if err != nil {
 		appG.ResponseError(http.StatusUnauthorized, err, nil)
 		return
 	}
-	var input domain.User
+	var input model.User
 	if er := c.Bind(&input); er != nil {
 		appG.ResponseError(http.StatusBadRequest, er, nil)
 		return
@@ -175,18 +177,20 @@ func (h *HandlerV1) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	var imageInput = &domain.ImageInput{}
+	var imageInput = &model.ImageInput{}
 	imageInput.Service = "user"
 	imageInput.ServiceID = user.ID.Hex()
 	imageInput.UserID = userID
 	imageInput.Dir = "user"
 
-	paths, err := utils.UploadResizeMultipleFile(c, imageInput, "upload", &h.imageConfig)
+	fmt.Println("imageInput: ", imageInput)
+
+	paths, err := utils.UploadResizeMultipleFile(c, imageInput, "images", &h.imageConfig)
 	if err != nil {
 		appG.ResponseError(http.StatusInternalServerError, err, nil)
 	}
 
-	var result []domain.Image
+	var result []model.Image
 	for i := range paths {
 		imageInput.Path = paths[i].Path
 		imageInput.Ext = paths[i].Ext

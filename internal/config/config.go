@@ -154,6 +154,8 @@ func unmarshal(cfg *Config) error {
 func setFromEnv(cfg *Config) {
 	cfg.HTTP.Host = os.Getenv("HOST")
 	cfg.HTTP.Port = os.Getenv("PORT")
+	// cfg.HTTP.ReadTimeout = 10 * time.Second
+	// cfg.HTTP.WriteTimeout = 10 * time.Second
 
 	cfg.Mongo.Host = os.Getenv("MONGODB_HOST")
 	cfg.Mongo.Port = os.Getenv("MONGODB_PORT")
@@ -179,7 +181,7 @@ func setDefaultConfigs(cfg *Config) {
 	cfg.Oauth.VkTokenURI = "https://oauth.vk.com/access_token"
 	cfg.Oauth.VkUserinfoURI = "https://api.vk.com/method/users.get"
 	cfg.Oauth.GoogleAuthURI = "https://accounts.google.com/o/oauth2/auth"
-	cfg.Oauth.GoogleRedirectURI = "https://storydata.ru/api/v1/oauth/google/me"
+	cfg.Oauth.GoogleRedirectURI = "http://localhost:8000/api/v1/oauth/google/me"
 	cfg.Oauth.GoogleTokenURI = "https://accounts.google.com/o/oauth2/token"
 	cfg.Oauth.GoogleUserinfoURI = "https://www.googleapis.com/oauth2/v3/userinfo"
 	cfg.Oauth.GoogleScopes = []string{

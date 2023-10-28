@@ -1,0 +1,29 @@
+config:
+  target: 'http://localhost:8000'
+  phases:
+    - duration: 60
+      arrivalRate: 50
+scenarios:
+  - flow:
+    - post:
+        url: "/api/v1/gql/query"
+        json:
+          query: |
+            query findNodes {
+              nodesConnection(limit:2000,latA: 51.42490192575532, latB: 53.553362785528094, lonA: 12.6287841796875, lonB: 15.639038085937502) {
+                edges {
+                  node {
+                    type
+                    lon
+                    lat
+                    osmId
+                    f
+                  }
+                }
+                pageInfo {
+                  startCursor
+                  endCursor
+                  hasNextPage
+                }
+              }
+            }

@@ -67,7 +67,7 @@ func (s *AuthService) CreateAuth(auth *domain.SignInInput) (string, error) {
 		Email:     auth.Email,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		Strategy:  "local",
+		Strategy:  auth.Strategy, //"local"
 		Verification: domain.Verification{
 			Code: verificationCode,
 		},

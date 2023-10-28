@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,7 @@ func (h *HandlerV1) registerTrack(router *gin.RouterGroup) {
 	track := router.Group("/track")
 	track.GET("/", h.FindTrack)
 	track.POST("/", middleware.SetUserIdentity, h.CreateTrack)
+	track.POST("/list/", middleware.SetUserIdentity, h.CreateListTrack)
 }
 
 func (h *HandlerV1) CreateTrack(c *gin.Context) {
@@ -31,13 +33,47 @@ func (h *HandlerV1) CreateTrack(c *gin.Context) {
 		return
 	}
 
-	Track, err := h.services.Track.CreateTrack(userID, input)
+	track, err := h.services.Track.CreateTrack(userID, input)
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, Track)
+	c.JSON(http.StatusOK, track)
+}
+
+func (h *HandlerV1) CreateListTrack(c *gin.Context) {
+	appG := app.Gin{C: c}
+	userID, err := middleware.GetUID(c)
+	if err != nil {
+		// c.AbortWithError(http.StatusUnauthorized, err)
+		appG.ResponseError(http.StatusUnauthorized, err, gin.H{"hello": "world"})
+		return
+	}
+
+	var input []*domain.Track
+	if er := c.BindJSON(&input); er != nil {
+		appG.ResponseError(http.StatusBadRequest, er, nil)
+		return
+	}
+
+	if len(input) == 0 {
+		appG.ResponseError(http.StatusBadRequest, errors.New("list must be with element(s)"), nil)
+		return
+	}
+
+	var result []*domain.Track
+	for i := range input {
+		track, err := h.services.Track.CreateTrack(userID, input[i])
+		if err != nil {
+			appG.ResponseError(http.StatusBadRequest, err, nil)
+			return
+		}
+		result = append(result, track)
+
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 // @Summary Track Get all Tracks

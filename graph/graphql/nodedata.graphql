@@ -1,0 +1,50 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+
+type Nodedata {
+  id: ID!
+  userId: String!
+  user: User!
+  nodeId: String!
+  tagId: String!
+  tagoptId: String!
+  value: Any!
+  title: String!
+  description: String!
+  locale: Any!
+  tag: Tag
+  tagopt: Tagopt
+
+  status: Int!
+
+  createdAt:String!
+  updatedAt:String!
+}
+
+type GroupNodeData {
+  groups: Any!
+}
+
+input FetchNodedata {
+  id: ID
+  userId: String
+  nodeId: String
+  tagId: String
+  tagoptId: String
+  value: String
+}
+
+type PaginationNodedata {
+  total: Int,
+  limit: Int,
+  skip: Int,
+  data: [Nodedata]
+}
+
+extend type Query {
+  nodedatas(first: Int = 20, after: ID, limit: Int=10, skip:Int=0, input:FetchNodedata): PaginationNodedata
+  groupNodeData: GroupNodeData
+  nodedata(id:ID): Nodedata
+}

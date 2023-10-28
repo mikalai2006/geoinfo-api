@@ -1,0 +1,48 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+
+type Tag {
+  id: ID!
+  userId: String!
+  key: String!
+  type: String!
+  multiopt: Int!
+  title: String!
+  description: String!
+  props: Any!
+  options: [Tagopt]!
+  # filter: Int!
+  # tagoptId: [String]!
+  multilanguage: Boolean,
+  createdAt:String!
+  updatedAt:String!
+}
+
+input FetchTag {
+  id: ID
+  userId: String
+}
+
+type PaginationTag {
+  total: Int,
+  limit: Int,
+  skip: Int,
+  data: [Tag]
+}
+
+# type TagEdge {
+#   cursor: ID!
+#   node: Tag
+# }
+
+# type TagsConnection {
+#   edges: [TagEdge!]!
+#   pageInfo: PageInfo!
+# }
+
+extend type Query {
+  tags(first: Int = 20, after: ID, limit: Int=10, skip:Int=0, input:FetchTag): PaginationTag
+  tag(input:FetchTag): Tag
+}

@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/mikalai2006/geoinfo-api/graph/model"
 	"github.com/mikalai2006/geoinfo-api/internal/config"
 	"github.com/mikalai2006/geoinfo-api/internal/domain"
 	"go.mongodb.org/mongo-driver/bson"
@@ -21,8 +23,8 @@ func NewImageMongo(db *mongo.Database, i18n config.I18nConfig) *ImageMongo {
 	return &ImageMongo{db: db, i18n: i18n}
 }
 
-func (r *ImageMongo) CreateImage(userID string, data *domain.ImageInput) (domain.Image, error) {
-	var result domain.Image
+func (r *ImageMongo) CreateImage(userID string, data *model.ImageInput) (model.Image, error) {
+	var result model.Image
 
 	collection := r.db.Collection(tblImage)
 
@@ -44,7 +46,7 @@ func (r *ImageMongo) CreateImage(userID string, data *domain.ImageInput) (domain
 	// 	ServiceID = primitive.NilObjectID
 	// }
 
-	newImage := domain.Image{
+	newImage := model.Image{
 		UserID:      userIDPrimitive,
 		Service:     data.Service,
 		ServiceID:   data.ServiceID,
@@ -78,22 +80,22 @@ func (r *ImageMongo) CreateImage(userID string, data *domain.ImageInput) (domain
 	return result, nil
 }
 
-func (r *ImageMongo) GetImage(id string) (domain.Image, error) {
-	var result domain.Image
+func (r *ImageMongo) GetImage(id string) (model.Image, error) {
+	var result model.Image
 
 	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
 	defer cancel()
 
 	userIDPrimitive, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return domain.Image{}, err
+		return model.Image{}, err
 	}
 
 	filter := bson.M{"_id": userIDPrimitive}
 
 	err = r.db.Collection(tblImage).FindOne(ctx, filter).Decode(&result)
 	if err != nil {
-		return domain.Image{}, err
+		return model.Image{}, err
 	}
 
 	return result, nil
@@ -129,9 +131,9 @@ func (r *ImageMongo) GetImageDirs(id string) ([]interface{}, error) {
 	return result, nil
 }
 
-func (r *ImageMongo) FindImage(params domain.RequestParams) (domain.Response[domain.Image], error) {
-	var results []domain.Image
-	var response domain.Response[domain.Image]
+func (r *ImageMongo) FindImage(params domain.RequestParams) (domain.Response[model.Image], error) {
+	var results []model.Image
+	var response domain.Response[model.Image]
 
 	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
 	defer cancel()
@@ -140,7 +142,7 @@ func (r *ImageMongo) FindImage(params domain.RequestParams) (domain.Response[dom
 
 	pipe, err := CreatePipeline(params, &r.i18n)
 	if err != nil {
-		return domain.Response[domain.Image]{}, err
+		return domain.Response[model.Image]{}, err
 	}
 
 	cursor, err := collection.Aggregate(ctx, pipe)
@@ -153,7 +155,7 @@ func (r *ImageMongo) FindImage(params domain.RequestParams) (domain.Response[dom
 		return response, er
 	}
 
-	resultSlice := make([]domain.Image, len(results))
+	resultSlice := make([]model.Image, len(results))
 	copy(resultSlice, results)
 
 	var options options.CountOptions
@@ -164,7 +166,7 @@ func (r *ImageMongo) FindImage(params domain.RequestParams) (domain.Response[dom
 		return response, err
 	}
 
-	response = domain.Response[domain.Image]{
+	response = domain.Response[model.Image]{
 		Total: int(count),
 		Skip:  int(params.Options.Skip),
 		Limit: int(params.Options.Limit),
@@ -173,8 +175,8 @@ func (r *ImageMongo) FindImage(params domain.RequestParams) (domain.Response[dom
 	return response, nil
 }
 
-func (r *ImageMongo) DeleteImage(id string) (domain.Image, error) {
-	var result = domain.Image{}
+func (r *ImageMongo) DeleteImage(id string) (model.Image, error) {
+	var result = model.Image{}
 
 	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
 	defer cancel()
@@ -199,4 +201,32 @@ func (r *ImageMongo) DeleteImage(id string) (domain.Image, error) {
 	}
 
 	return result, nil
+}
+
+func (r *ImageMongo) GqlGetImages(params domain.RequestParams) ([]*model.Image, error) {
+	fmt.Println("GqlGetImages")
+	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
+	defer cancel()
+
+	var results []*model.Image
+	pipe, err := CreatePipeline(params, &r.i18n)
+	if err != nil {
+		return results, err
+	}
+	// fmt.Println(pipe)
+
+	cursor, err := r.db.Collection(tblImage).Aggregate(ctx, pipe)
+	if err != nil {
+		return results, err
+	}
+	defer cursor.Close(ctx)
+
+	if er := cursor.All(ctx, &results); er != nil {
+		return results, er
+	}
+
+	resultSlice := make([]*model.Image, len(results))
+
+	copy(resultSlice, results)
+	return results, nil
 }

@@ -9,7 +9,7 @@ import (
 type Review struct {
 	ID     primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	UserID primitive.ObjectID `json:"userId" bson:"user_id" primitive:"true"`
-	GeoID  string             `json:"geoId" bson:"geo_id"`
+	OsmID  string             `json:"osmId" bson:"osm_id"`
 
 	Review string `json:"review" bson:"review"`
 	Rate   int    `json:"rate" bson:"rate"`
@@ -20,7 +20,7 @@ type Review struct {
 }
 
 type ReviewInputData struct {
-	GeoID string `json:"geoId" bson:"geo_id"  form:"geoId"`
+	OsmID string `json:"osmId" bson:"osm_id"  form:"osmId"`
 
 	Review string `json:"review" bson:"review"  form:"review"`
 	Rate   int    `json:"rate" bson:"rate" form:"rate"`

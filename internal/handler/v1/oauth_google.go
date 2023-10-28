@@ -10,8 +10,10 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mikalai2006/geoinfo-api/graph/model"
 	"github.com/mikalai2006/geoinfo-api/internal/domain"
 	"github.com/mikalai2006/geoinfo-api/pkg/app"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type GoogleUserInfo struct {
@@ -52,6 +54,7 @@ func (h *HandlerV1) OAuthGoogle(c *gin.Context) {
 	parameters.Add("state", urlReferer)
 
 	pathRequest.RawQuery = parameters.Encode()
+	fmt.Println("Google auth1::: ", pathRequest.String())
 	c.Redirect(http.StatusFound, pathRequest.String())
 }
 
@@ -142,6 +145,7 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 		Password: "",
 		GoogleID: bodyResponse.Sub,
 	}
+	fmt.Println("Google auth2::: ", input)
 
 	user, err := h.services.Authorization.ExistAuth(input)
 	if err != nil {
@@ -150,14 +154,42 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 		return
 	}
 
+	// Create new user, if not exist
+	var userID string
 	if user.Login == "" {
-		_, err = h.services.Authorization.CreateAuth(input)
+		userID, err = h.services.Authorization.CreateAuth(input)
 		if err != nil {
-			// c.AbortWithError(http.StatusBadRequest, err)
 			appG.ResponseError(http.StatusBadRequest, err, nil)
 			return
 		}
+
+		primitiveID, err := primitive.ObjectIDFromHex(userID)
+		if err != nil {
+			appG.ResponseError(http.StatusBadRequest, err, nil)
+			return
+		}
+		newUser := model.User{
+			UserID: primitiveID,
+			Login:  input.Login,
+			Name:   input.Login,
+			Roles:  []string{"user"},
+			Lang:   h.i18n.Default,
+		}
+		_, err = h.services.User.CreateUser(userID, &newUser)
+		if err != nil {
+			appG.ResponseError(http.StatusInternalServerError, err, nil)
+			return
+		}
 	}
+	// if user.Login == "" {
+	// 	a, err := h.services.Authorization.CreateAuth(input)
+	// 	fmt.Println("Google auth3::: ", a)
+	// 	if err != nil {
+	// 		// c.AbortWithError(http.StatusBadRequest, err)
+	// 		appG.ResponseError(http.StatusBadRequest, err, nil)
+	// 		return
+	// 	}
+	// }
 
 	tokens, err := h.services.Authorization.SignIn(input)
 	if err != nil {

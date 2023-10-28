@@ -29,3 +29,13 @@ MONGODB_PORT=*****
 MONGODB_USER=*****
 MONGODB_PASSWORD=*****
 ```
+
+Option type action:
+1 - remove node
+2 - patch node
+
+11 - remove tagopt
+12 - add tagopt
+
+
+

@@ -1,0 +1,84 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+
+type Node {
+  id: ID!
+  userId: String!
+  lon: Float!
+  lat: Float!
+  type: String!
+  name: String!
+  data: [Nodedata]
+  tagsData: [Tag]!
+  osmId: String!
+  amenityId: String!
+  props: Any!
+  user: User
+  # f: String
+  # p:String
+
+  like: NodeLike
+  reviews: [Review]
+  address: Address
+  reviewsInfo: ReviewInfo
+
+  createdAt:String!
+  updatedAt:DATETIME!
+}
+
+type NodeLike {
+  like: Int
+  dlike: Int
+  ilike: Like
+}
+
+type PaginationNode {
+  total: Int,
+  limit: Int,
+  skip: Int,
+  data: [Node]
+}
+# type NodeEdge {
+#   cursor: ID!
+#   node: Node
+# }
+
+type PageInfo {
+  startCursor: ID!
+  endCursor: ID!
+  hasNextPage: Boolean
+}
+
+# type NodesConnection {
+#   edges: [NodeEdge!]!
+#   pageInfo: PageInfo!
+# }
+input ParamsNode {
+  id: ID
+  lonA:Float,
+  latA:Float,
+  lonB:Float,
+  latB:Float,
+  name:String,
+  type:[String]
+}
+
+extend type Query {
+  nodes(first: Int = 20, after: ID, limit: Int, skip:Int=0, input: ParamsNode): PaginationNode
+  osm(first: Int = 20, after: ID, limit: Int, skip:Int=0, lonA:Float, latA:Float, lonB:Float, latB:Float): [Node]
+  
+  node(id: ID, osmId: String): Node
+}
+
+input NewNode {
+  lat: Float!
+  lon: Float!
+  type: String!
+  osmId: String!
+}
+
+extend type Mutation {
+  createNode(input: NewNode!): Node! @auth
+}

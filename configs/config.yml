@@ -9,10 +9,10 @@ auth:
   accessTokenTTL: 120m
   refreshTokenTTL: 43200m #30 days
 oauth:
-  timeExpireCookie: 900
+  timeExpireCookie: 36000 #6h
 i18n:
   prefix: __i18n__
-  default: ru
+  default: en
 images:
   sizes:
     - size: 30

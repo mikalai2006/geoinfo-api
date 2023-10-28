@@ -10,8 +10,8 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/gin-gonic/gin"
+	"github.com/mikalai2006/geoinfo-api/graph/model"
 	"github.com/mikalai2006/geoinfo-api/internal/config"
-	"github.com/mikalai2006/geoinfo-api/internal/domain"
 )
 
 type VMode struct {
@@ -27,8 +27,8 @@ type VImages struct {
 	Images []VMode
 }
 
-func UploadResizeMultipleFile(c *gin.Context, info *domain.ImageInput, nameField string, imageConfig *config.IImageConfig) ([]domain.IImagePaths, error) {
-	filePaths := []domain.IImagePaths{}
+func UploadResizeMultipleFile(c *gin.Context, info *model.ImageInput, nameField string, imageConfig *config.IImageConfig) ([]model.IImagePaths, error) {
+	filePaths := []model.IImagePaths{}
 	// fmt.Println("filePaths", filePaths)
 	// c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(30<<20))
 	form, err := c.MultipartForm()
@@ -49,6 +49,7 @@ func UploadResizeMultipleFile(c *gin.Context, info *domain.ImageInput, nameField
 	}
 
 	files := form.File[nameField]
+	fmt.Println("files: ", files)
 
 	for _, file := range files {
 		objImages := VImages{}
@@ -58,7 +59,7 @@ func UploadResizeMultipleFile(c *gin.Context, info *domain.ImageInput, nameField
 		originalFileName := strings.TrimSuffix(filepath.Base(file.Filename), filepath.Ext(file.Filename))
 		now := time.Now()
 		filenameOriginal := strings.ReplaceAll(strings.ToLower(originalFileName), " ", "-") + "-" + fmt.Sprintf("%v", now.Unix())
-		filePaths = append(filePaths, domain.IImagePaths{
+		filePaths = append(filePaths, model.IImagePaths{
 			Path: filenameOriginal,
 			Ext:  fileExt,
 		})

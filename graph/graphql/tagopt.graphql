@@ -1,0 +1,49 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+
+type Tagopt {
+  id: ID!
+  userId: String!
+  tagId: String!
+  # key: String!
+  value: String!
+  title: String!
+  description: String!
+  props: Any!
+  
+  user: User!
+
+  createdAt:String!
+  updatedAt:String!
+}
+
+input FetchTagopt {
+  id: ID
+  userId: String
+  # key: String
+  value: String
+}
+
+type PaginationTagopt {
+  total: Int,
+  limit: Int,
+  skip: Int,
+  data: [Tagopt]
+}
+
+# type TagoptEdge {
+#   cursor: ID!
+#   node: Tagopt
+# }
+
+# type TagoptsConnection {
+#   edges: [TagoptEdge!]!
+#   pageInfo: PageInfo!
+# }
+
+extend type Query {
+  tagopts(first: Int = 20, after: ID, limit: Int=10, skip:Int=0, input:FetchTagopt): PaginationTagopt
+  tagopt(input:FetchTag): Tagopt
+}

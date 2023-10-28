@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mikalai2006/geoinfo-api/graph/model"
 	"github.com/mikalai2006/geoinfo-api/internal/domain"
 	"github.com/mikalai2006/geoinfo-api/pkg/app"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -154,7 +155,7 @@ func (h *HandlerV1) MeVk(c *gin.Context) {
 			appG.ResponseError(http.StatusBadRequest, err, nil)
 			return
 		}
-		newUser := domain.User{
+		newUser := model.User{
 			UserID: primitiveID,
 			Login:  input.Login,
 			Name:   input.Login,

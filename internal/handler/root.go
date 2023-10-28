@@ -10,29 +10,35 @@ import (
 	"github.com/mikalai2006/geoinfo-api/internal/config"
 	v1 "github.com/mikalai2006/geoinfo-api/internal/handler/v1"
 	"github.com/mikalai2006/geoinfo-api/internal/middleware"
+	"github.com/mikalai2006/geoinfo-api/internal/repository"
 	"github.com/mikalai2006/geoinfo-api/internal/service"
 	"github.com/mikalai2006/geoinfo-api/pkg/app"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Handler struct {
-	services    *service.Services
-	oauth       config.OauthConfig
-	i18n        config.I18nConfig
-	imageConfig config.IImageConfig
+	db           *mongo.Database
+	repositories *repository.Repositories
+	services     *service.Services
+	oauth        config.OauthConfig
+	i18n         config.I18nConfig
+	imageConfig  config.IImageConfig
 }
 
-func NewHandler(services *service.Services, oauth *config.OauthConfig, i18n *config.I18nConfig, imageConfig *config.IImageConfig) *Handler {
+func NewHandler(services *service.Services, repositories *repository.Repositories, mongoDB *mongo.Database, oauth *config.OauthConfig, i18n *config.I18nConfig, imageConfig *config.IImageConfig) *Handler {
 	return &Handler{
-		services:    services,
-		oauth:       *oauth,
-		i18n:        *i18n,
-		imageConfig: *imageConfig,
+		repositories: repositories,
+		db:           mongoDB,
+		services:     services,
+		oauth:        *oauth,
+		i18n:         *i18n,
+		imageConfig:  *imageConfig,
 	}
 }
 
-func (h *Handler) InitRoutes(cfg *config.Config) *gin.Engine {
+func (h *Handler) InitRoutes(cfg *config.Config, mongoDB *mongo.Database) *gin.Engine {
 	// appG := app.Gin{C: *gin.Context}
 	router := gin.New()
 	router.Use(
@@ -77,7 +83,22 @@ func (h *Handler) InitRoutes(cfg *config.Config) *gin.Engine {
 
 func (h *Handler) initAPI(router *gin.Engine) {
 	fmt.Println("IImageConfig", &h.imageConfig)
-	handlerV1 := v1.NewHandler(h.services, &h.oauth, &h.i18n, &h.imageConfig)
 	api := router.Group("/api")
+	api.Use(GetLang(&h.i18n))
+
+	handlerV1 := v1.NewHandler(h.services, h.repositories, h.db, &h.oauth, &h.i18n, &h.imageConfig)
 	handlerV1.Init(api)
+}
+
+func GetLang(i18n *config.I18nConfig) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		lang := c.Query("lang")
+		if lang == "" {
+			lang = i18n.Default
+		}
+		// i18n.Locale = lang
+		c.Set("i18nLocale", lang)
+		// fmt.Println("middleware h.i18n.Locale=", i18n.Locale)
+		c.Next()
+	}
 }

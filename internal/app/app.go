@@ -89,10 +89,10 @@ func Run(configPath string) {
 		VerificationCodeLength: cfg.Auth.VerificationCodeLength,
 		I18n:                   cfg.I18n,
 	})
-	handlers := handler.NewHandler(services, &cfg.Oauth, &cfg.I18n, &cfg.IImage)
+	handlers := handler.NewHandler(services, repositories, mongoDB, &cfg.Oauth, &cfg.I18n, &cfg.IImage)
 
 	// initialize server
-	srv := server.NewServer(cfg, handlers.InitRoutes(cfg))
+	srv := server.NewServer(cfg, handlers.InitRoutes(cfg, mongoDB))
 
 	go func() {
 		if er := srv.Run(); !errors.Is(er, http.ErrServerClosed) {

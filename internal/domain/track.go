@@ -10,8 +10,8 @@ type Track struct {
 	ID     primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	UserID primitive.ObjectID `json:"userId" bson:"user_id" primitive:"true"`
 
-	Lon float64 `json:"lon" bson:"lon"`
-	Lat float64 `json:"lat" bson:"lat"`
+	Lon float64 `json:"lon" bson:"lon" binding:"required"`
+	Lat float64 `json:"lat" bson:"lat" binding:"required"`
 
 	CreatedAt time.Time `json:"createdAt" bson:"created_at"`
 	UpdatedAt time.Time `json:"updatedAt" bson:"updated_at"`

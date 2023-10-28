@@ -49,7 +49,7 @@ func chooseProvider(auth *domain.SignInInput) bson.D {
 		}
 		return bson.D{
 			{Key: "$or", Value: filter},
-			// {Key: "password", Value: auth.Password},
+			{Key: "password", Value: auth.Password},
 		}
 	}
 

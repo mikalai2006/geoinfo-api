@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mikalai2006/geoinfo-api/internal/domain"
+	"github.com/mikalai2006/geoinfo-api/graph/model"
 	"github.com/mikalai2006/geoinfo-api/internal/middleware"
 	"github.com/mikalai2006/geoinfo-api/internal/utils"
 	"github.com/mikalai2006/geoinfo-api/pkg/app"
@@ -66,7 +66,7 @@ func (h *HandlerV1) getImageDirs(c *gin.Context) {
 func (h *HandlerV1) findImage(c *gin.Context) {
 	appG := app.Gin{C: c}
 
-	params, err := utils.GetParamsFromRequest(c, domain.ImageInput{}, &h.i18n)
+	params, err := utils.GetParamsFromRequest(c, model.ImageInput{}, &h.i18n)
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
 		return
@@ -91,21 +91,21 @@ func (h *HandlerV1) createImage(c *gin.Context) {
 		return
 	}
 
-	var input = &domain.ImageInput{}
+	var input = &model.ImageInput{}
 	if er := c.Bind(input); er != nil {
 		appG.ResponseError(http.StatusBadRequest, er, nil)
 		return
 	}
 	// fmt.Println("input", input)
 	input.UserID = userID
-	// var image domain.Image
+	// var image model.Image
 
 	paths, err := utils.UploadResizeMultipleFile(c, input, "images", &h.imageConfig)
 	if err != nil {
 		appG.ResponseError(http.StatusInternalServerError, err, nil)
 	}
 
-	var result []domain.Image
+	var result []model.Image
 	for i := range paths {
 		input.Path = paths[i].Path
 		input.Ext = paths[i].Ext

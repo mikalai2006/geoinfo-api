@@ -3,6 +3,7 @@ package domain
 import (
 	"time"
 
+	"github.com/mikalai2006/geoinfo-api/graph/model"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -20,7 +21,7 @@ type Auth struct {
 	Verification Verification       `json:"verification" bson:"verification"`
 	Session      Session            `json:"session" bson:"session"`
 	Roles        []string           `json:"roles" bson:"roles"`
-	UserData     User               `json:"-" bson:"user_data"`
+	UserData     model.User         `json:"-" bson:"user_data"`
 	CreatedAt    time.Time          `json:"createdAt" bson:"created_at"`
 	UpdatedAt    time.Time          `json:"updatedAt" bson:"updated_at"`
 }

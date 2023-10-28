@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mikalai2006/geoinfo-api/graph/model"
 	"github.com/mikalai2006/geoinfo-api/internal/domain"
 	"github.com/mikalai2006/geoinfo-api/internal/middleware"
 	"github.com/mikalai2006/geoinfo-api/pkg/app"
@@ -38,6 +39,7 @@ func (h *HandlerV1) getIam(c *gin.Context) {
 	// 	appG.Response(http.StatusBadRequest, err, nil)
 	// 	return
 	// }
+	fmt.Println("ID=", userID)
 
 	users, err := h.services.User.Iam(userID)
 	if err != nil {
@@ -110,7 +112,7 @@ func (h *HandlerV1) SignUp(c *gin.Context) {
 	// create default
 	// avatar := fmt.Sprintf("https://www.gravatar.com/avatar/%s?d=identicon", id)
 
-	newUser := domain.User{
+	newUser := model.User{
 		// Avatar: avatar,
 		UserID: primitiveID,
 		Login:  input.Login,
@@ -161,6 +163,10 @@ func (h *HandlerV1) SignIn(c *gin.Context) {
 		appG.ResponseError(http.StatusBadRequest, errors.New("request must be with email or login"), nil)
 		return
 	}
+	if input.Password == "" {
+		appG.ResponseError(http.StatusBadRequest, errors.New("empty password"), nil)
+		return
+	}
 
 	if input.Strategy == "local" {
 		tokens, err := h.services.Authorization.SignIn(input)
@@ -196,9 +202,9 @@ func (h *HandlerV1) SignIn(c *gin.Context) {
 func (h *HandlerV1) tokenRefresh(c *gin.Context) {
 	appG := app.Gin{C: c}
 	jwtCookie, _ := c.Cookie("jwt-handmade")
-	fmt.Println("refresh jwt_handmade = ", jwtCookie)
+	fmt.Println("refresh Cookie jwt_handmade = ", jwtCookie)
 	cookie_header := c.GetHeader("cookie")
-	fmt.Println("cookie_header = ", cookie_header)
+	fmt.Println("refresh GetHeader cookie_header = ", cookie_header)
 	// fmt.Println("+++++++++++++")
 	// session := sessions.Default(c)
 	var input domain.RefreshInput
@@ -211,6 +217,7 @@ func (h *HandlerV1) tokenRefresh(c *gin.Context) {
 	} else {
 		input.Token = jwtCookie
 	}
+	fmt.Println("refresh input.Token  = ", input.Token)
 
 	if input.Token == "" && jwtCookie == "" {
 		c.JSON(http.StatusOK, gin.H{})

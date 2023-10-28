@@ -32,7 +32,7 @@ func GetParamsFromRequest[V any](c *gin.Context, filterStruct V, i18n *config.I1
 		Filter: filterStruct,
 	}
 	// set current locale.
-	lang := c.Query("lang")
+	lang := c.MustGet("i18nLocale").(string)
 	if lang != "" {
 		params.Lang = lang
 	} else {
@@ -85,9 +85,9 @@ func GetParamsFromRequest[V any](c *gin.Context, filterStruct V, i18n *config.I1
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 				value := elementsFilter.Field(i).Int()
 				dataFilter[tagValue] = value
+				// fmt.Println(tagValue, tagJSONValue, tagMapQuery, elementsFilter.Field(i), elementsFilter.Field(i).Type())
 
 			default:
-
 			}
 		} else {
 			valueParam = filterValues[tagMapQuery]
@@ -146,7 +146,7 @@ func GetParamsFromRequest[V any](c *gin.Context, filterStruct V, i18n *config.I1
 		opts.Sort = testBson
 	}
 	// TODO opts.Limit.
-	if opts.Limit == 0 || opts.Limit > 100 {
+	if (opts.Limit == 0 || opts.Limit > 500) && opts.Limit != 100000 {
 		opts.Limit = 10
 	}
 	params.Filter = dataFilter
@@ -154,4 +154,8 @@ func GetParamsFromRequest[V any](c *gin.Context, filterStruct V, i18n *config.I1
 	// fmt.Println("query map: ", c.Request.URL.Query())
 	// fmt.Println("params: ", params)
 	return params, nil
+}
+
+func GetIntPointer(value int) *int {
+	return &value
 }

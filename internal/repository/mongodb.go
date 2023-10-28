@@ -17,16 +17,25 @@ import (
 )
 
 const (
-	tblShops   = "shops"
-	tblUsers   = "users"
-	TblAuth    = "auths"
-	tblPage    = "pages"
-	tblStory   = "storys"
-	tblSpace   = "spaces"
-	tblPlugin  = "plugins"
-	tblReview  = "reviews"
-	tblAddress = "address"
-	tblTrack   = "track"
+	tblShops          = "shops"
+	tblUsers          = "users"
+	TblAuth           = "auths"
+	tblPage           = "pages"
+	tblStory          = "storys"
+	tblSpace          = "spaces"
+	tblPlugin         = "plugins"
+	TblReview         = "reviews"
+	TblAddress        = "address"
+	tblTrack          = "track"
+	TblNode           = "node"
+	TblNodedata       = "nodedata"
+	TblNodedataNumber = "nodedata_number"
+	TblTag            = "tag"
+	TblTagopt         = "tagopt"
+	TblTicket         = "ticket"
+	TblLike           = "like"
+	TblAmenity        = "amenity"
+	TblAction         = "action"
 
 	tblPartner = "partners"
 
@@ -94,7 +103,7 @@ func test(t interface{}) {
 
 func CreatePipeline(params domain.RequestParams, i18n *config.I18nConfig) (mongo.Pipeline, error) {
 	pipe := mongo.Pipeline{}
-	// fmt.Println("params.Filter: ", params.Filter)
+	// fmt.Println("params: ", params)
 
 	// filter := map[string]interface{}{}
 	// elementsFilter := reflect.ValueOf(params.Filter)
@@ -106,6 +115,7 @@ func CreatePipeline(params domain.RequestParams, i18n *config.I18nConfig) (mongo
 		params.Lang = i18n.Default
 	}
 
+	// fmt.Println("CreatePipeline1: ", params.Lang, i18n.Default)
 	pipe = append(pipe,
 		bson.D{{Key: "$match", Value: params.Filter}},
 		bson.D{{
@@ -121,8 +131,9 @@ func CreatePipeline(params domain.RequestParams, i18n *config.I18nConfig) (mongo
 				},
 			},
 		}},
-		bson.D{{Key: "$unset", Value: "locale"}},
+		// bson.D{{Key: "$unset", Value: "locale"}},
 	)
+	// fmt.Println("CreatePipeline2: pipe=", pipe)
 	// opts := options.Find()
 	if params.Options.Sort != nil {
 		// opts.SetSort(params.Options.Sort)

@@ -39,6 +39,7 @@ type FetchNodedata struct {
 	TagID    *string `json:"tagId,omitempty"`
 	TagoptID *string `json:"tagoptId,omitempty"`
 	Value    *string `json:"value,omitempty"`
+	Type     *string `json:"type,omitempty"`
 }
 
 type FetchReview struct {

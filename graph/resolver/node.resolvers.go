@@ -268,20 +268,113 @@ func (r *queryResolver) Nodes(ctx context.Context, first *int, after *string, li
 
 	inputData := input.Filter
 	if len(inputData) > 0 {
-		filterOutput := bson.D{}
+		// filterOutput := bson.M{}
+		// filter := []bson.M{}
+		// for i := range inputData {
+		// 	// typeFilter := ""
+		// 	filterTypeOptions := bson.A{}
+		// 	if input.Filter[i].Type != "" {
+		// 		// typeFilter = input.Filter[i].Type
+		// 		filterTypeOptions = append(filterTypeOptions, bson.M{"$eq": bson.A{"$type", input.Filter[i].Type}})
+		// 	} else {
+		// 		continue
+		// 	}
+
+		// 	if len(inputData[i].Options) > 0 {
+		// 		filterOptions := bson.A{}
+		// 		for j := range inputData[i].Options {
+		// 			tID, _ := primitive.ObjectIDFromHex(inputData[i].Options[j].TagID)
+
+		// 			arrValue := bson.A{}
+		// 			for v := range inputData[i].Options[j].Value {
+		// 				arrValue = append(arrValue, inputData[i].Options[j].Value[v])
+		// 			}
+
+		// 			filterOptions = append(filterOptions, bson.M{
+		// 				"$and": bson.A{
+		// 					bson.M{
+		// 						"$eq": bson.A{"$$item.tag_id", tID},
+		// 					},
+		// 					bson.M{
+		// 						"$in": bson.A{"$$item.data.value", arrValue},
+		// 					},
+		// 				},
+		// 				// "data.tag_id": tID,
+		// 				// "data.data.value": bson.D{
+		// 				// 	{"$in", arrValue},
+		// 				// },
+		// 			})
+		// 		}
+		// 		filterTypeOptions = append(filterTypeOptions, bson.M{"$and": filterOptions})
+		// 		// filterTypeOptions["$and"] = filterOptions
+		// 	}
+
+		// 	filter = append(filter, bson.M{"$and": filterTypeOptions})
+		// }
+		// filterOutput["$or"] = filter
+		// // filterOutput = append(filterOutput, bson.E{"$or", filter})
+
+		// pipe = append(pipe, bson.D{
+		// 	{"$addFields", bson.M{
+		// 		"dataCount": bson.M{
+		// 			"$size": bson.M{
+		// 				"$filter": bson.M{
+		// 					"input": "$data",
+		// 					"as":    "item",
+		// 					"cond":  filterOutput,
+		// 				},
+		// 			},
+		// 		},
+		// 	}},
+		// })
+
+		// pipe = append(pipe, bson.D{
+		// 	{"$match", bson.M{
+		// 		"dataCount": bson.M{
+		// 			"$gt": 0,
+		// 		},
+		// 	}}})
+		// fmt.Println("pipe=", pipe)
+
+		//////////////////// 2
+		filterNodeData := mongo.Pipeline{}
+		// filterNodeData = append(filterNodeData, bson.D{{Key: "$lookup", Value: bson.M{
+		// 	"from": "node",
+		// 	// "let":  bson.D{{Key: "nodeId", Value: bson.D{{"$toString", "$_id"}}}},
+		// 	// "pipeline": mongo.Pipeline{
+		// 	// 	bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$node_id", "$$nodeId"}}}}},
+		// 	// },
+		// 	"localField":   "node_id",
+		// 	"foreignField": "_id",
+		// 	"as":           "node",
+		// }}})
+		// filterNodeData = append(filterNodeData, bson.D{{"$unwind", bson.D{{"path", "$node"}}}})
+
 		filter := []bson.M{}
 		for i := range inputData {
 			// typeFilter := ""
-			filterTypeOptions := bson.M{}
+			filterTypeOptions := bson.A{}
 			if input.Filter[i].Type != "" {
-				// typeFilter = input.Filter[i].Type
-				filterTypeOptions["type"] = input.Filter[i].Type
+				filterTypeOptions = append(filterTypeOptions, bson.M{"type": input.Filter[i].Type})
 			} else {
 				continue
 			}
 
+			// if input.LatA != nil {
+			// 	filterTypeOptions = append(filterTypeOptions, bson.M{"lat": bson.D{{"$gt", *input.LatA}}})
+			// }
+			// if input.LatB != nil {
+			// 	filterTypeOptions = append(filterTypeOptions, bson.M{"lat": bson.D{{"$lt", *input.LatB}}})
+			// }
+			// if input.LonA != nil {
+			// 	filterTypeOptions = append(filterTypeOptions, bson.M{"lon": bson.D{{"$gt", *input.LonA}}})
+			// }
+			// if input.LonB != nil {
+			// 	filterTypeOptions = append(filterTypeOptions, bson.M{"lon": bson.D{{"$lt", *input.LonB}}})
+			// }
+
 			if len(inputData[i].Options) > 0 {
-				filterOptions := []bson.M{}
+				filterOptions := bson.A{}
 				for j := range inputData[i].Options {
 					tID, _ := primitive.ObjectIDFromHex(inputData[i].Options[j].TagID)
 
@@ -291,45 +384,43 @@ func (r *queryResolver) Nodes(ctx context.Context, first *int, after *string, li
 					}
 
 					filterOptions = append(filterOptions, bson.M{
-						"data.tag_id": tID,
-						"data.data.value": bson.D{
+						"tag_id": tID,
+						"data.value": bson.D{
 							{"$in", arrValue},
 						},
 					})
 				}
-				// filterTypeOptions = append(filterTypeOptions, bson.M{"$and": filterOptions})
-				filterTypeOptions["$and"] = filterOptions
+				filterTypeOptions = append(filterTypeOptions, bson.M{"$and": filterOptions})
+				// filterTypeOptions["$and"] = filterOptions
 			}
 
-			filter = append(filter, filterTypeOptions)
+			filter = append(filter, bson.M{"$and": filterTypeOptions})
 		}
-		// filterOutput["$or"] = filter
-		filterOutput = append(filterOutput, bson.E{"$or", filter})
+		filterNodeData = append(filterNodeData, bson.D{{"$match", bson.D{{"$or", filter}}}})
 
-		pipe = append(pipe, bson.D{{"$match", filterOutput}})
-		fmt.Println("pipe=", pipe)
+		fmt.Println("filterOutput=", filterNodeData)
 
-		// fmt.Println("filterOutput ====>>>>>", filterOutput)
-		// var allAllowOpts []model.Nodedata
-		// // if limit != nil {
-		// // 	filterOutput = append(filterOutput, bson.M{"$limit": limit})
-		// // }
-		// cur, err := r.DB.Collection(repository.TblNodedata).Aggregate(ctx, filterOutput)
-		// if err != nil {
-		// 	return results, err
+		var allAllowOpts []model.Nodedata
+		// if limit != nil {
+		// 	filterOutput = append(filterOutput, bson.M{"$limit": limit})
 		// }
-		// if er := cur.All(ctx, &allAllowOpts); er != nil {
-		// 	return results, er
-		// }
-		// fmt.Println("len=", len(allAllowOpts))
-		// IDs := []primitive.ObjectID{}
-		// for e := range allAllowOpts {
-		// 	IDs = append(IDs, allAllowOpts[e].NodeID)
-		// }
-		// fmt.Println("IDs len=", len(IDs))
-		// fmt.Println("filterOutput <<<<<=================")
-		// q = append(q, bson.E{"_id", bson.D{{"$in", IDs}}})
-		// fmt.Println("q=", q)
+		cur, err := r.DB.Collection(repository.TblNodedata).Aggregate(ctx, filterNodeData)
+		if err != nil {
+			return results, err
+		}
+		if er := cur.All(ctx, &allAllowOpts); er != nil {
+			return results, er
+		}
+		fmt.Println("len=", len(allAllowOpts))
+		IDs := []primitive.ObjectID{}
+		for e := range allAllowOpts {
+			IDs = append(IDs, allAllowOpts[e].NodeID)
+		}
+		fmt.Println("IDs len=", len(IDs))
+		fmt.Println("filterOutput <<<<<=================")
+
+		pipe = append(pipe, bson.D{{"$match", bson.D{{"_id", bson.D{{"$in", IDs}}}}}})
+		// fmt.Println("pipe=", pipe)
 	}
 
 	// if input.Name != nil && *input.Name != "" {

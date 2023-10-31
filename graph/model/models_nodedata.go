@@ -24,6 +24,8 @@ type Nodedata struct {
 	Locale      map[string]map[string]string `json:"locale" bson:"locale"`
 	Status      int64                        `json:"status" bson:"status"` // 1 - view, 100 - new, -1 - not view(remove)
 
+	Type string `json:"type" bson:"type"`
+
 	CreatedAt time.Time `json:"createdAt" bson:"created_at"`
 	UpdatedAt time.Time `json:"updatedAt" bson:"updated_at"`
 }
@@ -38,6 +40,7 @@ type NodedataInput struct {
 	Description string                       `json:"description" bson:"description"`
 	Locale      map[string]map[string]string `json:"locale" bson:"locale"`
 	Status      int64                        `json:"status" bson:"status"`
+	Type        string                       `json:"type" bson:"type"`
 }
 
 type GroupNodeData struct {

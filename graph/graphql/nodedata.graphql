@@ -14,6 +14,7 @@ type Nodedata {
   title: String!
   description: String!
   locale: Any!
+  type: String!
   tag: Tag
   tagopt: Tagopt
 
@@ -34,6 +35,7 @@ input FetchNodedata {
   tagId: String
   tagoptId: String
   value: String
+  type: String
 }
 
 type PaginationNodedata {

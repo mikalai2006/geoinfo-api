@@ -147,6 +147,7 @@ func (r *NodedataMongo) CreateNodedata(userID string, data *model.NodedataInput)
 		Data:      data.Data,
 		Locale:    data.Locale,
 		Status:    100, //data.Status,
+		Type:      data.Type,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -213,6 +214,7 @@ func (r *NodedataMongo) UpdateNodedata(id string, userID string, data *model.Nod
 		"data":       data.Data,
 		"locale":     data.Locale,
 		"status":     data.Status,
+		"type":       data.Type,
 		"updated_at": time.Now(),
 	}})
 	if err != nil {

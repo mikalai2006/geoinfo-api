@@ -227,6 +227,18 @@ func (r *NodeMongo) UpdateNode(id string, userID string, data *model.Node) (*mod
 		return result, err
 	}
 
+	// update type for nodedata collection
+	// if data.Type != "" {
+	_, err = r.db.Collection(TblNodedata).UpdateMany(
+		ctx,
+		bson.M{"node_id": result.ID},
+		bson.M{"$set": bson.M{"type": result.Type, "lat": result.Lat, "lon": result.Lon}},
+	)
+	if err != nil {
+		return result, err
+	}
+	// }
+
 	return result, nil
 }
 

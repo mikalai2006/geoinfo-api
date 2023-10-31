@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -131,12 +130,12 @@ func SetUserIdentityGraphql(c *gin.Context) {
 
 	}
 
-	id, ok := GetUserID(c)
-	if ok != nil {
-		fmt.Println("SetUserIdentityGraphql::: Not auth")
-	} else {
-		fmt.Println("SetUserIdentityGraphql::: AuthID=", id)
-	}
+	// id, ok := GetUserID(c)
+	// if ok != nil {
+	// 	fmt.Println("SetUserIdentityGraphql::: Not auth")
+	// } else {
+	// 	fmt.Println("SetUserIdentityGraphql::: AuthID=", id)
+	// }
 }
 
 func GetUserID(c *gin.Context) (string, error) {

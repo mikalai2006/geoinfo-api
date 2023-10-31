@@ -15,6 +15,7 @@ type Tag {
   options: [Tagopt]!
   # filter: Int!
   # tagoptId: [String]!
+  isFilter: Boolean,
   multilanguage: Boolean,
   createdAt:String!
   updatedAt:String!

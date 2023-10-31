@@ -16,6 +16,7 @@ type Amenity struct {
 	Locale      map[string]map[string]string `json:"locale" bson:"locale"`
 	Type        string                       `json:"type" bson:"type"`
 	Tags        []interface{}                `json:"tags" bson:"tags"`
+	Status      int64                        `json:"status" bson:"status"` // 1 - view, 100 - new, -1 - not view(remove)
 	CreatedAt   time.Time                    `json:"createdAt" bson:"created_at"`
 	UpdatedAt   time.Time                    `json:"updatedAt" bson:"updated_at"`
 }
@@ -30,6 +31,7 @@ type AmenityInput struct {
 	Locale      map[string]map[string]string `json:"locale" bson:"locale"`
 	Type        string                       `json:"type" bson:"type"`
 	Tags        []interface{}                `json:"tags" bson:"tags" form:"tags"`
+	Status      int64                        `json:"status" bson:"status"`
 	CreatedAt   time.Time                    `json:"createdAt" bson:"created_at"`
 	UpdatedAt   time.Time                    `json:"updatedAt" bson:"updated_at"`
 }

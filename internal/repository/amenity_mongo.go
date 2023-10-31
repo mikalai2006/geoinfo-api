@@ -132,6 +132,7 @@ func (r *AmenityMongo) CreateAmenity(userID string, amenity *model.Amenity) (*mo
 		Locale:      amenity.Locale,
 		Type:        amenity.Type,
 		Tags:        amenity.Tags,
+		Status:      amenity.Status,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
@@ -218,6 +219,7 @@ func (r *AmenityMongo) UpdateAmenity(id string, userID string, data *model.Ameni
 		"locale":      data.Locale,
 		"type":        data.Type,
 		"tags":        data.Tags,
+		"status":      data.Status,
 		"updated_at":  time.Now(),
 	}})
 	if err != nil {

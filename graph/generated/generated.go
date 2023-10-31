@@ -87,6 +87,7 @@ type ComplexityRoot struct {
 		ID          func(childComplexity int) int
 		Key         func(childComplexity int) int
 		Props       func(childComplexity int) int
+		Status      func(childComplexity int) int
 		Tags        func(childComplexity int) int
 		Title       func(childComplexity int) int
 		Type        func(childComplexity int) int
@@ -299,6 +300,7 @@ type ComplexityRoot struct {
 		CreatedAt     func(childComplexity int) int
 		Description   func(childComplexity int) int
 		ID            func(childComplexity int) int
+		IsFilter      func(childComplexity int) int
 		Key           func(childComplexity int) int
 		MultiOpt      func(childComplexity int) int
 		Multilanguage func(childComplexity int) int
@@ -365,6 +367,7 @@ type AmenityResolver interface {
 	Props(ctx context.Context, obj *model.Amenity) (interface{}, error)
 
 	Tags(ctx context.Context, obj *model.Amenity) ([]*string, error)
+
 	CreatedAt(ctx context.Context, obj *model.Amenity) (string, error)
 	UpdatedAt(ctx context.Context, obj *model.Amenity) (string, error)
 }
@@ -393,7 +396,6 @@ type NodeResolver interface {
 	ID(ctx context.Context, obj *model.Node) (string, error)
 	UserID(ctx context.Context, obj *model.Node) (string, error)
 
-	Data(ctx context.Context, obj *model.Node) ([]*model.Nodedata, error)
 	TagsData(ctx context.Context, obj *model.Node) ([]*model.Tag, error)
 
 	AmenityID(ctx context.Context, obj *model.Node) (string, error)
@@ -658,6 +660,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Amenity.Props(childComplexity), true
+
+	case "Amenity.status":
+		if e.complexity.Amenity.Status == nil {
+			break
+		}
+
+		return e.complexity.Amenity.Status(childComplexity), true
 
 	case "Amenity.tags":
 		if e.complexity.Amenity.Tags == nil {
@@ -1749,6 +1758,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tag.ID(childComplexity), true
 
+	case "Tag.isFilter":
+		if e.complexity.Tag.IsFilter == nil {
+			break
+		}
+
+		return e.complexity.Tag.IsFilter(childComplexity), true
+
 	case "Tag.key":
 		if e.complexity.Tag.Key == nil {
 			break
@@ -1976,6 +1992,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputFetchTag,
 		ec.unmarshalInputFetchTagopt,
 		ec.unmarshalInputNewNode,
+		ec.unmarshalInputNodeFilterTag,
+		ec.unmarshalInputNodeFilterTagOption,
 		ec.unmarshalInputParamsNode,
 	)
 	first := true
@@ -2162,6 +2180,7 @@ type Amenity {
   type: String!
   tags: [String]
 
+  status: Int!
   createdAt:String!
   updatedAt:String!
 }
@@ -2171,6 +2190,7 @@ input FetchAmenity {
   userId: String
   key: String
   type: String
+  status: Int
 }
 
 type PaginationAmenity {
@@ -2246,7 +2266,7 @@ extend type Query {
 	{Name: "../graphql/node.graphql", Input: `# GraphQL schema example
 #
 # https://gqlgen.com/getting-started/
-
+scalar JSON
 
 type Node {
   id: ID!
@@ -2300,14 +2320,25 @@ type PageInfo {
 #   edges: [NodeEdge!]!
 #   pageInfo: PageInfo!
 # }
+input NodeFilterTagOption {
+	tagId: String!
+	value: [Any]
+}
+input NodeFilterTag {
+  type: String!
+  options: [NodeFilterTagOption]!
+}
+
 input ParamsNode {
   id: ID
   lonA:Float,
   latA:Float,
   lonB:Float,
   latB:Float,
-  name:String,
-  type:[String]
+  query:String,
+  # type:[String],
+  # filter: JSON
+  filter: [NodeFilterTag]
 }
 
 extend type Query {
@@ -2496,6 +2527,7 @@ type Tag {
   options: [Tagopt]!
   # filter: Int!
   # tagoptId: [String]!
+  isFilter: Boolean,
   multilanguage: Boolean,
   createdAt:String!
   updatedAt:String!
@@ -4475,6 +4507,50 @@ func (ec *executionContext) fieldContext_Amenity_tags(ctx context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Amenity_status(ctx context.Context, field graphql.CollectedField, obj *model.Amenity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Amenity_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Amenity_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Amenity",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Amenity_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Amenity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Amenity_createdAt(ctx, field)
 	if err != nil {
@@ -5790,7 +5866,7 @@ func (ec *executionContext) _Node_data(ctx context.Context, field graphql.Collec
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Node().Data(rctx, obj)
+		return obj.Data, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5799,17 +5875,17 @@ func (ec *executionContext) _Node_data(ctx context.Context, field graphql.Collec
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Nodedata)
+	res := resTmp.([]model.Nodedata)
 	fc.Result = res
-	return ec.marshalONodedata2ᚕᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodedata(ctx, field.Selections, res)
+	return ec.marshalONodedata2ᚕgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodedata(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Node_data(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Node",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -5906,6 +5982,8 @@ func (ec *executionContext) fieldContext_Node_tagsData(ctx context.Context, fiel
 				return ec.fieldContext_Tag_props(ctx, field)
 			case "options":
 				return ec.fieldContext_Tag_options(ctx, field)
+			case "isFilter":
+				return ec.fieldContext_Tag_isFilter(ctx, field)
 			case "multilanguage":
 				return ec.fieldContext_Tag_multilanguage(ctx, field)
 			case "createdAt":
@@ -7073,6 +7151,8 @@ func (ec *executionContext) fieldContext_Nodedata_tag(ctx context.Context, field
 				return ec.fieldContext_Tag_props(ctx, field)
 			case "options":
 				return ec.fieldContext_Tag_options(ctx, field)
+			case "isFilter":
+				return ec.fieldContext_Tag_isFilter(ctx, field)
 			case "multilanguage":
 				return ec.fieldContext_Tag_multilanguage(ctx, field)
 			case "createdAt":
@@ -7953,6 +8033,8 @@ func (ec *executionContext) fieldContext_PaginationAmenity_data(ctx context.Cont
 				return ec.fieldContext_Amenity_type(ctx, field)
 			case "tags":
 				return ec.fieldContext_Amenity_tags(ctx, field)
+			case "status":
+				return ec.fieldContext_Amenity_status(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Amenity_createdAt(ctx, field)
 			case "updatedAt":
@@ -8907,6 +8989,8 @@ func (ec *executionContext) fieldContext_PaginationTag_data(ctx context.Context,
 				return ec.fieldContext_Tag_props(ctx, field)
 			case "options":
 				return ec.fieldContext_Tag_options(ctx, field)
+			case "isFilter":
+				return ec.fieldContext_Tag_isFilter(ctx, field)
 			case "multilanguage":
 				return ec.fieldContext_Tag_multilanguage(ctx, field)
 			case "createdAt":
@@ -9536,6 +9620,8 @@ func (ec *executionContext) fieldContext_Query_amenity(ctx context.Context, fiel
 				return ec.fieldContext_Amenity_type(ctx, field)
 			case "tags":
 				return ec.fieldContext_Amenity_tags(ctx, field)
+			case "status":
+				return ec.fieldContext_Amenity_status(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Amenity_createdAt(ctx, field)
 			case "updatedAt":
@@ -10457,6 +10543,8 @@ func (ec *executionContext) fieldContext_Query_tag(ctx context.Context, field gr
 				return ec.fieldContext_Tag_props(ctx, field)
 			case "options":
 				return ec.fieldContext_Tag_options(ctx, field)
+			case "isFilter":
+				return ec.fieldContext_Tag_isFilter(ctx, field)
 			case "multilanguage":
 				return ec.fieldContext_Tag_multilanguage(ctx, field)
 			case "createdAt":
@@ -11869,6 +11957,47 @@ func (ec *executionContext) fieldContext_Tag_options(ctx context.Context, field 
 				return ec.fieldContext_Tagopt_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tagopt", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Tag_isFilter(ctx context.Context, field graphql.CollectedField, obj *model.Tag) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Tag_isFilter(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsFilter, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalOBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Tag_isFilter(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Tag",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -14876,7 +15005,7 @@ func (ec *executionContext) unmarshalInputFetchAmenity(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "userId", "key", "type"}
+	fieldsInOrder := [...]string{"id", "userId", "key", "type", "status"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14919,6 +15048,15 @@ func (ec *executionContext) unmarshalInputFetchAmenity(ctx context.Context, obj 
 				return it, err
 			}
 			it.Type = data
+		case "status":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
 		}
 	}
 
@@ -15243,6 +15381,82 @@ func (ec *executionContext) unmarshalInputNewNode(ctx context.Context, obj inter
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputNodeFilterTag(ctx context.Context, obj interface{}) (model.NodeFilterTag, error) {
+	var it model.NodeFilterTag
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"type", "options"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "type":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
+		case "options":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("options"))
+			data, err := ec.unmarshalNNodeFilterTagOption2ᚕgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeFilterTagOption(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Options = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputNodeFilterTagOption(ctx context.Context, obj interface{}) (model.NodeFilterTagOption, error) {
+	var it model.NodeFilterTagOption
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"tagId", "value"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "tagId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tagId"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TagID = data
+		case "value":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalOAny2ᚕinterface(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputParamsNode(ctx context.Context, obj interface{}) (model.ParamsNode, error) {
 	var it model.ParamsNode
 	asMap := map[string]interface{}{}
@@ -15250,7 +15464,7 @@ func (ec *executionContext) unmarshalInputParamsNode(ctx context.Context, obj in
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "lonA", "latA", "lonB", "latB", "name", "type"}
+	fieldsInOrder := [...]string{"id", "lonA", "latA", "lonB", "latB", "query", "filter"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -15302,24 +15516,24 @@ func (ec *executionContext) unmarshalInputParamsNode(ctx context.Context, obj in
 				return it, err
 			}
 			it.LatB = data
-		case "name":
+		case "query":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("query"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Name = data
-		case "type":
+			it.Query = data
+		case "filter":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
-			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+			data, err := ec.unmarshalONodeFilterTag2ᚕᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeFilterTag(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Type = data
+			it.Filter = data
 		}
 	}
 
@@ -16005,6 +16219,11 @@ func (ec *executionContext) _Amenity(ctx context.Context, sel ast.SelectionSet, 
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "status":
+			out.Values[i] = ec._Amenity_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "createdAt":
 			field := field
 
@@ -16794,38 +17013,7 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "data":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Node_data(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			out.Values[i] = ec._Node_data(ctx, field, obj)
 		case "tagsData":
 			field := field
 
@@ -19095,6 +19283,8 @@ func (ec *executionContext) _Tag(ctx context.Context, sel ast.SelectionSet, obj 
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "isFilter":
+			out.Values[i] = ec._Tag_isFilter(ctx, field, obj)
 		case "multilanguage":
 			out.Values[i] = ec._Tag_multilanguage(ctx, field, obj)
 		case "createdAt":
@@ -20245,6 +20435,23 @@ func (ec *executionContext) marshalNNode2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfo
 	return ec._Node(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNNodeFilterTagOption2ᚕgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeFilterTagOption(ctx context.Context, v interface{}) ([]model.NodeFilterTagOption, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]model.NodeFilterTagOption, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalONodeFilterTagOption2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeFilterTagOption(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *model.PageInfo) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -20827,6 +21034,38 @@ func (ec *executionContext) marshalOAny2interface(ctx context.Context, sel ast.S
 	return res
 }
 
+func (ec *executionContext) unmarshalOAny2ᚕinterface(ctx context.Context, v interface{}) ([]interface{}, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]interface{}, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOAny2interface(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOAny2ᚕinterface(ctx context.Context, sel ast.SelectionSet, v []interface{}) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOAny2interface(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -21093,11 +21332,89 @@ func (ec *executionContext) marshalONode2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfo
 	return ec._Node(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalONodeFilterTag2ᚕᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeFilterTag(ctx context.Context, v interface{}) ([]*model.NodeFilterTag, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.NodeFilterTag, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalONodeFilterTag2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeFilterTag(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalONodeFilterTag2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeFilterTag(ctx context.Context, v interface{}) (*model.NodeFilterTag, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputNodeFilterTag(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalONodeFilterTagOption2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeFilterTagOption(ctx context.Context, v interface{}) (model.NodeFilterTagOption, error) {
+	res, err := ec.unmarshalInputNodeFilterTagOption(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalONodeLike2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeLike(ctx context.Context, sel ast.SelectionSet, v *model.NodeLike) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._NodeLike(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalONodedata2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodedata(ctx context.Context, sel ast.SelectionSet, v model.Nodedata) graphql.Marshaler {
+	return ec._Nodedata(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalONodedata2ᚕgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodedata(ctx context.Context, sel ast.SelectionSet, v []model.Nodedata) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalONodedata2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodedata(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
 }
 
 func (ec *executionContext) marshalONodedata2ᚕᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodedata(ctx context.Context, sel ast.SelectionSet, v []*model.Nodedata) graphql.Marshaler {

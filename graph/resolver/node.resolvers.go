@@ -6,9 +6,7 @@ package resolver
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/mikalai2006/geoinfo-api/graph/generated"
 	"github.com/mikalai2006/geoinfo-api/graph/loaders"
@@ -36,29 +34,6 @@ func (r *nodeResolver) ID(ctx context.Context, obj *model.Node) (string, error) 
 // UserID is the resolver for the userId field.
 func (r *nodeResolver) UserID(ctx context.Context, obj *model.Node) (string, error) {
 	return obj.UserID.Hex(), nil
-}
-
-// Data is the resolver for the data field.
-func (r *nodeResolver) Data(ctx context.Context, obj *model.Node) ([]*model.Nodedata, error) {
-	gc, err := utils.GinContextFromContext(ctx)
-	lang := gc.MustGet("i18nLocale").(string)
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := r.Repo.Nodedata.GqlGetNodedatas(domain.RequestParams{
-		// Options: domain.Options{Limit: 10},
-		Filter: bson.M{"node_id": obj.ID, "status": bson.M{"$gt": 0}},
-		Lang:   lang,
-	})
-	if err != nil {
-		return result, err
-	}
-	// result, errs := loaders.GetTags(ctx, obj.Tags)
-	// if len(errs) > 0 {
-	// 	fmt.Println("Error:", errs)
-	// }
-	return result, nil
 }
 
 // TagsData is the resolver for the tagsData field.
@@ -256,77 +231,166 @@ func (r *queryResolver) Nodes(ctx context.Context, first *int, after *string, li
 	if input.LonB != nil {
 		q = append(q, bson.E{"lon", bson.D{{"$lt", input.LonB}}})
 	}
-	if input.Type != nil && len(input.Type) > 0 {
-		types := make([]string, len(input.Type))
-		for i := range input.Type {
-			types[i] = *input.Type[i]
-		}
-		q = append(q, bson.E{"type", bson.D{{"$in", types}}})
-	}
-	// Filter by substring name
-	// if input.Name != nil && *input.Name != "" {
-	// 	strName := primitive.Regex{Pattern: fmt.Sprintf("%v", *input.Name), Options: "i"}
-	// 	q = append(q, bson.E{"name", bson.D{{"$regex", strName}}})
-	// 	fmt.Println("q:", q)
+	// if input.Type != nil && len(input.Type) > 0 {
+	// 	types := make([]string, len(input.Type))
+	// 	for i := range input.Type {
+	// 		types[i] = *input.Type[i]
+	// 	}
+	// 	q = append(q, bson.E{"type", bson.D{{"$in", types}}})
 	// }
 
-	if input.Name != nil && *input.Name != "" {
-		var allAllowOpts []model.Nodedata
-		fmt.Println("Filter by name=================>>>>>")
-
-		aggregateQuery := []bson.M{}
-
-		strName := primitive.Regex{Pattern: fmt.Sprintf("^%v", *input.Name), Options: "i"}
-		fmt.Println("strName: ", strName)
-		aggregateQuery = append(aggregateQuery, bson.M{"$match": bson.M{"data.value": bson.D{{"$regex", strName}}}})
-		// aggregateQuery = append(aggregateQuery,
-		// 	bson.M{"$lookup": bson.M{
-		// 		"from":         "tag",
-		// 		"as":           "tagg",
-		// 		"foreignField": "tag_id",
-		// 		"localField":   "_id",
-		// 	},
-		// 	})
-		cur, err := r.DB.Collection(repository.TblNodedata).Aggregate(ctx, aggregateQuery)
-		if err != nil {
-			return results, err
-		}
-		if er := cur.All(ctx, &allAllowOpts); er != nil {
-			return results, er
-		}
-		fmt.Println("len=", len(allAllowOpts))
-
-		IDs := []primitive.ObjectID{}
-		for e := range allAllowOpts {
-			IDs = append(IDs, allAllowOpts[e].NodeID)
-		}
-
-		fmt.Println("IDs len=", len(IDs))
-		fmt.Println("Filter by name<<<<<=================")
-
-		q = append(q, bson.E{"_id", bson.D{{"$in", IDs}}})
-		//fmt.Println("q=", q)
+	// Filter by substring name
+	if input.Query != nil && *input.Query != "" {
+		strName := primitive.Regex{Pattern: fmt.Sprintf("%v", *input.Query), Options: "i"}
+		q = append(q, bson.E{"name", bson.D{{"$regex", strName}}})
+		// fmt.Println("q:", q)
 	}
+
+	// inputData := []model.NodeFilterTag{}
+	// err := json.Unmarshal([]byte(*input.Filter), &inputData)
+	// if err != nil {
+	// 	return results, err
+	// }
 
 	pipe := mongo.Pipeline{}
 	pipe = append(pipe, bson.D{{"$match", q}})
+
+	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"from": "nodedata",
+		// "let":  bson.D{{Key: "nodeId", Value: bson.D{{"$toString", "$_id"}}}},
+		// "pipeline": mongo.Pipeline{
+		// 	bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$node_id", "$$nodeId"}}}}},
+		// },
+		"localField":   "_id",
+		"foreignField": "node_id",
+		"as":           "data",
+	}}})
+
+	inputData := input.Filter
+	if len(inputData) > 0 {
+		filterOutput := bson.D{}
+		filter := []bson.M{}
+		for i := range inputData {
+			// typeFilter := ""
+			filterTypeOptions := bson.M{}
+			if input.Filter[i].Type != "" {
+				// typeFilter = input.Filter[i].Type
+				filterTypeOptions["type"] = input.Filter[i].Type
+			} else {
+				continue
+			}
+
+			if len(inputData[i].Options) > 0 {
+				filterOptions := []bson.M{}
+				for j := range inputData[i].Options {
+					tID, _ := primitive.ObjectIDFromHex(inputData[i].Options[j].TagID)
+
+					arrValue := bson.A{}
+					for v := range inputData[i].Options[j].Value {
+						arrValue = append(arrValue, inputData[i].Options[j].Value[v])
+					}
+
+					filterOptions = append(filterOptions, bson.M{
+						"data.tag_id": tID,
+						"data.data.value": bson.D{
+							{"$in", arrValue},
+						},
+					})
+				}
+				// filterTypeOptions = append(filterTypeOptions, bson.M{"$and": filterOptions})
+				filterTypeOptions["$and"] = filterOptions
+			}
+
+			filter = append(filter, filterTypeOptions)
+		}
+		// filterOutput["$or"] = filter
+		filterOutput = append(filterOutput, bson.E{"$or", filter})
+
+		pipe = append(pipe, bson.D{{"$match", filterOutput}})
+		fmt.Println("pipe=", pipe)
+
+		// fmt.Println("filterOutput ====>>>>>", filterOutput)
+		// var allAllowOpts []model.Nodedata
+		// // if limit != nil {
+		// // 	filterOutput = append(filterOutput, bson.M{"$limit": limit})
+		// // }
+		// cur, err := r.DB.Collection(repository.TblNodedata).Aggregate(ctx, filterOutput)
+		// if err != nil {
+		// 	return results, err
+		// }
+		// if er := cur.All(ctx, &allAllowOpts); er != nil {
+		// 	return results, er
+		// }
+		// fmt.Println("len=", len(allAllowOpts))
+		// IDs := []primitive.ObjectID{}
+		// for e := range allAllowOpts {
+		// 	IDs = append(IDs, allAllowOpts[e].NodeID)
+		// }
+		// fmt.Println("IDs len=", len(IDs))
+		// fmt.Println("filterOutput <<<<<=================")
+		// q = append(q, bson.E{"_id", bson.D{{"$in", IDs}}})
+		// fmt.Println("q=", q)
+	}
+
+	// if input.Name != nil && *input.Name != "" {
+	// 	var allAllowOpts []model.Nodedata
+	// 	fmt.Println("Filter by name=================>>>>>")
+	// 	aggregateQuery := []bson.M{}
+	// 	strName := primitive.Regex{Pattern: fmt.Sprintf("^%v", *input.Name), Options: "i"}
+	// 	fmt.Println("strName: ", strName)
+	// 	tID, _ := primitive.ObjectIDFromHex("650712e1d1f4b9ad0b718092")
+	// 	aggregateQuery = append(aggregateQuery, bson.M{"$match": bson.D{
+	// 		{"$and", bson.A{
+	// 			bson.D{{"tag_id", tID}},
+	// 			bson.D{{"data.value", bson.D{{"$regex", strName}}}},
+	// 		}},
+	// 	}})
+	// 	fmt.Println("aggregateQuery=", aggregateQuery)
+	// 	// aggregateQuery = append(aggregateQuery,
+	// 	// 	bson.M{"$lookup": bson.M{
+	// 	// 		"from":         "tag",
+	// 	// 		"as":           "tagg",
+	// 	// 		"foreignField": "tag_id",
+	// 	// 		"localField":   "_id",
+	// 	// 	},
+	// 	// 	})
+	// 	if limit != nil {
+	// 		aggregateQuery = append(aggregateQuery, bson.M{"$limit": limit})
+	// 	}
+	// 	cur, err := r.DB.Collection(repository.TblNodedata).Aggregate(ctx, aggregateQuery)
+	// 	if err != nil {
+	// 		return results, err
+	// 	}
+	// 	if er := cur.All(ctx, &allAllowOpts); er != nil {
+	// 		return results, er
+	// 	}
+	// 	fmt.Println("len=", len(allAllowOpts))
+	// 	IDs := []primitive.ObjectID{}
+	// 	for e := range allAllowOpts {
+	// 		IDs = append(IDs, allAllowOpts[e].NodeID)
+	// 	}
+	// 	fmt.Println("IDs len=", len(IDs))
+	// 	fmt.Println("Filter by name<<<<<=================")
+	// 	q = append(q, bson.E{"_id", bson.D{{"$in", IDs}}})
+	// 	// fmt.Println("q=", q)
+	// }
+
 	if skip != nil {
 		pipe = append(pipe, bson.D{{"$skip", skip}})
 	}
 	if limit != nil {
 		pipe = append(pipe, bson.D{{"$limit", limit}})
 	}
-
 	var allItems []model.Node
 	cursor, err := r.DB.Collection(repository.TblNode).Aggregate(ctx, pipe) //Aggregate(ctx, pipe) // Find(ctx, q, options)
 	if err != nil {
 		return results, err
 	}
 	defer cursor.Close(ctx)
-
 	if er := cursor.All(ctx, &allItems); er != nil {
 		return results, er
 	}
+	// fmt.Println("allItems len=", len(allItems))
 
 	if len(allItems) == 0 {
 		return results, nil
@@ -421,12 +485,39 @@ func (r *queryResolver) Node(ctx context.Context, id *string, osmID *string) (*m
 		filter = append(filter, bson.E{"osm_id", osmID})
 	}
 
-	if err := r.DB.Collection(repository.TblNode).FindOne(ctx, filter).Decode(&result); err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return result, model.ErrNodeNotFound
-		}
+	pipe := mongo.Pipeline{}
+	pipe = append(pipe, bson.D{{"$match", filter}})
+	pipe = append(pipe, bson.D{{"$limit", 1}})
+
+	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"from": "nodedata",
+		// "let":  bson.D{{Key: "nodeId", Value: bson.D{{"$toString", "$_id"}}}},
+		// "pipeline": mongo.Pipeline{
+		// 	bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$node_id", "$$nodeId"}}}}},
+		// },
+		"localField":   "_id",
+		"foreignField": "node_id",
+		"as":           "data",
+	}}})
+
+	// if err := r.DB.Collection(repository.TblNode).FindOne(ctx, filter).Decode(&result); err != nil {
+	// 	if errors.Is(err, mongo.ErrNoDocuments) {
+	// 		return result, model.ErrNodeNotFound
+	// 	}
+	// 	return result, err
+	// }
+	var allItems []model.Node
+	cursor, err := r.DB.Collection(repository.TblNode).Aggregate(ctx, pipe) //Aggregate(ctx, pipe) // Find(ctx, q, options)
+	if err != nil {
 		return result, err
 	}
+	defer cursor.Close(ctx)
+	if er := cursor.All(ctx, &allItems); er != nil {
+		return result, er
+	}
+
+	result = &allItems[0]
+
 	return result, nil
 }
 
@@ -445,65 +536,24 @@ type nodeResolver struct{ *Resolver }
 //   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
 //     it when you're done.
 //   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *nodeResolver) P(ctx context.Context, obj *model.Node) (*string, error) {
-	res := fmt.Sprintf("%v,%v,%v,%v", obj.OsmID, obj.Lat, obj.Lon, obj.Type)
-	return &res, nil
-}
-func (r *nodeResolver) F(ctx context.Context, obj *model.Node) (*string, error) {
-	// // gc, err := utils.GinContextFromContext(ctx)
-	// // lang := gc.MustGet("i18nLocale").(string)
-	// // if err != nil {
-	// // 	return nil, err
-	// // }
-	// // listIDs := []primitive.ObjectID{}
-
-	// // for i := range obj.Tags {
-	// // 	uIDPrimitive, err := primitive.ObjectIDFromHex(obj.Tags[i])
-	// // 	if err != nil {
-	// // 		return []*int{}, err
-	// // 	}
-	// // 	listIDs = append(listIDs, uIDPrimitive)
-	// // }
-	// res, errs := loaders.GetTags(ctx, obj.Tags)
-	// if len(errs) > 0 {
-	// 	fmt.Println("Error:", len(obj.Tags), len(res))
-	// }
-
-	// // result, err := r.Repo.Tag.GqlGetTags(domain.RequestParams{
-	// // 	Options: domain.Options{Limit: 10},
-	// // 	Filter:  bson.M{"_id": bson.M{"$in": listIDs}},
-	// // 	Lang:    lang,
-	// // })
-	// // if err != nil {
-	// // 	return []*int{}, err
-	// // }
-
-	resultArray := []string{}
-	// TODO
-	// for i := range res {
-	// 	// fmt.Println(i, res[i].Filter)
-	// 	d := res[i].Filter
-	// 	resultArray = append(resultArray, strconv.Itoa(d))
-	// }
-
-	resultString := strings.Join(resultArray, ".")
-	return &resultString, nil
-}
-func (r *nodeResolver) Tags(ctx context.Context, obj *model.Node) ([]*string, error) {
-	panic(fmt.Errorf("not implemented: Tags - tags"))
-}
-func (r *nodeResolver) Ilike(ctx context.Context, obj *model.Node) (*model.Like, error) {
+func (r *nodeResolver) Data(ctx context.Context, obj *model.Node) ([]*model.Nodedata, error) {
 	gc, err := utils.GinContextFromContext(ctx)
+	lang := gc.MustGet("i18nLocale").(string)
 	if err != nil {
 		return nil, err
 	}
-	userID, err := middleware.GetUID(gc)
+
+	result, err := r.Repo.Nodedata.GqlGetNodedatas(domain.RequestParams{
+		// Options: domain.Options{Limit: 10},
+		Filter: bson.M{"node_id": obj.ID, "status": bson.M{"$gt": 0}},
+		Lang:   lang,
+	})
 	if err != nil {
-		return nil, err
+		return result, err
 	}
-	ilike, err := r.Repo.Like.GqlGetIamLike(userID, obj.ID.Hex())
-	if err != nil {
-		return nil, err
-	}
-	return ilike, nil
+	// result, errs := loaders.GetTags(ctx, obj.Tags)
+	// if len(errs) > 0 {
+	// 	fmt.Println("Error:", errs)
+	// }
+	return result, nil
 }

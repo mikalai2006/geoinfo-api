@@ -22,6 +22,7 @@ type FetchAmenity struct {
 	UserID *string `json:"userId,omitempty"`
 	Key    *string `json:"key,omitempty"`
 	Type   *string `json:"type,omitempty"`
+	Status *int    `json:"status,omitempty"`
 }
 
 type FetchImage struct {
@@ -131,13 +132,13 @@ type PaginationTagopt struct {
 }
 
 type ParamsNode struct {
-	ID   *string   `json:"id,omitempty"`
-	LonA *float64  `json:"lonA,omitempty"`
-	LatA *float64  `json:"latA,omitempty"`
-	LonB *float64  `json:"lonB,omitempty"`
-	LatB *float64  `json:"latB,omitempty"`
-	Name *string   `json:"name,omitempty"`
-	Type []*string `json:"type,omitempty"`
+	ID     *string          `json:"id,omitempty"`
+	LonA   *float64         `json:"lonA,omitempty"`
+	LatA   *float64         `json:"latA,omitempty"`
+	LonB   *float64         `json:"lonB,omitempty"`
+	LatB   *float64         `json:"latB,omitempty"`
+	Query  *string          `json:"query,omitempty"`
+	Filter []*NodeFilterTag `json:"filter,omitempty"`
 }
 
 type ReviewEdge struct {

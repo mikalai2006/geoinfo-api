@@ -18,6 +18,7 @@ type Node struct {
 	// Like   int                `json:"like" bson:"like"`
 	// Dlike  int                `json:"dlike" bson:"dlike"`
 	//TagsData interface{}        `json:"tagsData" bson:"tags_data"`
+	Data      []Nodedata         `json:"data,omitempty" bson:"data,omitempty"`
 	OsmID     string             `json:"osmId" bson:"osm_id"`
 	AmenityID primitive.ObjectID `json:"amenityId" bson:"amenity_id"`
 	// Amenity   []string           `json:"amenity" bson:"amenity"`
@@ -30,4 +31,14 @@ type NodeLike struct {
 	Like  int  `json:"like,omitempty"`
 	Dlike int  `json:"dlike,omitempty"`
 	Ilike Like `json:"ilike,omitempty"`
+}
+
+type NodeFilterTagOption struct {
+	TagID string        `json:"tagId" bson:"tag_id"`
+	Value []interface{} `json:"value" bson:"value"`
+}
+
+type NodeFilterTag struct {
+	Type    string                `json:"type" bson:"type"`
+	Options []NodeFilterTagOption `json:"options" bson:"options"`
 }

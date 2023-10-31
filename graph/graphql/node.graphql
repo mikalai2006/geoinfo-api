@@ -1,7 +1,7 @@
 # GraphQL schema example
 #
 # https://gqlgen.com/getting-started/
-
+scalar JSON
 
 type Node {
   id: ID!
@@ -55,14 +55,25 @@ type PageInfo {
 #   edges: [NodeEdge!]!
 #   pageInfo: PageInfo!
 # }
+input NodeFilterTagOption {
+	tagId: String!
+	value: [Any]
+}
+input NodeFilterTag {
+  type: String!
+  options: [NodeFilterTagOption]!
+}
+
 input ParamsNode {
   id: ID
   lonA:Float,
   latA:Float,
   lonB:Float,
   latB:Float,
-  name:String,
-  type:[String]
+  query:String,
+  # type:[String],
+  # filter: JSON
+  filter: [NodeFilterTag]
 }
 
 extend type Query {

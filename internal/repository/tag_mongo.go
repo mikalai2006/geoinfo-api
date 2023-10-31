@@ -56,7 +56,7 @@ func (r *TagMongo) FindTag(params domain.RequestParams) (domain.Response[model.T
 	// }
 	copy(resultSlice, results)
 
-	count, err := r.db.Collection(TblTag).CountDocuments(ctx, bson.M{})
+	count, err := r.db.Collection(TblTag).CountDocuments(ctx, params.Filter)
 	if err != nil {
 		return response, err
 	}
@@ -127,13 +127,14 @@ func (r *TagMongo) CreateTag(userID string, tag *model.Tag) (*model.Tag, error) 
 	newTag := model.Tag{
 		UserID:        userIDPrimitive,
 		Key:           tag.Key,
-		MultiOpt:      tag.MultiOpt,
 		Type:          tag.Type,
 		Title:         tag.Title,
 		Description:   tag.Description,
 		Props:         tag.Props,
 		Locale:        tag.Locale,
 		Multilanguage: tag.Multilanguage,
+		MultiOpt:      tag.MultiOpt,
+		IsFilter:      tag.IsFilter,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
 	}
@@ -220,6 +221,7 @@ func (r *TagMongo) UpdateTag(id string, userID string, data *model.Tag) (*model.
 		"props":         data.Props,
 		"locale":        data.Locale,
 		"multilanguage": data.Multilanguage,
+		"is_filter":     data.IsFilter,
 		"updated_at":    time.Now(),
 	}})
 	if err != nil {

@@ -13,6 +13,7 @@ type Amenity {
   type: String!
   tags: [String]
 
+  status: Int!
   createdAt:String!
   updatedAt:String!
 }
@@ -22,6 +23,7 @@ input FetchAmenity {
   userId: String
   key: String
   type: String
+  status: Int
 }
 
 type PaginationAmenity {

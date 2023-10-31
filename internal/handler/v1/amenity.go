@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -33,17 +34,27 @@ func (h *HandlerV1) CreateAmenity(c *gin.Context) {
 		return
 	}
 
-	// var input *model.Amenity
-	// if er := c.BindJSON(&input); er != nil {
+	// // var input *model.Amenity
+	// // if er := c.BindJSON(&input); er != nil {
+	// // 	appG.ResponseError(http.StatusBadRequest, er, nil)
+	// // 	return
+	// // }
+	// var a map[string]interface{}
+	// if er := c.ShouldBindBodyWith(&a, binding.JSON); er != nil {
 	// 	appG.ResponseError(http.StatusBadRequest, er, nil)
 	// 	return
 	// }
-	var a map[string]interface{}
+	// data, er := utils.BindJSON[model.Amenity](a)
+	// if er != nil {
+	// 	appG.ResponseError(http.StatusBadRequest, er, nil)
+	// 	return
+	// }
+	var a map[string]json.RawMessage //  map[string]interface{}
 	if er := c.ShouldBindBodyWith(&a, binding.JSON); er != nil {
 		appG.ResponseError(http.StatusBadRequest, er, nil)
 		return
 	}
-	data, er := utils.BindJSON[model.Amenity](a)
+	data, er := utils.BindJSON2[model.Amenity](a)
 	if er != nil {
 		appG.ResponseError(http.StatusBadRequest, er, nil)
 		return
@@ -177,25 +188,36 @@ func (h *HandlerV1) UpdateAmenity(c *gin.Context) {
 	}
 	id := c.Param("id")
 
-	// var input model.AmenityInput
-	// data, err := utils.BindAndValid(c, &input)
-	// if err != nil {
-	// 	appG.ResponseError(http.StatusBadRequest, err, nil)
+	// // var input model.AmenityInput
+	// // data, err := utils.BindAndValid(c, &input)
+	// // if err != nil {
+	// // 	appG.ResponseError(http.StatusBadRequest, err, nil)
+	// // 	return
+	// // }
+	// var a map[string]interface{}
+	// if er := c.ShouldBindBodyWith(&a, binding.JSON); er != nil {
+	// 	appG.ResponseError(http.StatusBadRequest, er, nil)
 	// 	return
 	// }
-	var a map[string]interface{}
+	// data, er := utils.BindJSON[model.Amenity](a)
+	// if er != nil {
+	// 	appG.ResponseError(http.StatusBadRequest, er, nil)
+	// 	return
+	// }
+	// // fmt.Println(data)
+
+	fmt.Println("hello1")
+	var a map[string]json.RawMessage //  map[string]interface{}
 	if er := c.ShouldBindBodyWith(&a, binding.JSON); er != nil {
 		appG.ResponseError(http.StatusBadRequest, er, nil)
 		return
 	}
-	data, er := utils.BindJSON[model.Amenity](a)
+	data, er := utils.BindJSON2[model.Amenity](a)
 	if er != nil {
 		appG.ResponseError(http.StatusBadRequest, er, nil)
 		return
 	}
-	// fmt.Println(data)
 
-	fmt.Println("hello1")
 	document, err := h.services.Amenity.UpdateAmenity(id, userID, &data)
 	if err != nil {
 		appG.ResponseError(http.StatusInternalServerError, err, nil)

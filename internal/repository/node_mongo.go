@@ -27,12 +27,27 @@ func (r *NodeMongo) FindNode(params domain.RequestParams) (domain.Response[model
 
 	var results []model.Node
 	var response domain.Response[model.Node]
-	filter, opts, err := CreateFilterAndOptions(params)
+	// filter, opts, err := CreateFilterAndOptions(params)
+	// if err != nil {
+	// 	return domain.Response[model.Node]{}, err
+	// }
+	pipe, err := CreatePipeline(params, &r.i18n)
 	if err != nil {
 		return domain.Response[model.Node]{}, err
 	}
+	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"from": "nodedata",
+		// "let":  bson.D{{Key: "nodeId", Value: bson.D{{"$toString", "$_id"}}}},
+		// "pipeline": mongo.Pipeline{
+		// 	bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$node_id", "$$nodeId"}}}}},
+		// },
+		"localField":   "_id",
+		"foreignField": "node_id",
+		"as":           "data",
+	}}})
 
-	cursor, err := r.db.Collection(TblNode).Find(ctx, filter, opts)
+	cursor, err := r.db.Collection(TblNode).Aggregate(ctx, pipe) // Find(ctx, params.Filter, opts)
+	// cursor, err := r.db.Collection(TblNode).Find(ctx, filter, opts)
 	if err != nil {
 		return response, err
 	}

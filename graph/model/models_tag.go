@@ -11,11 +11,12 @@ type Tag struct {
 	UserID      primitive.ObjectID           `json:"userId" bson:"user_id"`
 	Key         string                       `json:"key" bson:"key"`
 	Type        string                       `json:"type" bson:"type"`
-	MultiOpt    int64                        `json:"multiOpt" bson:"multi_opt"`
 	Title       string                       `json:"title" bson:"title"`
 	Description string                       `json:"description" bson:"description"`
 	Props       map[string]interface{}       `json:"props" bson:"props"`
 	Locale      map[string]map[string]string `json:"locale" bson:"locale"`
+	MultiOpt    int64                        `json:"multiOpt" bson:"multi_opt"`
+	IsFilter    bool                         `json:"isFilter" bson:"is_filter"`
 	// Filter        int                          `json:"filter" bson:"filter"`
 	Multilanguage bool `json:"multilanguage" bson:"multilanguage"`
 	// TagoptID      []string  `json:"tagoptId" bson:"tagopt_id"`
@@ -28,11 +29,12 @@ type TagInput struct {
 	UserID      string                       `json:"userId" bson:"user_id" form:"userId"`
 	Key         string                       `json:"key" bson:"key" form:"key"`
 	Type        string                       `json:"type" bson:"type" form:"type"`
-	MultiOpt    int64                        `json:"multiOpt" bson:"multi_opt"`
 	Title       string                       `json:"title" bson:"title" form:"title"`
 	Description string                       `json:"description" bson:"description" form:"description"`
 	Props       map[string]interface{}       `json:"props" bson:"props"`
 	Locale      map[string]map[string]string `json:"locale" bson:"locale"`
+	MultiOpt    int64                        `json:"multiOpt" bson:"multi_opt"`
+	IsFilter    bool                         `json:"isFilter" bson:"is_filter"`
 	// Filter        int                          `json:"filter" bson:"filter"`
 	Multilanguage bool `json:"multilanguage" bson:"multilanguage"`
 	// TagoptID      []string  `json:"tagoptId" bson:"tagopt_id"`

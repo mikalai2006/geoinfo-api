@@ -1,0 +1,37 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+
+type AmenityGroup {
+  id: ID!
+  userId: String!
+  title: String!
+  description: String!
+  props: Any!
+
+  status: Int!
+  sortOrder: Int!
+  createdAt:Time!
+  updatedAt:Time!
+}
+
+input FetchAmenityGroup {
+  id: ID
+  userId: String
+  title: String
+  status: Int
+  sortOrder: Int
+}
+
+type PaginationAmenityGroup {
+  total: Int
+  limit: Int
+  skip: Int
+  data: [AmenityGroup]
+}
+
+extend type Query {
+  amenityGroups(limit: Int=10, skip:Int=0, input:FetchAmenityGroup): PaginationAmenityGroup
+  amenityGroup(id:ID): AmenityGroup
+}

@@ -17,6 +17,7 @@ type Tagopt struct {
 	Description string                       `json:"description" bson:"description"`
 	Locale      map[string]map[string]string `json:"locale" bson:"locale"`
 	Props       map[string]interface{}       `json:"props" bson:"props"`
+	CountItem   int                          `json:"countItem" bson:"countItem"`
 	CreatedAt   time.Time                    `json:"createdAt" bson:"created_at"`
 	UpdatedAt   time.Time                    `json:"updatedAt" bson:"updated_at"`
 }

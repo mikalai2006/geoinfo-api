@@ -11,11 +11,13 @@ type Node {
   type: String!
   name: String!
   data: [Nodedata]
+  images: [Image]
   tagsData: [Tag]!
   osmId: String!
   amenityId: String!
   props: Any!
   user: User
+  ccode: String!
   # f: String
   # p:String
 
@@ -24,8 +26,8 @@ type Node {
   address: Address
   reviewsInfo: ReviewInfo
 
-  createdAt:String!
-  updatedAt:DATETIME!
+  createdAt:Time!
+  updatedAt:Time!
 }
 
 type NodeLike {
@@ -71,16 +73,18 @@ input ParamsNode {
   lonB:Float,
   latB:Float,
   query:String,
+  center: [Float],
+  c: [String]
   # type:[String],
   # filter: JSON
   filter: [NodeFilterTag]
 }
 
 extend type Query {
-  nodes(first: Int = 20, after: ID, limit: Int, skip:Int=0, input: ParamsNode): PaginationNode
-  osm(first: Int = 20, after: ID, limit: Int, skip:Int=0, lonA:Float, latA:Float, lonB:Float, latB:Float): [Node]
+  nodes(limit: Int, skip:Int=0, input: ParamsNode): PaginationNode
+  osm(limit: Int, skip:Int=0, lonA:Float, latA:Float, lonB:Float, latB:Float): [Node]
   
-  node(id: ID, osmId: String): Node
+  node(id: ID, osmId: String, lat: Float, lon: Float): Node
 }
 
 input NewNode {

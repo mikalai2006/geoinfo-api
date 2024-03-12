@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/mikalai2006/geoinfo-api/graph/model"
@@ -141,8 +140,35 @@ func (r *AddressMongo) CreateAddress(userID string, address *domain.AddressInput
 	return result, nil
 }
 
+func (r *AddressMongo) DeleteAddress(id string) (model.Address, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
+	defer cancel()
+
+	var result = model.Address{}
+	collection := r.db.Collection(TblAddress)
+
+	idPrimitive, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return result, err
+	}
+
+	filter := bson.M{"_id": idPrimitive}
+
+	// err = collection.FindOne(ctx, filter).Decode(&result)
+	// if err != nil {
+	// 	return result, err
+	// }
+
+	_, err = collection.DeleteOne(ctx, filter)
+	if err != nil {
+		return result, err
+	}
+
+	return result, nil
+}
+
 func (r *AddressMongo) GqlGetAdresses(params domain.RequestParams) ([]*model.Address, error) {
-	fmt.Println("GqlGetAdresses")
+	// fmt.Println("GqlGetAdresses")
 	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
 	defer cancel()
 

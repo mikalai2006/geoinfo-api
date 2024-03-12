@@ -11,11 +11,11 @@ type User {
   lang: String!
   online: Boolean!
   verify: Boolean!
-  lastTime: String!
+  lastTime: Time!
   images: [Image]!
 
-  createdAt:String!
-  updatedAt:String!
+  createdAt:Time!
+  updatedAt:Time!
 }
 
 extend type Query {

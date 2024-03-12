@@ -10,6 +10,7 @@ type Amenity struct {
 	ID          primitive.ObjectID           `json:"id" bson:"_id,omitempty"`
 	UserID      primitive.ObjectID           `json:"userId" bson:"user_id"`
 	Key         string                       `json:"key" bson:"key"`
+	Group       string                       `json:"group" bson:"group"`
 	Title       string                       `json:"title" bson:"title"`
 	Description string                       `json:"description" bson:"description"`
 	Props       map[string]interface{}       `json:"props" bson:"props"`
@@ -25,6 +26,7 @@ type AmenityInput struct {
 	ID          primitive.ObjectID           `json:"id" bson:"_id,omitempty"`
 	UserID      string                       `json:"userId" bson:"user_id" form:"userId"`
 	Key         string                       `json:"key" bson:"key" form:"key"`
+	Group       string                       `json:"group" bson:"group" form:"group"`
 	Title       string                       `json:"title" bson:"title" form:"title"`
 	Description string                       `json:"description" bson:"description" form:"description"`
 	Props       map[string]interface{}       `json:"props" bson:"props"`

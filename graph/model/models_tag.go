@@ -18,8 +18,11 @@ type Tag struct {
 	MultiOpt    int64                        `json:"multiOpt" bson:"multi_opt"`
 	IsFilter    bool                         `json:"isFilter" bson:"is_filter"`
 	// Filter        int                          `json:"filter" bson:"filter"`
-	Multilanguage bool `json:"multilanguage" bson:"multilanguage"`
+	Options       []Tagopt `json:"options,omitempty" bson:"options,omitempty"`
+	Multilanguage bool     `json:"multilanguage" bson:"multilanguage"`
+	CountItem     int      `json:"countItem" bson:"countItem"`
 	// TagoptID      []string  `json:"tagoptId" bson:"tagopt_id"`
+	SortOrder int       `json:"sortOrder" bson:"sort_order"`
 	CreatedAt time.Time `json:"createdAt" bson:"created_at"`
 	UpdatedAt time.Time `json:"updatedAt" bson:"updated_at"`
 }
@@ -37,6 +40,7 @@ type TagInput struct {
 	IsFilter    bool                         `json:"isFilter" bson:"is_filter"`
 	// Filter        int                          `json:"filter" bson:"filter"`
 	Multilanguage bool `json:"multilanguage" bson:"multilanguage"`
+	SortOrder     int  `json:"sortOrder" bson:"sort_order"`
 	// TagoptID      []string  `json:"tagoptId" bson:"tagopt_id"`
 	CreatedAt time.Time `json:"createdAt" bson:"created_at"`
 	UpdatedAt time.Time `json:"updatedAt" bson:"updated_at"`

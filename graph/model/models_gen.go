@@ -22,7 +22,16 @@ type FetchAmenity struct {
 	UserID *string `json:"userId,omitempty"`
 	Key    *string `json:"key,omitempty"`
 	Type   *string `json:"type,omitempty"`
+	Group  *string `json:"group,omitempty"`
 	Status *int    `json:"status,omitempty"`
+}
+
+type FetchAmenityGroup struct {
+	ID        *string `json:"id,omitempty"`
+	UserID    *string `json:"userId,omitempty"`
+	Title     *string `json:"title,omitempty"`
+	Status    *int    `json:"status,omitempty"`
+	SortOrder *int    `json:"sortOrder,omitempty"`
 }
 
 type FetchImage struct {
@@ -39,18 +48,19 @@ type FetchNodedata struct {
 	TagID    *string `json:"tagId,omitempty"`
 	TagoptID *string `json:"tagoptId,omitempty"`
 	Value    *string `json:"value,omitempty"`
-	Type     *string `json:"type,omitempty"`
+}
+
+type FetchNodedataAudit struct {
+	ID         *string `json:"id,omitempty"`
+	UserID     *string `json:"userId,omitempty"`
+	NodedataID *string `json:"nodedataId,omitempty"`
+	Value      *int    `json:"value,omitempty"`
 }
 
 type FetchReview struct {
 	ID     *string `json:"id,omitempty"`
 	UserID *string `json:"userId,omitempty"`
 	OsmID  *string `json:"osmId,omitempty"`
-}
-
-type FetchTag struct {
-	ID     *string `json:"id,omitempty"`
-	UserID *string `json:"userId,omitempty"`
 }
 
 type FetchTagopt struct {
@@ -97,6 +107,13 @@ type PaginationAmenity struct {
 	Data  []*Amenity `json:"data,omitempty"`
 }
 
+type PaginationAmenityGroup struct {
+	Total *int            `json:"total,omitempty"`
+	Limit *int            `json:"limit,omitempty"`
+	Skip  *int            `json:"skip,omitempty"`
+	Data  []*AmenityGroup `json:"data,omitempty"`
+}
+
 type PaginationImage struct {
 	Total *int     `json:"total,omitempty"`
 	Limit *int     `json:"limit,omitempty"`
@@ -116,6 +133,13 @@ type PaginationNodedata struct {
 	Limit *int        `json:"limit,omitempty"`
 	Skip  *int        `json:"skip,omitempty"`
 	Data  []*Nodedata `json:"data,omitempty"`
+}
+
+type PaginationNodedataAudit struct {
+	Total *int             `json:"total,omitempty"`
+	Limit *int             `json:"limit,omitempty"`
+	Skip  *int             `json:"skip,omitempty"`
+	Data  []*NodedataAudit `json:"data,omitempty"`
 }
 
 type PaginationTag struct {
@@ -139,7 +163,17 @@ type ParamsNode struct {
 	LonB   *float64         `json:"lonB,omitempty"`
 	LatB   *float64         `json:"latB,omitempty"`
 	Query  *string          `json:"query,omitempty"`
+	Center []*float64       `json:"center,omitempty"`
+	C      []*string        `json:"c,omitempty"`
 	Filter []*NodeFilterTag `json:"filter,omitempty"`
+}
+
+type ParamsTag struct {
+	ID          *string `json:"id,omitempty"`
+	Key         *string `json:"key,omitempty"`
+	Type        *string `json:"type,omitempty"`
+	Title       *string `json:"title,omitempty"`
+	Description *string `json:"description,omitempty"`
 }
 
 type ReviewEdge struct {

@@ -2,7 +2,6 @@ package v1
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -65,10 +64,22 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 	clientURL := c.Query("state")
 
 	if code == "" {
-		// c.AbortWithError(http.StatusBadRequest, errors.New("no correct code"))
-		appG.ResponseError(http.StatusBadRequest, errors.New("no correct code"), nil)
+		pathRequest, err := url.Parse(clientURL)
+		if err != nil {
+			// c.AbortWithError(http.StatusBadRequest, err)
+			appG.ResponseError(http.StatusBadRequest, err, nil)
+			return
+		}
+		parameters := url.Values{}
+		errorClient := c.Query("error")
+		parameters.Add("error", errorClient)
+		pathRequest.RawQuery = parameters.Encode()
+		c.Redirect(http.StatusFound, pathRequest.String())
+		// // c.AbortWithError(http.StatusBadRequest, errors.New("no correct code"))
+		// appG.ResponseError(http.StatusBadRequest, errors.New("no correct code"), nil)
 		return
 	}
+	fmt.Println("error!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 	pathRequest, err := url.Parse(h.oauth.GoogleTokenURI)
 	if err != nil {
@@ -140,10 +151,11 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 	}
 
 	input := &domain.SignInInput{
-		Login:    bodyResponse.Email,
-		Strategy: "jwt",
-		Password: "",
-		GoogleID: bodyResponse.Sub,
+		Login:       bodyResponse.Email,
+		Strategy:    "jwt",
+		Password:    "",
+		GoogleID:    bodyResponse.Sub,
+		MaxDistance: 100,
 	}
 	fmt.Println("Google auth2::: ", input)
 
@@ -207,6 +219,6 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 	parameters = url.Values{}
 	parameters.Add("token", tokens.AccessToken)
 	pathRequest.RawQuery = parameters.Encode()
-	c.SetCookie("jwt-handmade", tokens.RefreshToken, h.oauth.TimeExpireCookie, "/", c.Request.URL.Hostname(), false, true)
+	c.SetCookie(h.auth.NameCookieRefresh, tokens.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", c.Request.URL.Hostname(), false, true)
 	c.Redirect(http.StatusFound, pathRequest.String())
 }

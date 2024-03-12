@@ -14,9 +14,10 @@ type Tagopt {
   props: Any!
   
   user: User!
+  countItem: Int
 
-  createdAt:String!
-  updatedAt:String!
+  createdAt:Time!
+  updatedAt:Time!
 }
 
 input FetchTagopt {
@@ -45,5 +46,5 @@ type PaginationTagopt {
 
 extend type Query {
   tagopts(first: Int = 20, after: ID, limit: Int=10, skip:Int=0, input:FetchTagopt): PaginationTagopt
-  tagopt(input:FetchTag): Tagopt
+  tagopt(input:FetchTagopt): Tagopt
 }

@@ -170,6 +170,7 @@ func (h *HandlerV1) UpdateUser(c *gin.Context) {
 		appG.ResponseError(http.StatusBadRequest, er, nil)
 		return
 	}
+	// fmt.Println("UpdateUser input: ", input)
 
 	user, err := h.services.User.UpdateUser(id, &input)
 	if err != nil {
@@ -183,7 +184,7 @@ func (h *HandlerV1) UpdateUser(c *gin.Context) {
 	imageInput.UserID = userID
 	imageInput.Dir = "user"
 
-	fmt.Println("imageInput: ", imageInput)
+	// fmt.Println("imageInput: ", imageInput)
 
 	paths, err := utils.UploadResizeMultipleFile(c, imageInput, "images", &h.imageConfig)
 	if err != nil {

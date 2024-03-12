@@ -5,9 +5,10 @@ type Review {
 
   review: String!
   rate: Int!
+  user: User
 
-  createdAt:String!
-  updatedAt:DATETIME!
+  createdAt:Time!
+  updatedAt:Time!
 }
 
 type ReviewInfo {

@@ -12,18 +12,28 @@ type Tag {
   title: String!
   description: String!
   props: Any!
-  options: [Tagopt]!
+  options: [Tagopt]
   # filter: Int!
   # tagoptId: [String]!
   isFilter: Boolean,
   multilanguage: Boolean,
-  createdAt:String!
-  updatedAt:String!
+  sortOrder: Int
+  countItem: Int
+  
+  createdAt:Time!
+  updatedAt:Time!
 }
 
-input FetchTag {
+# input FetchTag {
+#   id: ID
+#   userId: String
+# }
+input ParamsTag {
   id: ID
-  userId: String
+  key: String,
+  type: String,
+  title: String,
+  description: String,
 }
 
 type PaginationTag {
@@ -44,6 +54,6 @@ type PaginationTag {
 # }
 
 extend type Query {
-  tags(first: Int = 20, after: ID, limit: Int=10, skip:Int=0, input:FetchTag): PaginationTag
-  tag(input:FetchTag): Tag
+  tags(limit: Int=10, skip:Int=0, input:ParamsTag): PaginationTag
+  tag(input:ParamsTag): Tag
 }

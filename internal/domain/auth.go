@@ -20,10 +20,13 @@ type Auth struct {
 	GithubID     string             `json:"githubId" bson:"github_id"`
 	Verification Verification       `json:"verification" bson:"verification"`
 	Session      Session            `json:"session" bson:"session"`
-	Roles        []string           `json:"roles" bson:"roles"`
-	UserData     model.User         `json:"-" bson:"user_data"`
-	CreatedAt    time.Time          `json:"createdAt" bson:"created_at"`
-	UpdatedAt    time.Time          `json:"updatedAt" bson:"updated_at"`
+
+	Roles       []string `json:"roles" bson:"roles"`
+	MaxDistance int      `json:"maxDistance" bson:"max_distance"`
+
+	UserData  model.User `json:"-" bson:"user_data"`
+	CreatedAt time.Time  `json:"createdAt" bson:"created_at"`
+	UpdatedAt time.Time  `json:"updatedAt" bson:"updated_at"`
 }
 
 type SignInInput struct {
@@ -39,6 +42,7 @@ type SignInInput struct {
 	Verification Verification `json:"verification" bson:"verification"`
 	Session      Session      `json:"session" bson:"session"`
 	Roles        []string     `json:"roles" bson:"roles"`
+	MaxDistance  int          `json:"maxDistance" bson:"max_distance"`
 
 	CreatedAt time.Time `json:"createdAt" bson:"created_at"`
 	UpdatedAt time.Time `json:"updatedAt" bson:"updated_at"`
@@ -47,6 +51,7 @@ type SignInInput struct {
 type DataForClaims struct {
 	Roles  []string `json:"roles" bson:"roles"`
 	UserID string   `json:"user_id" bson:"user_id"`
+	Md     int      `json:"md" bson:"md"`
 	UID    string   `json:"uid" bson:"uid"`
 }
 

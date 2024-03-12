@@ -30,6 +30,7 @@ func NewManager(signingKey string) (*Manager, error) {
 
 type AuthClaims struct {
 	Roles []string `json:"roles"`
+	Md    int      `json:"md"`
 	Uid   string   `json:"uid"`
 	jwt.StandardClaims
 }
@@ -38,6 +39,7 @@ func (m *Manager) NewJWT(claims domain.DataForClaims, ttl time.Duration) (string
 	claimsData := AuthClaims{
 		Roles: claims.Roles,
 		Uid:   claims.UID,
+		Md:    claims.Md,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(ttl).Unix(),
 			Subject:   claims.UserID,

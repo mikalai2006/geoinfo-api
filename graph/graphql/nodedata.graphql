@@ -6,7 +6,6 @@
 type Nodedata {
   id: ID!
   userId: String!
-  user: User!
   nodeId: String!
   tagId: String!
   tagoptId: String!
@@ -14,14 +13,19 @@ type Nodedata {
   title: String!
   description: String!
   locale: Any!
-  type: String!
   tag: Tag
   tagopt: Tagopt
 
-  status: Int!
+  like: Int
+  dlike:Int
+  votes: [NodedataVote]
 
-  createdAt:String!
-  updatedAt:String!
+  status: Int!
+  user: User
+  audit: [NodedataAudit]
+
+  createdAt:Time!
+  updatedAt:Time!
 }
 
 type GroupNodeData {
@@ -35,7 +39,6 @@ input FetchNodedata {
   tagId: String
   tagoptId: String
   value: String
-  type: String
 }
 
 type PaginationNodedata {

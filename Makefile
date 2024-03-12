@@ -12,8 +12,8 @@ dev:
 start:
 	GIN_MODE=release go run cmd/main.go
 
-# art
-# 	artillery run test/art.yml
+art:
+	artillery run test/art.yml
 
 #testing variables
 export TEST_DB_URI=mongo://$(MONGODB_USER):$(MONGODB_PASSWORD)@$(MONGODB_HOST):$(MONGODB_PORT)

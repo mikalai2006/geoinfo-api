@@ -6,6 +6,7 @@
 directive @auth on FIELD_DEFINITION
 scalar Any
 scalar DATETIME
+scalar Time
 
 # type Todo {
 #   id: ID!

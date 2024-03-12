@@ -2,9 +2,7 @@ package v1
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mikalai2006/geoinfo-api/graph/model"
@@ -128,48 +126,48 @@ func (h *HandlerV1) deleteImage(c *gin.Context) {
 		return
 	}
 
-	imageForRemove, err := h.services.Image.GetImage(id)
-	if err != nil {
-		appG.ResponseError(http.StatusBadRequest, err, nil)
-		return
-	}
-	if imageForRemove.Service == "" {
-		appG.ResponseError(http.StatusBadRequest, errors.New("not found item for remove"), nil)
-		return
-	} else {
-		pathOfRemove := fmt.Sprintf("public/%s/%s", imageForRemove.UserID.Hex(), imageForRemove.Service)
+	// imageForRemove, err := h.services.Image.GetImage(id)
+	// if err != nil {
+	// 	appG.ResponseError(http.StatusBadRequest, err, nil)
+	// 	return
+	// }
+	// if imageForRemove.Service == "" {
+	// 	appG.ResponseError(http.StatusBadRequest, errors.New("not found item for remove"), nil)
+	// 	return
+	// } else {
+	// 	pathOfRemove := fmt.Sprintf("public/%s/%s", imageForRemove.UserID.Hex(), imageForRemove.Service)
 
-		if imageForRemove.ServiceID != "" {
-			pathOfRemove = fmt.Sprintf("%s/%s", pathOfRemove, imageForRemove.ServiceID)
-		}
+	// 	if imageForRemove.ServiceID != "" {
+	// 		pathOfRemove = fmt.Sprintf("%s/%s", pathOfRemove, imageForRemove.ServiceID)
+	// 	}
 
-		pathRemove := fmt.Sprintf("%s/%s%s", pathOfRemove, imageForRemove.Path, imageForRemove.Ext)
-		err := os.Remove(pathRemove)
-		if err != nil {
-			appG.ResponseError(http.StatusBadRequest, err, nil)
-		}
+	// 	pathRemove := fmt.Sprintf("%s/%s%s", pathOfRemove, imageForRemove.Path, imageForRemove.Ext)
+	// 	err := os.Remove(pathRemove)
+	// 	if err != nil {
+	// 		appG.ResponseError(http.StatusBadRequest, err, nil)
+	// 	}
 
-		// remove srcset.
-		for i := range h.imageConfig.Sizes {
-			dataImg := h.imageConfig.Sizes[i]
-			pathRemove = fmt.Sprintf("%s/%v-%s%s", pathOfRemove, dataImg.Size, imageForRemove.Path, imageForRemove.Ext) // ".webp"
-			err = os.Remove(pathRemove)
-			if err != nil {
-				appG.ResponseError(http.StatusBadRequest, err, nil)
-			}
-		}
+	// 	// remove srcset.
+	// 	for i := range h.imageConfig.Sizes {
+	// 		dataImg := h.imageConfig.Sizes[i]
+	// 		pathRemove = fmt.Sprintf("%s/%v-%s%s", pathOfRemove, dataImg.Size, imageForRemove.Path, imageForRemove.Ext) // ".webp"
+	// 		err = os.Remove(pathRemove)
+	// 		if err != nil {
+	// 			appG.ResponseError(http.StatusBadRequest, err, nil)
+	// 		}
+	// 	}
 
-		// pathRemove = fmt.Sprintf("%s/xs-%s", pathOfRemove, imageForRemove.Path)
-		// err = os.Remove(pathRemove)
-		// if err != nil {
-		// 	appG.ResponseError(http.StatusBadRequest, err, nil)
-		// }
-		// pathRemove = fmt.Sprintf("%s/lg-%s", pathOfRemove, imageForRemove.Path)
-		// err = os.Remove(pathRemove)
-		// if err != nil {
-		// 	appG.ResponseError(http.StatusBadRequest, err, nil)
-		// }
-	}
+	// 	// pathRemove = fmt.Sprintf("%s/xs-%s", pathOfRemove, imageForRemove.Path)
+	// 	// err = os.Remove(pathRemove)
+	// 	// if err != nil {
+	// 	// 	appG.ResponseError(http.StatusBadRequest, err, nil)
+	// 	// }
+	// 	// pathRemove = fmt.Sprintf("%s/lg-%s", pathOfRemove, imageForRemove.Path)
+	// 	// err = os.Remove(pathRemove)
+	// 	// if err != nil {
+	// 	// 	appG.ResponseError(http.StatusBadRequest, err, nil)
+	// 	// }
+	// }
 
 	image, err := h.services.Image.DeleteImage(id)
 	if err != nil {

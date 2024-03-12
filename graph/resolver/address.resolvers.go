@@ -32,16 +32,6 @@ func (r *addressResolver) Props(ctx context.Context, obj *model.Address) (interf
 	return obj.Props, nil
 }
 
-// CreatedAt is the resolver for the createdAt field.
-func (r *addressResolver) CreatedAt(ctx context.Context, obj *model.Address) (string, error) {
-	return obj.CreatedAt.String(), nil
-}
-
-// UpdatedAt is the resolver for the updatedAt field.
-func (r *addressResolver) UpdatedAt(ctx context.Context, obj *model.Address) (string, error) {
-	return obj.UpdatedAt.String(), nil
-}
-
 // Addresses is the resolver for the addresses field.
 func (r *queryResolver) Addresses(ctx context.Context, first *int, after *string, limit *int, skip *int, input *model.FetchAddress) (*model.PaginationAddress, error) {
 	var results *model.PaginationAddress
@@ -100,3 +90,16 @@ func (r *queryResolver) Address(ctx context.Context, id *string) (*model.Address
 func (r *Resolver) Address() generated.AddressResolver { return &addressResolver{r} }
 
 type addressResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *addressResolver) CreatedAt(ctx context.Context, obj *model.Address) (string, error) {
+	return obj.CreatedAt.String(), nil
+}
+func (r *addressResolver) UpdatedAt(ctx context.Context, obj *model.Address) (string, error) {
+	return obj.UpdatedAt.String(), nil
+}

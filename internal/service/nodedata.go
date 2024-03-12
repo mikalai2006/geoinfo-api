@@ -33,3 +33,7 @@ func (s *NodedataService) UpdateNodedata(id string, userID string, data *model.N
 func (s *NodedataService) DeleteNodedata(id string) (model.Nodedata, error) {
 	return s.repo.DeleteNodedata(id)
 }
+
+func (s *NodedataService) AddAudit(userID string, data *model.NodedataAuditInput) (*model.Nodedata, error) {
+	return s.repo.AddAudit(userID, data)
+}

@@ -1,0 +1,14 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+
+type NodedataVote {
+  id: ID!
+  userId: String!
+  nodedataId: String!
+  value: Any!
+  
+  createdAt:Time!
+  updatedAt:Time!
+}

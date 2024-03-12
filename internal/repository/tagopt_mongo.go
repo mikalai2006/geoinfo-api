@@ -102,6 +102,14 @@ func (r *TagoptMongo) GqlGetTagopts(params domain.RequestParams) ([]*model.Tagop
 		return results, err
 	}
 
+	pipe = append(pipe, bson.D{{"$lookup", bson.M{
+		"from":         "nodedata",
+		"as":           "countItem2",
+		"localField":   "_id",
+		"foreignField": "tagopt_id",
+	}}})
+	pipe = append(pipe, bson.D{{"$addFields", bson.D{{"countItem", bson.D{{"$size", "$countItem2"}}}}}})
+
 	cursor, err := r.db.Collection(TblTagopt).Aggregate(ctx, pipe)
 	if err != nil {
 		return results, err

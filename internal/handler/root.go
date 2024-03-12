@@ -23,16 +23,18 @@ type Handler struct {
 	repositories *repository.Repositories
 	services     *service.Services
 	oauth        config.OauthConfig
+	auth         config.AuthConfig
 	i18n         config.I18nConfig
 	imageConfig  config.IImageConfig
 }
 
-func NewHandler(services *service.Services, repositories *repository.Repositories, mongoDB *mongo.Database, oauth *config.OauthConfig, i18n *config.I18nConfig, imageConfig *config.IImageConfig) *Handler {
+func NewHandler(services *service.Services, repositories *repository.Repositories, mongoDB *mongo.Database, oauth *config.OauthConfig, auth *config.AuthConfig, i18n *config.I18nConfig, imageConfig *config.IImageConfig) *Handler {
 	return &Handler{
 		repositories: repositories,
 		db:           mongoDB,
 		services:     services,
 		oauth:        *oauth,
+		auth:         *auth,
 		i18n:         *i18n,
 		imageConfig:  *imageConfig,
 	}
@@ -78,6 +80,28 @@ func (h *Handler) InitRoutes(cfg *config.Config, mongoDB *mongo.Database) *gin.E
 	router.Static("/images", "./public")
 	router.Static("/css", "./public/css")
 	router.Static("/js", "./public/js")
+
+	// var upgrader = websocket.Upgrader{
+	// 	ReadBufferSize:  1024,
+	// 	WriteBufferSize: 1024,
+	// }
+	// router.GET("/ws", func(c *gin.Context) {
+	// 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	// 	if err != nil {
+	// 		return
+	// 	}
+	// 	defer conn.Close()
+	// 	var input interface{}
+	// 	if er := c.BindJSON(&input); er != nil {
+	// 		fmt.Println("Error: ", er)
+	// 		return
+	// 	}
+	// 	conn.WriteMessage(websocket.TextMessage, []byte(input.(string)))
+	// 	// for {
+	// 	// 	conn.WriteMessage(websocket.TextMessage, []byte("Hello, WebSocket!"))
+	// 	// 	time.Sleep(time.Second)
+	// 	// }
+	// })
 	return router
 }
 
@@ -86,7 +110,7 @@ func (h *Handler) initAPI(router *gin.Engine) {
 	api := router.Group("/api")
 	api.Use(GetLang(&h.i18n))
 
-	handlerV1 := v1.NewHandler(h.services, h.repositories, h.db, &h.oauth, &h.i18n, &h.imageConfig)
+	handlerV1 := v1.NewHandler(h.services, h.repositories, h.db, &h.oauth, &h.auth, &h.i18n, &h.imageConfig)
 	handlerV1.Init(api)
 }
 

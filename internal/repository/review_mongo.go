@@ -21,18 +21,65 @@ func NewReviewMongo(db *mongo.Database, i18n config.I18nConfig) *ReviewMongo {
 	return &ReviewMongo{db: db, i18n: i18n}
 }
 
-func (r *ReviewMongo) FindReview(params domain.RequestParams) (domain.Response[domain.Review], error) {
+func (r *ReviewMongo) FindReview(params domain.RequestParams) (domain.Response[model.Review], error) {
 	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
 	defer cancel()
 
-	var results []domain.Review
-	var response domain.Response[domain.Review]
-	filter, opts, err := CreateFilterAndOptions(params)
-	if err != nil {
-		return domain.Response[domain.Review]{}, err
-	}
+	var results []model.Review
+	var response domain.Response[model.Review]
+	// var response domain.Response[model.Review]
+	// filter, opts, err := CreateFilterAndOptions(params)
+	// if err != nil {
+	// 	return domain.Response[model.Review]{}, err
+	// }
 
-	cursor, err := r.db.Collection(TblReview).Find(ctx, filter, opts)
+	// cursor, err := r.db.Collection(TblReview).Find(ctx, filter, opts)
+	// if err != nil {
+	// 	return response, err
+	// }
+	// defer cursor.Close(ctx)
+
+	// if er := cursor.All(ctx, &results); er != nil {
+	// 	return response, er
+	// }
+
+	// resultSlice := make([]model.Review, len(results))
+	// // for i, d := range results {
+	// // 	resultSlice[i] = d
+	// // }
+	// copy(resultSlice, results)
+
+	pipe, err := CreatePipeline(params, &r.i18n)
+	if err != nil {
+		return domain.Response[model.Review]{}, err
+	}
+	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"from": "users",
+		"as":   "usera",
+		// "localField":   "user_id",
+		// "foreignField": "_id",
+		"let": bson.D{{Key: "userId", Value: "$user_id"}},
+		"pipeline": mongo.Pipeline{
+			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$userId"}}}}},
+			bson.D{{"$limit", 1}},
+			bson.D{{
+				Key: "$lookup",
+				Value: bson.M{
+					"from": tblImage,
+					"as":   "images",
+					// "localField":   "_id",
+					// "foreignField": "service_id",
+					"let": bson.D{{Key: "serviceId", Value: bson.D{{"$toString", "$_id"}}}},
+					"pipeline": mongo.Pipeline{
+						bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$service_id", "$$serviceId"}}}}},
+					},
+				},
+			}},
+		},
+	}}})
+	pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"user": bson.M{"$first": "$usera"}}}})
+	cursor, err := r.db.Collection(TblReview).Aggregate(ctx, pipe) // Find(ctx, params.Filter, opts)
+	// cursor, err := r.db.Collection(TblNode).Find(ctx, filter, opts)
 	if err != nil {
 		return response, err
 	}
@@ -42,35 +89,29 @@ func (r *ReviewMongo) FindReview(params domain.RequestParams) (domain.Response[d
 		return response, er
 	}
 
-	resultSlice := make([]domain.Review, len(results))
-	// for i, d := range results {
-	// 	resultSlice[i] = d
-	// }
-	copy(resultSlice, results)
-
-	count, err := r.db.Collection(TblReview).CountDocuments(ctx, bson.M{})
+	count, err := r.db.Collection(TblReview).CountDocuments(ctx, params.Filter)
 	if err != nil {
 		return response, err
 	}
 
-	response = domain.Response[domain.Review]{
+	response = domain.Response[model.Review]{
 		Total: int(count),
 		Skip:  int(params.Options.Skip),
 		Limit: int(params.Options.Limit),
-		Data:  resultSlice,
+		Data:  results,
 	}
 	return response, nil
 }
 
-func (r *ReviewMongo) GetAllReview(params domain.RequestParams) (domain.Response[domain.Review], error) {
+func (r *ReviewMongo) GetAllReview(params domain.RequestParams) (domain.Response[model.Review], error) {
 	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
 	defer cancel()
 
-	var results []domain.Review
-	var response domain.Response[domain.Review]
+	var results []model.Review
+	var response domain.Response[model.Review]
 	pipe, err := CreatePipeline(params, &r.i18n)
 	if err != nil {
-		return domain.Response[domain.Review]{}, err
+		return domain.Response[model.Review]{}, err
 	}
 
 	cursor, err := r.db.Collection(TblReview).Aggregate(ctx, pipe) // Find(ctx, params.Filter, opts)
@@ -83,7 +124,7 @@ func (r *ReviewMongo) GetAllReview(params domain.RequestParams) (domain.Response
 		return response, er
 	}
 
-	resultSlice := make([]domain.Review, len(results))
+	resultSlice := make([]model.Review, len(results))
 	// for i, d := range results {
 	// 	resultSlice[i] = d
 	// }
@@ -94,7 +135,7 @@ func (r *ReviewMongo) GetAllReview(params domain.RequestParams) (domain.Response
 		return response, err
 	}
 
-	response = domain.Response[domain.Review]{
+	response = domain.Response[model.Review]{
 		Total: int(count),
 		Skip:  int(params.Options.Skip),
 		Limit: int(params.Options.Limit),
@@ -112,6 +153,28 @@ func (r *ReviewMongo) GqlGetReviews(params domain.RequestParams) ([]*model.Revie
 	if err != nil {
 		return results, err
 	}
+
+	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"from": "users",
+		"as":   "usera",
+		"let":  bson.D{{Key: "userId", Value: "$user_id"}},
+		"pipeline": mongo.Pipeline{
+			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$userId"}}}}},
+			bson.D{{"$limit", 1}},
+			bson.D{{
+				Key: "$lookup",
+				Value: bson.M{
+					"from": tblImage,
+					"as":   "images",
+					"let":  bson.D{{Key: "serviceId", Value: bson.D{{"$toString", "$_id"}}}},
+					"pipeline": mongo.Pipeline{
+						bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$service_id", "$$serviceId"}}}}},
+					},
+				},
+			}},
+		},
+	}}})
+	pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"user": bson.M{"$first": "$usera"}}}})
 
 	cursor, err := r.db.Collection(TblReview).Aggregate(ctx, pipe) // Find(ctx, params.Filter, opts)
 	if err != nil {
@@ -134,7 +197,7 @@ func (r *ReviewMongo) GqlGetReviews(params domain.RequestParams) ([]*model.Revie
 	// 	return results, err
 	// }
 
-	// results = []*domain.Review{
+	// results = []*model.Review{
 	// 	Total: int(count),
 	// 	Skip:  int(params.Options.Skip),
 	// 	Limit: int(params.Options.Limit),
@@ -214,8 +277,8 @@ func (r *ReviewMongo) GqlGetCountReviews(params domain.RequestParams) (*model.Re
 	return &results, nil
 }
 
-func (r *ReviewMongo) CreateReview(userID string, review *domain.Review) (*domain.Review, error) {
-	var result *domain.Review
+func (r *ReviewMongo) CreateReview(userID string, review *model.Review) (*model.Review, error) {
+	var result *model.Review
 
 	collection := r.db.Collection(TblReview)
 
@@ -227,23 +290,74 @@ func (r *ReviewMongo) CreateReview(userID string, review *domain.Review) (*domai
 		return nil, err
 	}
 
-	newReview := domain.Review{
-		Review:    review.Review,
-		Rate:      review.Rate,
-		OsmID:     review.OsmID,
-		UserID:    userIDPrimitive,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+	var existReview model.Review
+	r.db.Collection(TblReview).FindOne(ctx, bson.M{"osm_id": review.OsmID, "user_id": userIDPrimitive}).Decode(&existReview)
+
+	if existReview.OsmID == "" {
+
+		newReview := model.ReviewInput{
+			Review:    review.Review,
+			Rate:      review.Rate,
+			OsmID:     review.OsmID,
+			UserID:    userIDPrimitive,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+
+		res, err := collection.InsertOne(ctx, newReview)
+		if err != nil {
+			return nil, err
+		}
+
+		err = r.db.Collection(TblReview).FindOne(ctx, bson.M{"_id": res.InsertedID}).Decode(&result)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		updateReview := &model.ReviewInput{
+			Rate:   review.Rate,
+			Review: review.Review,
+		}
+		result, err = r.UpdateReview(existReview.ID.Hex(), userID, updateReview)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	res, err := collection.InsertOne(ctx, newReview)
+	return result, nil
+}
+
+func (r *ReviewMongo) UpdateReview(id string, userID string, data *model.ReviewInput) (*model.Review, error) {
+	var result *model.Review
+	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
+	defer cancel()
+
+	collection := r.db.Collection(TblReview)
+
+	idPrimitive, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
-	err = r.db.Collection(TblReview).FindOne(ctx, bson.M{"_id": res.InsertedID}).Decode(&result)
+	filter := bson.M{"_id": idPrimitive}
+
+	newData := bson.M{}
+	if data.Rate != 0 {
+		newData["rate"] = data.Rate
+	}
+	if data.Review != "" {
+		newData["review"] = data.Review
+	}
+	newData["updated_at"] = time.Now()
+
+	_, err = collection.UpdateOne(ctx, filter, bson.M{"$set": newData})
 	if err != nil {
-		return nil, err
+		return result, err
+	}
+
+	err = collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return result, err
 	}
 
 	return result, nil

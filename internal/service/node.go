@@ -17,6 +17,9 @@ func NewNodeService(repo repository.Node) *NodeService {
 func (s *NodeService) FindNode(params domain.RequestParams) (domain.Response[model.Node], error) {
 	return s.repo.FindNode(params)
 }
+func (s *NodeService) FindForKml(params domain.RequestParams) (domain.Response[domain.Kml], error) {
+	return s.repo.FindForKml(params)
+}
 
 func (s *NodeService) GetAllNode(params domain.RequestParams) (domain.Response[model.Node], error) {
 	return s.repo.GetAllNode(params)

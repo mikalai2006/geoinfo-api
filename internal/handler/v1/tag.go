@@ -154,6 +154,8 @@ func (h *HandlerV1) FindTag(c *gin.Context) {
 		return
 	}
 
+	params.Sort = bson.D{bson.E{"sort_order", 1}}
+
 	Tags, err := h.services.Tag.FindTag(params)
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)

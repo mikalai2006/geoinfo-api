@@ -28,7 +28,10 @@ const (
 	TblAddress        = "address"
 	tblTrack          = "track"
 	TblNode           = "node"
+	TblNodeAudit      = "node_audit"
 	TblNodedata       = "nodedata"
+	TblNodedataVote   = "nodedata_vote"
+	TblNodedataAudit  = "nodedata_audit"
 	TblNodedataNumber = "nodedata_number"
 	TblTag            = "tag"
 	TblTagopt         = "tagopt"
@@ -36,6 +39,8 @@ const (
 	TblLike           = "like"
 	TblAmenity        = "amenity"
 	TblAction         = "action"
+	TblCountry        = "country"
+	TblAmenityGroup   = "amenity_group"
 
 	tblPartner = "partners"
 

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/mikalai2006/geoinfo-api/graph/model"
@@ -63,7 +64,7 @@ func (r *NodeMongo) FindNode(params domain.RequestParams) (domain.Response[model
 	// }
 	copy(resultSlice, results)
 
-	count, err := r.db.Collection(TblNode).CountDocuments(ctx, bson.M{})
+	count, err := r.db.Collection(TblNode).CountDocuments(ctx, params.Filter)
 	if err != nil {
 		return response, err
 	}
@@ -131,7 +132,7 @@ func (r *NodeMongo) CreateNode(userID string, node *model.Node) (*model.Node, er
 		return nil, err
 	}
 
-	newNode := model.Node{
+	newNode := model.NodeInput{
 		UserID:    userIDPrimitive,
 		OsmID:     node.OsmID,
 		Lon:       node.Lon,
@@ -139,7 +140,8 @@ func (r *NodeMongo) CreateNode(userID string, node *model.Node) (*model.Node, er
 		Type:      node.Type,
 		Props:     node.Props,
 		AmenityID: node.AmenityID,
-		// Status:    node.Status,
+		Name:      node.Name,
+		CCode:     node.CCode,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -169,7 +171,32 @@ func (r *NodeMongo) UpdateNode(id string, userID string, data *model.Node) (*mod
 		return result, err
 	}
 
+	// idUser, err := primitive.ObjectIDFromHex(userID)
+	// if err != nil {
+	// 	return result, err
+	// }
 	filter := bson.M{"_id": idPrimitive}
+
+	// Find old data
+	var oldResult *model.Node
+	err = collection.FindOne(ctx, filter).Decode(&oldResult)
+	if err != nil {
+		return result, err
+	}
+	oldNodeAudit := model.NodeInput{
+		UserID:    oldResult.UserID,
+		Lon:       oldResult.Lon,
+		Lat:       oldResult.Lat,
+		Type:      oldResult.Type,
+		Name:      oldResult.Name,
+		OsmID:     oldResult.OsmID,
+		AmenityID: oldResult.AmenityID,
+		Props:     oldResult.Props,
+	}
+	_, err = r.db.Collection(TblNodeAudit).InsertOne(ctx, oldNodeAudit)
+	if err != nil {
+		return result, err
+	}
 
 	newData := bson.M{}
 	if data.Lon != 0 {
@@ -203,6 +230,9 @@ func (r *NodeMongo) UpdateNode(id string, userID string, data *model.Node) (*mod
 	if data.Name != "" {
 		newData["name"] = data.Name
 	}
+	if data.CCode != "" {
+		newData["ccode"] = data.CCode
+	}
 	// if data.Status != 0 {
 	// 	newData["status"] = data.Status
 	// }
@@ -229,14 +259,14 @@ func (r *NodeMongo) UpdateNode(id string, userID string, data *model.Node) (*mod
 
 	// update type for nodedata collection
 	// if data.Type != "" {
-	_, err = r.db.Collection(TblNodedata).UpdateMany(
-		ctx,
-		bson.M{"node_id": result.ID},
-		bson.M{"$set": bson.M{"type": result.Type, "lat": result.Lat, "lon": result.Lon}},
-	)
-	if err != nil {
-		return result, err
-	}
+	// _, err = r.db.Collection(TblNodedata).UpdateMany(
+	// 	ctx,
+	// 	bson.M{"node_id": result.ID},
+	// 	bson.M{"$set": bson.M{"type": result.Type, "lat": result.Lat, "lon": result.Lon}},
+	// )
+	// if err != nil {
+	// 	return result, err
+	// }
 	// }
 
 	return result, nil
@@ -266,5 +296,156 @@ func (r *NodeMongo) DeleteNode(id string) (model.Node, error) {
 		return result, err
 	}
 
+	// remove nodedata.
+	_, err = r.db.Collection(TblNodedata).DeleteMany(ctx, bson.M{"node_id": idPrimitive})
+	if err != nil {
+		return result, err
+	}
+	// remove reviews.
+	_, err = r.db.Collection(TblReview).DeleteMany(ctx, bson.M{"osm_id": result.OsmID})
+	if err != nil {
+		return result, err
+	}
+
 	return result, nil
+}
+
+func (r *NodeMongo) FindForKml(params domain.RequestParams) (domain.Response[domain.Kml], error) {
+	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
+	defer cancel()
+
+	var results []domain.Kml
+	var response domain.Response[domain.Kml]
+	// filter, opts, err := CreateFilterAndOptions(params)
+	// if err != nil {
+	// 	return domain.Response[model.Node]{}, err
+	// }
+	pipe, err := CreatePipeline(params, &r.i18n)
+	if err != nil {
+		return domain.Response[domain.Kml]{}, err
+	}
+	fmt.Println("params lang=", params.Lang)
+	// pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+	// 	"from": "nodedata",
+	// 	// "let":  bson.D{{Key: "nodeId", Value: bson.D{{"$toString", "$_id"}}}},
+	// 	// "pipeline": mongo.Pipeline{
+	// 	// 	bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$node_id", "$$nodeId"}}}}},
+	// 	// },
+	// 	"localField":   "_id",
+	// 	"foreignField": "node_id",
+	// 	"as":           "data",
+	// }}})
+	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"from": "nodedata",
+		"as":   "data",
+		"let":  bson.D{{Key: "nodeId", Value: "$_id"}},
+		"pipeline": mongo.Pipeline{
+			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$node_id", "$$nodeId"}}}}},
+			// bson.D{{"$limit", 1}},
+			bson.D{{
+				Key: "$lookup",
+				Value: bson.M{
+					"from": "tag",
+					"as":   "tagx",
+					"let":  bson.D{{Key: "tagId", Value: "$tag_id"}},
+					"pipeline": mongo.Pipeline{
+						bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$tagId"}}}}},
+						bson.D{{"$limit", 1}},
+						bson.D{{
+							Key: "$replaceWith", Value: bson.M{
+								"$mergeObjects": bson.A{
+									"$$ROOT",
+									bson.D{{
+										Key: "$ifNull", Value: bson.A{
+											fmt.Sprintf("$locale.%s", params.Lang),
+											fmt.Sprintf("$locale.%s", r.i18n.Default),
+										},
+									}},
+								},
+							},
+						}},
+					},
+				},
+			}},
+			bson.D{{Key: "$set", Value: bson.M{"tag": bson.M{"$first": "$tagx"}}}},
+			bson.D{{
+				Key: "$lookup",
+				Value: bson.M{
+					"from": "users",
+					"as":   "userx",
+					"let":  bson.D{{Key: "userId", Value: "$user_id"}},
+					"pipeline": mongo.Pipeline{
+						bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$userId"}}}}},
+						bson.D{{"$limit", 1}},
+					},
+				},
+			}},
+			bson.D{{Key: "$set", Value: bson.M{"user": bson.M{"$first": "$userx"}}}},
+		},
+	}}})
+
+	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"from": "users",
+		"as":   "userb",
+		"let":  bson.D{{Key: "userId", Value: "$user_id"}},
+		"pipeline": mongo.Pipeline{
+			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$userId"}}}}},
+			bson.D{{"$limit", 1}},
+		},
+	}}})
+	pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"user": bson.M{"$first": "$userb"}}}})
+
+	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"from": "amenity",
+		"as":   "amenityx",
+		"let":  bson.D{{Key: "amenityId", Value: "$amenity_id"}},
+		"pipeline": mongo.Pipeline{
+			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$amenityId"}}}}},
+			bson.D{{"$limit", 1}},
+			bson.D{{
+				Key: "$replaceWith", Value: bson.M{
+					"$mergeObjects": bson.A{
+						"$$ROOT",
+						bson.D{{
+							Key: "$ifNull", Value: bson.A{
+								fmt.Sprintf("$locale.%s", params.Lang),
+								fmt.Sprintf("$locale.%s", r.i18n.Default),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}}})
+	pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"amenity": bson.M{"$first": "$amenityx"}}}})
+
+	cursor, err := r.db.Collection(TblNode).Aggregate(ctx, pipe) // Find(ctx, params.Filter, opts)
+	// cursor, err := r.db.Collection(TblNode).Find(ctx, filter, opts)
+	if err != nil {
+		return response, err
+	}
+	defer cursor.Close(ctx)
+
+	if er := cursor.All(ctx, &results); er != nil {
+		return response, er
+	}
+
+	resultSlice := make([]domain.Kml, len(results))
+	// for i, d := range results {
+	// 	resultSlice[i] = d
+	// }
+	copy(resultSlice, results)
+
+	count, err := r.db.Collection(TblNode).CountDocuments(ctx, params.Filter)
+	if err != nil {
+		return response, err
+	}
+
+	response = domain.Response[domain.Kml]{
+		Total: int(count),
+		Skip:  int(params.Options.Skip),
+		Limit: int(params.Options.Limit),
+		Data:  resultSlice,
+	}
+	return response, nil
 }

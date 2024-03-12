@@ -23,3 +23,28 @@ type ErrorResponse struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
+
+type ResponseNominatim struct {
+	OsmType     string                 `json:"osm_type" bson:"osm_type"`
+	OsmID       int                    `json:"osm_id" bson:"osm_id"`
+	Lat         string                 `json:"lat" bson:"lat"`
+	Lon         string                 `json:"lon" bson:"lon"`
+	Class       string                 `json:"class" bson:"class"`
+	Type        string                 `json:"type" bson:"type"`
+	AddressType string                 `json:"address_type" bson:"address_type"`
+	Name        string                 `json:"name" bson:"name"`
+	DisplayName string                 `json:"display_name" bson:"display_name"`
+	Address     map[string]interface{} `json:"address" bson:"address"`
+}
+
+// type ResponseNominatimAddress struct {
+// 	Highway      string `json:"highway"`
+// 	Road         string `json:"road"`
+// 	Village      string `json:"village"`
+// 	Municipality string `json:"municipality"`
+// 	County       string `json:"county"`
+// 	State        string `json:"state"`
+// 	Postcode     string `json:"postcode"`
+// 	Country      string `json:"country"`
+// 	CountryCode  string `json:"country_code"`
+// }

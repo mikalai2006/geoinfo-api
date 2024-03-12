@@ -166,9 +166,9 @@ func BindJSON2[V any](raw map[string]json.RawMessage) (V, error) {
 	// Convert the JSON to a struct
 	json.Unmarshal(jsonData, &result)
 
-	for key, val := range parsed {
-		fmt.Printf("%T: %v %v \n", val, key, val)
-	}
+	// for key, val := range parsed {
+	// 	fmt.Printf("%T: %v %v \n", val, key, val)
+	// }
 	return result, nil
 }
 

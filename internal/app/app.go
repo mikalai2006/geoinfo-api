@@ -88,8 +88,9 @@ func Run(configPath string) {
 		RefreshTokenTTL:        cfg.Auth.RefreshTokenTTL,
 		VerificationCodeLength: cfg.Auth.VerificationCodeLength,
 		I18n:                   cfg.I18n,
+		ImageService:           cfg.IImage,
 	})
-	handlers := handler.NewHandler(services, repositories, mongoDB, &cfg.Oauth, &cfg.I18n, &cfg.IImage)
+	handlers := handler.NewHandler(services, repositories, mongoDB, &cfg.Oauth, &cfg.Auth, &cfg.I18n, &cfg.IImage)
 
 	// initialize server
 	srv := server.NewServer(cfg, handlers.InitRoutes(cfg, mongoDB))

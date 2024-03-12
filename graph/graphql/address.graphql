@@ -11,8 +11,8 @@ type Address {
   dAddress: String!
   props: Any!
 
-  createdAt:DATETIME!
-  updatedAt:DATETIME!
+  createdAt:Time!
+  updatedAt:Time!
 }
 
 input FetchAddress {

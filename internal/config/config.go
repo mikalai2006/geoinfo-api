@@ -42,7 +42,7 @@ type (
 	}
 
 	OauthConfig struct {
-		TimeExpireCookie int
+		// TimeExpireCookie int
 
 		VkAuthURI      string
 		VkTokenURI     string
@@ -62,10 +62,11 @@ type (
 	}
 
 	AuthConfig struct {
-		Salt            string
-		SigningKey      string
-		AccessTokenTTL  time.Duration `mapstructure:"accessTokenTTL"`
-		RefreshTokenTTL time.Duration `mapstructure:"refreshTokenTTL"`
+		Salt              string
+		SigningKey        string
+		NameCookieRefresh string
+		AccessTokenTTL    time.Duration `mapstructure:"accessTokenTTL"`
+		RefreshTokenTTL   time.Duration `mapstructure:"refreshTokenTTL"`
 
 		VerificationCodeLength int
 	}
@@ -164,6 +165,7 @@ func setFromEnv(cfg *Config) {
 
 	cfg.Auth.Salt = os.Getenv("SALT")
 	cfg.Auth.SigningKey = os.Getenv("SIGNING_KEY")
+	cfg.Auth.NameCookieRefresh = os.Getenv("NAME_COOKIE_REFRESH")
 
 	cfg.Environment = os.Getenv("APP_ENV")
 

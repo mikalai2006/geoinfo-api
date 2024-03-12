@@ -39,6 +39,8 @@ func (r *TagMongo) FindTag(params domain.RequestParams) (domain.Response[model.T
 		return response, err
 	}
 
+	// pipe = append(pipe, bson.D{{"$sort", bson.D{bson.E{"sort_order", 1}}}})
+
 	cursor, err := r.db.Collection(TblTag).Aggregate(ctx, pipe)
 	// fmt.Println("filter tag:::", pipe)
 	if err != nil {
@@ -135,6 +137,7 @@ func (r *TagMongo) CreateTag(userID string, tag *model.Tag) (*model.Tag, error) 
 		Multilanguage: tag.Multilanguage,
 		MultiOpt:      tag.MultiOpt,
 		IsFilter:      tag.IsFilter,
+		SortOrder:     tag.SortOrder,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
 	}
@@ -163,6 +166,38 @@ func (r *TagMongo) GqlGetTags(params domain.RequestParams) ([]*model.Tag, error)
 		return results, err
 	}
 	// fmt.Println(pipe)
+
+	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"from": "tagopt",
+		"let":  bson.D{{Key: "tagId", Value: "$_id"}},
+		"pipeline": mongo.Pipeline{
+			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$tag_id", "$$tagId"}}}}},
+			bson.D{{
+				Key: "$replaceWith", Value: bson.M{
+					"$mergeObjects": bson.A{
+						"$$ROOT",
+						bson.D{{
+							Key: "$ifNull", Value: bson.A{
+								fmt.Sprintf("$locale.%s", params.Lang),
+								fmt.Sprintf("$locale.%s", &r.i18n.Default),
+							},
+						}},
+					},
+				},
+			}},
+		},
+		// "localField":   "_id",
+		// "foreignField": "tag_id",
+		"as": "options",
+	}}})
+
+	// pipe = append(pipe, bson.D{{"$lookup", bson.M{
+	// 	"from":         "nodedata",
+	// 	"as":           "countItem2",
+	// 	"localField":   "_id",
+	// 	"foreignField": "tag_id",
+	// }}})
+	// pipe = append(pipe, bson.D{{"$addFields", bson.D{{"countItem", bson.D{{"$size", "$countItem2"}}}}}})
 
 	cursor, err := r.db.Collection(TblTag).Aggregate(ctx, pipe)
 	if err != nil {
@@ -222,6 +257,7 @@ func (r *TagMongo) UpdateTag(id string, userID string, data *model.Tag) (*model.
 		"locale":        data.Locale,
 		"multilanguage": data.Multilanguage,
 		"is_filter":     data.IsFilter,
+		"sort_order":    data.SortOrder,
 		"updated_at":    time.Now(),
 	}})
 	if err != nil {

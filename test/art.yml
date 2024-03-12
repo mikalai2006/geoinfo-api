@@ -9,21 +9,146 @@ scenarios:
         url: "/api/v1/gql/query"
         json:
           query: |
-            query findNodes {
-              nodesConnection(limit:2000,latA: 51.42490192575532, latB: 53.553362785528094, lonA: 12.6287841796875, lonB: 15.639038085937502) {
-                edges {
-                  node {
-                    type
-                    lon
-                    lat
+            query findNodeInfo($lat: Float, $lon: Float){
+                node(lat: $lat, lon: $lon) {
+                    id
                     osmId
-                    f
-                  }
+                    type
+                    lat
+                    lon
+                    name
+                    userId
+                    user {
+                        id
+                        lang
+                        name
+                        login
+                        lastTime
+                        online
+                        images {
+                            id
+                            service
+                            serviceId
+                            title
+                            userId
+                            path
+                            dir
+                            ext
+                        }
+                    }
+                    images {
+                        id
+                        service
+                        serviceId
+                        title
+                        userId
+                        path
+                        dir
+                        ext
+                        createdAt
+                        user {
+                            id
+                            lang
+                            name
+                            login
+                            lastTime
+                            online
+                            images {
+                                id
+                                service
+                                serviceId
+                                title
+                                userId
+                                path
+                                dir
+                                ext
+                            }
+                        }
+                    }
+                    props
+                    data{
+                        id
+                        nodeId
+                        tagId
+                        tagoptId
+                        value
+                        title
+                        description
+                        audit {
+                            id
+                            nodedataId
+                            value
+                            props
+                            user {
+                                id
+                                lang
+                                name
+                                login
+                                lastTime
+                                online
+                                images {
+                                    id
+                                    service
+                                    serviceId
+                                    title
+                                    userId
+                                    path
+                                    dir
+                                    ext
+                                }
+                            }
+                        }
+                        user {
+                            id
+                            lang
+                            name
+                            login
+                            lastTime
+                            online
+                            images {
+                                id
+                                service
+                                serviceId
+                                title
+                                userId
+                                path
+                                dir
+                                ext
+                            }
+                        }
+                        tag {
+                            id
+                            key
+                            title
+                            description
+                            options {
+                                id
+                            }
+                        }
+                        tagopt {
+                            id
+                            title
+                            description
+                            value
+                        }
+                        createdAt
+                    }
+                    reviewsInfo {
+                        count
+                        value
+                        ratings
+                    }
+                    address {
+                        id
+                        userId
+                        osmId
+                        dAddress
+                        address
+                        props
+                    }
+                    createdAt
                 }
-                pageInfo {
-                  startCursor
-                  endCursor
-                  hasNextPage
-                }
-              }
             }
+          variables:
+            lat: 51.3485788
+            lon: -1.3412568

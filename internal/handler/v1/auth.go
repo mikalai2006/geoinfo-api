@@ -39,13 +39,21 @@ func (h *HandlerV1) getIam(c *gin.Context) {
 	// 	appG.Response(http.StatusBadRequest, err, nil)
 	// 	return
 	// }
-	fmt.Println("ID=", userID)
+	// fmt.Println("ID=", userID)
 
 	users, err := h.services.User.Iam(userID)
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
 		return
 	}
+
+	// implementation max distance.
+	md, err := middleware.GetMaxDistance(c)
+	if err != nil {
+		appG.ResponseError(http.StatusUnauthorized, err, nil)
+		return
+	}
+	users.Md = md
 
 	// implementation roles for user.
 	roles, err := middleware.GetRoles(c)
@@ -119,6 +127,7 @@ func (h *HandlerV1) SignUp(c *gin.Context) {
 		Name:   input.Login,
 		Roles:  []string{"user"},
 		Lang:   lang,
+		Md:     50,
 	}
 	document, err := h.services.User.CreateUser(id, &newUser)
 	if err != nil {
@@ -143,9 +152,9 @@ func (h *HandlerV1) SignUp(c *gin.Context) {
 // @Router /auth/sign-in [post].
 func (h *HandlerV1) SignIn(c *gin.Context) {
 	appG := app.Gin{C: c}
-	// jwt_cookie, _ := c.Cookie("jwt-handmade")
+	// jwt_cookie, _ := c.Cookie(h.auth.NameCookieRefresh)
 	// fmt.Println("+++++++++++++")
-	// fmt.Printf("jwt_handmade = %s", jwt_cookie)
+	// fmt.Printf("%s = %s",h.auth.NameCookieRefresh, jwt_cookie)
 	// fmt.Println("+++++++++++++")
 	// session := sessions.Default(c)
 	var input *domain.SignInInput
@@ -174,7 +183,7 @@ func (h *HandlerV1) SignIn(c *gin.Context) {
 			appG.ResponseError(http.StatusBadRequest, err, nil)
 			return
 		}
-		c.SetCookie("jwt-handmade", tokens.RefreshToken, h.oauth.TimeExpireCookie, "/", c.Request.URL.Hostname(), false, true)
+		c.SetCookie(h.auth.NameCookieRefresh, tokens.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", c.Request.URL.Hostname(), false, true)
 
 		c.JSON(http.StatusOK, domain.ResponseTokens{
 			AccessToken:  tokens.AccessToken,
@@ -201,10 +210,10 @@ func (h *HandlerV1) SignIn(c *gin.Context) {
 // @Router /users/auth/refresh [post].
 func (h *HandlerV1) tokenRefresh(c *gin.Context) {
 	appG := app.Gin{C: c}
-	jwtCookie, _ := c.Cookie("jwt-handmade")
-	fmt.Println("refresh Cookie jwt_handmade = ", jwtCookie)
+	jwtCookie, _ := c.Cookie(h.auth.NameCookieRefresh)
+	fmt.Sprintf("refresh Cookie %s = %s", h.auth.NameCookieRefresh, jwtCookie)
 	cookie_header := c.GetHeader("cookie")
-	fmt.Println("refresh GetHeader cookie_header = ", cookie_header)
+	fmt.Println("refresh Cookie_header = ", cookie_header)
 	// fmt.Println("+++++++++++++")
 	// session := sessions.Default(c)
 	var input domain.RefreshInput
@@ -217,11 +226,12 @@ func (h *HandlerV1) tokenRefresh(c *gin.Context) {
 	} else {
 		input.Token = jwtCookie
 	}
-	fmt.Println("refresh input.Token  = ", input.Token)
+	// fmt.Println("refresh input.Token  = ", input.Token)
 
 	if input.Token == "" && jwtCookie == "" {
-		c.JSON(http.StatusOK, gin.H{})
-		c.AbortWithStatus(http.StatusOK)
+		appG.ResponseError(http.StatusUnauthorized, errors.New("not found token"), nil)
+		// c.JSON(http.StatusOK, gin.H{})
+		// c.AbortWithStatus(http.StatusOK)
 		return
 	}
 
@@ -237,7 +247,7 @@ func (h *HandlerV1) tokenRefresh(c *gin.Context) {
 	// 	return
 	// }
 
-	c.SetCookie("jwt-handmade", res.RefreshToken, h.oauth.TimeExpireCookie, "/", c.Request.URL.Hostname(), false, true)
+	c.SetCookie(h.auth.NameCookieRefresh, res.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", c.Request.URL.Hostname(), false, true)
 
 	c.JSON(http.StatusOK, domain.ResponseTokens{
 		AccessToken:  res.AccessToken,
@@ -256,7 +266,7 @@ func (h *HandlerV1) Logout(c *gin.Context) {
 
 	var input domain.RefreshInput
 
-	jwtCookie, _ := c.Cookie("jwt-handmade")
+	jwtCookie, _ := c.Cookie(h.auth.NameCookieRefresh)
 	if jwtCookie == "" {
 		if err := c.BindJSON(&input); err != nil {
 			appG.ResponseError(http.StatusBadRequest, err, nil)
@@ -278,7 +288,7 @@ func (h *HandlerV1) Logout(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("jwt-handmade", "", -1, "/", c.Request.URL.Hostname(), false, true)
+	c.SetCookie(h.auth.NameCookieRefresh, "", -1, "/", c.Request.URL.Hostname(), false, true)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Successfully logged out",

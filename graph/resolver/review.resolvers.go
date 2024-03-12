@@ -6,15 +6,13 @@ package resolver
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/mikalai2006/geoinfo-api/graph/generated"
 	"github.com/mikalai2006/geoinfo-api/graph/model"
 	"github.com/mikalai2006/geoinfo-api/internal/domain"
-	"github.com/mikalai2006/geoinfo-api/internal/repository"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // ReviewsConnection is the resolver for the reviewsConnection field.
@@ -71,11 +69,26 @@ func (r *queryResolver) ReviewsConnection(ctx context.Context, first *int, after
 	// 	return results, nil
 	// }
 
+	filter := bson.D{}
+	if input.UserID != nil {
+		userIDPrimitive, err := primitive.ObjectIDFromHex(*input.UserID)
+		if err != nil {
+			return results, err
+		}
+
+		filter = append(filter, bson.E{"user_id", userIDPrimitive})
+	} else if input.OsmID != nil {
+		filter = append(filter, bson.E{"osm_id", *input.OsmID})
+	}
+
 	allItems, err := r.Repo.Review.GqlGetReviews(domain.RequestParams{
-		Options: domain.Options{Limit: int64(*limit)},
-		Filter:  bson.D{},
+		Options: domain.Options{Limit: int64(*limit), Sort: bson.D{bson.E{"created_at", -1}}},
+		Filter:  filter,
 	})
 	if err != nil {
+		return results, err
+	}
+	if len(allItems) == 0 {
 		return results, err
 	}
 
@@ -135,23 +148,43 @@ func (r *queryResolver) Review(ctx context.Context, input *model.FetchReview) (*
 
 	filter := bson.D{}
 	if input.ID != nil {
-		userIDPrimitive, err := primitive.ObjectIDFromHex(*input.ID)
+		iDPrimitive, err := primitive.ObjectIDFromHex(*input.ID)
 		if err != nil {
 			return result, err
 		}
 
-		filter = append(filter, bson.E{"_id", userIDPrimitive})
-	} else if input.OsmID != nil {
+		filter = append(filter, bson.E{"_id", iDPrimitive})
+	}
+	if input.OsmID != nil {
 		filter = append(filter, bson.E{"osm_id", input.OsmID})
 	}
-
-	if err := r.DB.Collection(repository.TblReview).FindOne(ctx, filter).Decode(&result); err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return result, model.ErrReviewNotFound
+	if input.UserID != nil {
+		userIDPrimitive, err := primitive.ObjectIDFromHex(*input.UserID)
+		if err != nil {
+			return result, err
 		}
+		filter = append(filter, bson.E{"user_id", userIDPrimitive})
+	}
+	fmt.Println(filter)
+
+	allItems, err := r.Repo.Review.GqlGetReviews(domain.RequestParams{
+		Options: domain.Options{Limit: 1},
+		Filter:  filter,
+	})
+	if err != nil {
 		return result, err
 	}
-	return result, nil
+	if len(allItems) == 0 {
+		return result, err
+	}
+	return allItems[0], err
+	// if err := r.DB.Collection(repository.TblReview).FindOne(ctx, filter).Decode(&result); err != nil {
+	// 	if errors.Is(err, mongo.ErrNoDocuments) {
+	// 		return result, model.ErrReviewNotFound
+	// 	}
+	// 	return result, err
+	// }
+	// return result, nil
 }
 
 // ID is the resolver for the _id field.
@@ -159,14 +192,9 @@ func (r *reviewResolver) ID(ctx context.Context, obj *model.Review) (string, err
 	return obj.ID.Hex(), nil
 }
 
-// CreatedAt is the resolver for the createdAt field.
-func (r *reviewResolver) CreatedAt(ctx context.Context, obj *model.Review) (string, error) {
-	return obj.CreatedAt.String(), nil
-}
-
-// UpdatedAt is the resolver for the updatedAt field.
-func (r *reviewResolver) UpdatedAt(ctx context.Context, obj *model.Review) (string, error) {
-	return obj.UpdatedAt.String(), nil
+// UserID is the resolver for the userId field.
+func (r *reviewResolver) UserID(ctx context.Context, obj *model.Review) (string, error) {
+	return obj.UserID.Hex(), nil
 }
 
 // Review returns generated.ReviewResolver implementation.

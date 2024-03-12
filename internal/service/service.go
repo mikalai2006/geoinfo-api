@@ -23,6 +23,7 @@ type Address interface {
 	FindAddress(params domain.RequestParams) (domain.Response[domain.Address], error)
 	GetAllAddress(params domain.RequestParams) (domain.Response[domain.Address], error)
 	CreateAddress(userID string, address *domain.AddressInput) (*domain.Address, error)
+	DeleteAddress(id string) (model.Address, error)
 }
 
 type Authorization interface {
@@ -47,20 +48,33 @@ type Node interface {
 	CreateNode(userID string, node *model.Node) (*model.Node, error)
 	UpdateNode(id string, userID string, data *model.Node) (*model.Node, error)
 	DeleteNode(id string) (model.Node, error)
+
+	FindForKml(params domain.RequestParams) (domain.Response[domain.Kml], error)
 }
+
 type Nodedata interface {
 	FindNodedata(params domain.RequestParams) (domain.Response[model.Nodedata], error)
 	GetAllNodedata(params domain.RequestParams) (domain.Response[model.Nodedata], error)
 	CreateNodedata(userID string, data *model.NodedataInput) (*model.Nodedata, error)
 	UpdateNodedata(id string, userID string, data *model.Nodedata) (*model.Nodedata, error)
 	DeleteNodedata(id string) (model.Nodedata, error)
+
+	AddAudit(userID string, data *model.NodedataAuditInput) (*model.Nodedata, error)
+}
+
+type NodedataVote interface {
+	FindNodedataVote(params domain.RequestParams) (domain.Response[model.NodedataVote], error)
+	GetAllNodedataVote(params domain.RequestParams) (domain.Response[model.NodedataVote], error)
+	CreateNodedataVote(userID string, data *model.NodedataVoteInput) (*model.NodedataVote, error)
+	UpdateNodedataVote(id string, userID string, data *model.NodedataVote) (*model.NodedataVote, error)
+	DeleteNodedataVote(id string) (model.NodedataVote, error)
 }
 
 type Review interface {
-	FindReview(params domain.RequestParams) (domain.Response[domain.Review], error)
+	FindReview(params domain.RequestParams) (domain.Response[model.Review], error)
 
-	GetAllReview(params domain.RequestParams) (domain.Response[domain.Review], error)
-	CreateReview(userID string, review *domain.Review) (*domain.Review, error)
+	GetAllReview(params domain.RequestParams) (domain.Response[model.Review], error)
+	CreateReview(userID string, review *model.Review) (*model.Review, error)
 }
 type User interface {
 	GetUser(id string) (model.User, error)
@@ -77,6 +91,13 @@ type Image interface {
 	GetImageDirs(id string) ([]interface{}, error)
 	FindImage(params domain.RequestParams) (domain.Response[model.Image], error)
 	DeleteImage(id string) (model.Image, error)
+}
+type Country interface {
+	CreateCountry(userID string, data *domain.CountryInput) (domain.Country, error)
+	GetCountry(id string) (domain.Country, error)
+	FindCountry(params domain.RequestParams) (domain.Response[domain.Country], error)
+	UpdateCountry(id string, data interface{}) (domain.Country, error)
+	DeleteCountry(id string) (domain.Country, error)
 }
 
 type Apps interface {
@@ -121,19 +142,29 @@ type Amenity interface {
 	UpdateAmenity(id string, userID string, data *model.Amenity) (*model.Amenity, error)
 	DeleteAmenity(id string) (model.Amenity, error)
 }
+type AmenityGroup interface {
+	FindAmenityGroup(params domain.RequestParams) (domain.Response[model.AmenityGroup], error)
+	GetAllAmenityGroup(params domain.RequestParams) (domain.Response[model.AmenityGroup], error)
+	CreateAmenityGroup(userID string, AmenityGroup *model.AmenityGroup) (*model.AmenityGroup, error)
+	UpdateAmenityGroup(id string, userID string, data *model.AmenityGroup) (*model.AmenityGroup, error)
+	DeleteAmenityGroup(id string) (model.AmenityGroup, error)
+}
 
 type Services struct {
 	Action
 	Address
 	Amenity
+	AmenityGroup
 	Authorization
 	Apps
+	Country
 	Image
 	Review
 	User
 	Track
 	Node
 	Nodedata
+	NodedataVote
 	Tag
 	Tagopt
 	Ticket
@@ -150,6 +181,7 @@ type ConfigServices struct {
 	RefreshTokenTTL        time.Duration
 	VerificationCodeLength int
 	I18n                   config.I18nConfig
+	ImageService           config.IImageConfig
 }
 
 func NewServices(cfgService *ConfigServices) *Services {
@@ -163,19 +195,22 @@ func NewServices(cfgService *ConfigServices) *Services {
 			cfgService.OtpGenerator,
 			cfgService.VerificationCodeLength,
 		),
-		Action:   NewActionService(cfgService.Repositories.Action, cfgService.I18n),
-		Address:  NewAddressService(cfgService.Repositories.Address, cfgService.I18n),
-		Amenity:  NewAmenityService(cfgService.Repositories.Amenity, cfgService.I18n),
-		Review:   NewReviewService(cfgService.Repositories.Review),
-		Apps:     NewAppsService(cfgService.Repositories, cfgService.I18n),
-		Image:    NewImageService(cfgService.Repositories.Image),
-		User:     NewUserService(cfgService.Repositories.User),
-		Track:    NewTrackService(cfgService.Repositories.Track),
-		Node:     NewNodeService(cfgService.Repositories.Node),
-		Nodedata: NewNodedataService(cfgService.Repositories.Nodedata),
-		Tag:      NewTagService(cfgService.Repositories.Tag),
-		Tagopt:   NewTagoptService(cfgService.Repositories.Tagopt),
-		Ticket:   NewTicketService(cfgService.Repositories.Ticket),
+		Action:       NewActionService(cfgService.Repositories.Action, cfgService.I18n),
+		Address:      NewAddressService(cfgService.Repositories.Address, cfgService.I18n),
+		Amenity:      NewAmenityService(cfgService.Repositories.Amenity, cfgService.I18n),
+		AmenityGroup: NewAmenityGroupService(cfgService.Repositories.AmenityGroup, cfgService.I18n),
+		Review:       NewReviewService(cfgService.Repositories.Review),
+		Apps:         NewAppsService(cfgService.Repositories, cfgService.I18n),
+		Country:      NewCountryService(cfgService.Repositories, cfgService.I18n),
+		Image:        NewImageService(cfgService.Repositories.Image, cfgService.ImageService),
+		User:         NewUserService(cfgService.Repositories.User),
+		Track:        NewTrackService(cfgService.Repositories.Track),
+		Node:         NewNodeService(cfgService.Repositories.Node),
+		Nodedata:     NewNodedataService(cfgService.Repositories.Nodedata),
+		NodedataVote: NewNodedataVoteService(cfgService.Repositories.NodedataVote),
+		Tag:          NewTagService(cfgService.Repositories.Tag),
+		Tagopt:       NewTagoptService(cfgService.Repositories.Tagopt),
+		Ticket:       NewTicketService(cfgService.Repositories.Ticket),
 
 		Like: NewLikeService(cfgService.Repositories.Like),
 	}

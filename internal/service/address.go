@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/mikalai2006/geoinfo-api/graph/model"
 	"github.com/mikalai2006/geoinfo-api/internal/config"
 	"github.com/mikalai2006/geoinfo-api/internal/domain"
 	"github.com/mikalai2006/geoinfo-api/internal/repository"
@@ -31,9 +32,9 @@ func (s *AddressService) GetAllAddress(params domain.RequestParams) (domain.Resp
 // 	return s.repo.UpdateAddress(id, data)
 // }
 
-// func (s *AddressService) DeleteAddress(id string) (domain.Address, error) {
-// 	return s.repo.DeleteAddress(id)
-// }
+func (s *AddressService) DeleteAddress(id string) (model.Address, error) {
+	return s.repo.DeleteAddress(id)
+}
 
 // func (s *PageService) GetPageForRouters() (domain.Response[domain.PageRoutes], error) {
 // 	return s.repo.GetPageForRouters()

@@ -6,7 +6,6 @@ package resolver
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/mikalai2006/geoinfo-api/graph/generated"
@@ -32,34 +31,6 @@ func (r *nodedataResolver) ID(ctx context.Context, obj *model.Nodedata) (string,
 // UserID is the resolver for the userId field.
 func (r *nodedataResolver) UserID(ctx context.Context, obj *model.Nodedata) (string, error) {
 	return obj.UserID.Hex(), nil
-}
-
-// User is the resolver for the user field.
-func (r *nodedataResolver) User(ctx context.Context, obj *model.Nodedata) (*model.User, error) {
-	var result *model.User
-	gc, err := utils.GinContextFromContext(ctx)
-	if err != nil {
-		return result, err
-	}
-	lang := gc.MustGet("i18nLocale").(string)
-
-	filter := bson.D{}
-	filter = append(filter, bson.E{"_id", obj.UserID})
-
-	allItems, err := r.Repo.User.GqlGetUsers(domain.RequestParams{
-		Options: domain.Options{Limit: 1, Skip: 0},
-		Filter:  filter,
-		Lang:    lang,
-	})
-	if err != nil {
-		return result, err
-	}
-
-	if len(allItems) > 0 {
-		result = allItems[0]
-	}
-
-	return result, nil
 }
 
 // NodeID is the resolver for the nodeId field.
@@ -162,23 +133,23 @@ func (r *nodedataResolver) Tagopt(ctx context.Context, obj *model.Nodedata) (*mo
 	return result, nil
 }
 
-// CreatedAt is the resolver for the createdAt field.
-func (r *nodedataResolver) CreatedAt(ctx context.Context, obj *model.Nodedata) (string, error) {
-	return obj.CreatedAt.String(), nil
-}
-
-// UpdatedAt is the resolver for the updatedAt field.
-func (r *nodedataResolver) UpdatedAt(ctx context.Context, obj *model.Nodedata) (string, error) {
-	return obj.UpdatedAt.String(), nil
-}
-
 // Nodedatas is the resolver for the nodedatas field.
 func (r *queryResolver) Nodedatas(ctx context.Context, first *int, after *string, limit *int, skip *int, input *model.FetchNodedata) (*model.PaginationNodedata, error) {
 	var results *model.PaginationNodedata
 
+	filter := bson.D{}
+	if input.NodeID != nil {
+		nID, _ := primitive.ObjectIDFromHex(*input.NodeID)
+		filter = append(filter, bson.E{"node_id", nID})
+	}
+	if input.TagID != nil {
+		tID, _ := primitive.ObjectIDFromHex(*input.TagID)
+		filter = append(filter, bson.E{"tag_id", tID})
+	}
+
 	allItems, err := r.Repo.Nodedata.GqlGetNodedatas(domain.RequestParams{
 		Options: domain.Options{Limit: int64(*limit)},
-		Filter:  bson.D{},
+		Filter:  filter,
 	})
 	if err != nil {
 		return results, err
@@ -207,7 +178,7 @@ func (r *queryResolver) GroupNodeData(ctx context.Context) (*model.GroupNodeData
 
 	pipe := mongo.Pipeline{}
 
-	pipe = append(pipe, bson.D{{"$group", bson.M{"_id": "$value", "count": bson.M{"$sum": 1}}}})
+	pipe = append(pipe, bson.D{{"$group", bson.M{"_id": bson.D{{"$toString", "$tagopt_id"}}, "count": bson.M{"$sum": 1}}}})
 
 	var allItems []map[string]interface{}
 	cursor, err := r.DB.Collection(repository.TblNodedata).Aggregate(ctx, pipe)
@@ -232,21 +203,65 @@ func (r *queryResolver) GroupNodeData(ctx context.Context) (*model.GroupNodeData
 func (r *queryResolver) Nodedata(ctx context.Context, id *string) (*model.Nodedata, error) {
 	var result *model.Nodedata
 
-	filter := bson.D{}
+	// filter := bson.D{}
+	var pipe mongo.Pipeline
 	if id != nil {
 		IDPrimitive, err := primitive.ObjectIDFromHex(*id)
 		if err != nil {
 			return result, err
 		}
 
-		filter = append(filter, bson.E{"_id", IDPrimitive})
+		// filter = append(filter, bson.E{"_id", IDPrimitive})
+		pipe = append(pipe, bson.D{{"$match", bson.M{"_id": IDPrimitive}}})
+		pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+			"from": "users",
+			"as":   "userb",
+			"let":  bson.D{{Key: "userId", Value: "$user_id"}},
+			"pipeline": mongo.Pipeline{
+				bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$userId"}}}}},
+				bson.D{{"$limit", 1}},
+				bson.D{{
+					Key: "$lookup",
+					Value: bson.M{
+						"from": "image",
+						"as":   "images",
+						"let":  bson.D{{Key: "serviceId", Value: bson.D{{"$toString", "$_id"}}}},
+						"pipeline": mongo.Pipeline{
+							bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$service_id", "$$serviceId"}}}}},
+						},
+					},
+				}},
+			},
+		}}})
+		pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"user": bson.M{"$first": "$userb"}}}})
+
+		pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+			"from": "nodedata_vote",
+			"as":   "votes",
+			"let":  bson.D{{Key: "id", Value: "$_id"}},
+			"pipeline": mongo.Pipeline{
+				bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$nodedata_id", "$$id"}}}}},
+			},
+		}}})
+
 	}
 
-	if err := r.DB.Collection(repository.TblNodedata).FindOne(ctx, filter).Decode(&result); err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return result, model.ErrTagOptNotFound
-		}
+	// if err := r.DB.Collection(repository.TblNodedata).FindOne(ctx, filter).Decode(&result); err != nil {
+	// 	if errors.Is(err, mongo.ErrNoDocuments) {
+	// 		return result, model.ErrTagOptNotFound
+	// 	}
+	// 	return result, err
+	// }
+	cursor, err := r.DB.Collection(repository.TblNodedata).Aggregate(ctx, pipe)
+	if err != nil {
 		return result, err
+	}
+	defer cursor.Close(ctx)
+
+	if cursor.Next(ctx) {
+		if er := cursor.Decode(&result); er != nil {
+			return result, er
+		}
 	}
 	return result, nil
 }
@@ -259,3 +274,45 @@ func (r *Resolver) Nodedata() generated.NodedataResolver { return &nodedataResol
 
 type groupNodeDataResolver struct{ *Resolver }
 type nodedataResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *nodedataResolver) Audit(ctx context.Context, obj *model.Nodedata) ([]*model.NodedataAudit, error) {
+	panic(fmt.Errorf("not implemented: Audit - audit"))
+}
+func (r *nodedataResolver) CreatedAt(ctx context.Context, obj *model.Nodedata) (string, error) {
+	return obj.CreatedAt.String(), nil
+}
+func (r *nodedataResolver) UpdatedAt(ctx context.Context, obj *model.Nodedata) (string, error) {
+	return obj.UpdatedAt.String(), nil
+}
+func (r *nodedataResolver) User(ctx context.Context, obj *model.Nodedata) (*model.User, error) {
+	var result *model.User
+	gc, err := utils.GinContextFromContext(ctx)
+	if err != nil {
+		return result, err
+	}
+	lang := gc.MustGet("i18nLocale").(string)
+
+	filter := bson.D{}
+	filter = append(filter, bson.E{"_id", obj.UserID})
+
+	allItems, err := r.Repo.User.GqlGetUsers(domain.RequestParams{
+		Options: domain.Options{Limit: 1, Skip: 0},
+		Filter:  filter,
+		Lang:    lang,
+	})
+	if err != nil {
+		return result, err
+	}
+
+	if len(allItems) > 0 {
+		result = allItems[0]
+	}
+
+	return result, nil
+}

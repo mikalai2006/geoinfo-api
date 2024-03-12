@@ -23,6 +23,7 @@ jobs:
           echo GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} >> .env
           echo SALT=${{ secrets.SALT }} >> .env
           echo SIGNING_KEY=${{ secrets.SIGNING_KEY }} >> .env
+          echo NAME_COOKIE_REFRESH=${{ secrets.NAME_COOKIE_REFRESH }} >> .env
           cat .env
       - name: Checkout code
         uses: actions/setup-go@v3
@@ -64,6 +65,7 @@ jobs:
           echo GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} >> .env
           echo SALT=${{ secrets.SALT }} >> .env
           echo SIGNING_KEY=${{ secrets.SIGNING_KEY }} >> .env
+          echo NAME_COOKIE_REFRESH=${{ secrets.NAME_COOKIE_REFRESH }} >> .env
           cat .env
       - name: Extract Version
         id: version_step

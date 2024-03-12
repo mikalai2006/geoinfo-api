@@ -3,7 +3,6 @@ package v1
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,8 +18,9 @@ import (
 
 func (h *HandlerV1) registerNodedata(router *gin.RouterGroup) {
 	Nodedata := router.Group("/nodedata")
-	Nodedata.GET("/", h.FindNodedata)
-	Nodedata.POST("/", middleware.SetUserIdentity, h.CreateNodedata)
+	Nodedata.GET("", h.FindNodedata)
+	Nodedata.POST("", middleware.SetUserIdentity, h.CreateNodedata)
+	Nodedata.POST("/audit", middleware.SetUserIdentity, h.AddAudit)
 	Nodedata.POST("/list/", middleware.SetUserIdentity, h.CreateListNodedata)
 	Nodedata.DELETE("/:id", middleware.SetUserIdentity, h.DeleteNodedata)
 }
@@ -69,7 +69,6 @@ func (h *HandlerV1) CreateNodedata(c *gin.Context) {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
 		return
 	}
-	fmt.Println(bson.D{{"value", input.Data.Value}, {"node_id", nodeIDPrimitive}, {"tag_id", tagIDPrimitive}})
 
 	if len(existNodedata.Data) > 0 {
 		appG.ResponseError(http.StatusBadRequest, model.ErrNodedataExistValue, nil)
@@ -223,12 +222,84 @@ func (h *HandlerV1) DeleteNodedata(c *gin.Context) {
 		return
 	}
 
-	user, err := h.services.Nodedata.DeleteNodedata(id) // , input
+	nodedata, err := h.services.Nodedata.DeleteNodedata(id) // , input
 	if err != nil {
 		// c.AbortWithError(http.StatusBadRequest, err)
 		appG.ResponseError(http.StatusBadRequest, err, nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	// remove nodedata votes.
+	nodedataVotes, err := h.services.NodedataVote.FindNodedataVote(domain.RequestParams{
+		Filter: bson.D{{"nodedata_id", nodedata.ID}},
+	})
+	if err != nil {
+		appG.ResponseError(http.StatusBadRequest, err, nil)
+		return
+	}
+	if len(nodedataVotes.Data) > 0 {
+		for i, _ := range nodedataVotes.Data {
+			_, err := h.services.NodedataVote.DeleteNodedataVote(nodedataVotes.Data[i].ID.Hex())
+			if err != nil {
+				appG.ResponseError(http.StatusBadRequest, err, nil)
+				return
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, nodedata)
+}
+
+func (h *HandlerV1) AddAudit(c *gin.Context) {
+	appG := app.Gin{C: c}
+	userID, err := middleware.GetUID(c)
+	if err != nil {
+		// c.AbortWithError(http.StatusUnauthorized, err)
+		appG.ResponseError(http.StatusUnauthorized, err, gin.H{"hello": "world"})
+		return
+	}
+
+	var a map[string]json.RawMessage
+	if er := c.ShouldBindBodyWith(&a, binding.JSON); er != nil {
+		appG.ResponseError(http.StatusBadRequest, er, nil)
+		return
+	}
+	input, er := utils.BindJSON2[model.NodedataAuditInput](a)
+	if er != nil {
+		appG.ResponseError(http.StatusBadRequest, er, nil)
+		return
+	}
+
+	// nodedataIDPrimitive, err := primitive.ObjectIDFromHex(input.NodedataID)
+	// if err != nil {
+	// 	appG.ResponseError(http.StatusBadRequest, err, nil)
+	// 	return
+	// }
+	// userIDPrimitive, err := primitive.ObjectIDFromHex(userID)
+	// if err != nil {
+	// 	appG.ResponseError(http.StatusBadRequest, err, nil)
+	// 	return
+	// }
+
+	// existNodedata, err := h.services.Nodedata.FindNodedata(domain.RequestParams{
+	// 	Options: domain.Options{Limit: 1},
+	// 	Filter:  bson.D{{"value", input.Data.Value}, {"node_id", nodeIDPrimitive}, {"tag_id", tagIDPrimitive}}, // {"tag_id", input.TagID},
+	// })
+	// if err != nil {
+	// 	appG.ResponseError(http.StatusBadRequest, err, nil)
+	// 	return
+	// }
+	// fmt.Println(bson.D{{"value", input.Data.Value}, {"node_id", nodeIDPrimitive}, {"tag_id", tagIDPrimitive}})
+	// if len(existNodedata.Data) > 0 {
+	// 	appG.ResponseError(http.StatusBadRequest, model.ErrNodedataExistValue, nil)
+	// 	return
+	// }
+
+	Nodedata, err := h.services.Nodedata.AddAudit(userID, &input)
+	if err != nil {
+		appG.ResponseError(http.StatusBadRequest, err, nil)
+		return
+	}
+
+	c.JSON(http.StatusOK, Nodedata)
 }

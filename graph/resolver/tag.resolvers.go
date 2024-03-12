@@ -17,7 +17,7 @@ import (
 )
 
 // Tags is the resolver for the tags field.
-func (r *queryResolver) Tags(ctx context.Context, first *int, after *string, limit *int, skip *int, input *model.FetchTag) (*model.PaginationTag, error) {
+func (r *queryResolver) Tags(ctx context.Context, limit *int, skip *int, input *model.ParamsTag) (*model.PaginationTag, error) {
 	var results *model.PaginationTag
 
 	gc, err := utils.GinContextFromContext(ctx)
@@ -27,7 +27,7 @@ func (r *queryResolver) Tags(ctx context.Context, first *int, after *string, lim
 	lang := gc.MustGet("i18nLocale").(string)
 
 	allItems, err := r.Repo.Tag.GqlGetTags(domain.RequestParams{
-		Options: domain.Options{Limit: int64(*limit), Skip: int64(*skip)},
+		Options: domain.Options{Limit: int64(*limit), Skip: int64(*skip), Sort: bson.D{bson.E{"sort_order", 1}}},
 		Filter:  bson.D{},
 		Lang:    lang,
 	})
@@ -57,7 +57,7 @@ func (r *queryResolver) Tags(ctx context.Context, first *int, after *string, lim
 }
 
 // Tag is the resolver for the tag field.
-func (r *queryResolver) Tag(ctx context.Context, input *model.FetchTag) (*model.Tag, error) {
+func (r *queryResolver) Tag(ctx context.Context, input *model.ParamsTag) (*model.Tag, error) {
 	var result *model.Tag
 	gc, err := utils.GinContextFromContext(ctx)
 	if err != nil {
@@ -113,7 +113,23 @@ func (r *tagResolver) Props(ctx context.Context, obj *model.Tag) (interface{}, e
 	return obj.Props, nil
 }
 
-// Options is the resolver for the options field.
+// Tag returns generated.TagResolver implementation.
+func (r *Resolver) Tag() generated.TagResolver { return &tagResolver{r} }
+
+type tagResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *tagResolver) CreatedAt(ctx context.Context, obj *model.Tag) (string, error) {
+	return obj.CreatedAt.String(), nil
+}
+func (r *tagResolver) UpdatedAt(ctx context.Context, obj *model.Tag) (string, error) {
+	return obj.UpdatedAt.String(), nil
+}
 func (r *tagResolver) Options(ctx context.Context, obj *model.Tag) ([]*model.Tagopt, error) {
 	gc, err := utils.GinContextFromContext(ctx)
 	lang := gc.MustGet("i18nLocale").(string)
@@ -180,18 +196,3 @@ func (r *tagResolver) Options(ctx context.Context, obj *model.Tag) ([]*model.Tag
 
 	return result, nil
 }
-
-// CreatedAt is the resolver for the createdAt field.
-func (r *tagResolver) CreatedAt(ctx context.Context, obj *model.Tag) (string, error) {
-	return obj.CreatedAt.String(), nil
-}
-
-// UpdatedAt is the resolver for the updatedAt field.
-func (r *tagResolver) UpdatedAt(ctx context.Context, obj *model.Tag) (string, error) {
-	return obj.UpdatedAt.String(), nil
-}
-
-// Tag returns generated.TagResolver implementation.
-func (r *Resolver) Tag() generated.TagResolver { return &tagResolver{r} }
-
-type tagResolver struct{ *Resolver }

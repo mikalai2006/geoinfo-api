@@ -24,6 +24,7 @@ type Address interface {
 	FindAddress(params domain.RequestParams) (domain.Response[domain.Address], error)
 	GetAllAddress(params domain.RequestParams) (domain.Response[domain.Address], error)
 	CreateAddress(userID string, address *domain.AddressInput) (*domain.Address, error)
+	DeleteAddress(id string) (model.Address, error)
 	GqlGetAdresses(params domain.RequestParams) ([]*model.Address, error)
 }
 
@@ -50,20 +51,37 @@ type Node interface {
 	CreateNode(userID string, node *model.Node) (*model.Node, error)
 	UpdateNode(id string, userID string, data *model.Node) (*model.Node, error)
 	DeleteNode(id string) (model.Node, error)
+
+	FindForKml(params domain.RequestParams) (domain.Response[domain.Kml], error)
 }
+
 type Nodedata interface {
 	FindNodedata(params domain.RequestParams) (domain.Response[model.Nodedata], error)
 	GetAllNodedata(params domain.RequestParams) (domain.Response[model.Nodedata], error)
+	GetNodedata(id string) (*model.Nodedata, error)
 	CreateNodedata(userID string, data *model.NodedataInput) (*model.Nodedata, error)
 	UpdateNodedata(id string, userID string, data *model.Nodedata) (*model.Nodedata, error)
 	DeleteNodedata(id string) (model.Nodedata, error)
 	GqlGetNodedatas(params domain.RequestParams) ([]*model.Nodedata, error)
+
+	AddAudit(userID string, data *model.NodedataAuditInput) (*model.Nodedata, error)
+	FindAudits(params domain.RequestParams) (domain.Response[model.NodedataAudit], error)
+}
+
+type NodedataVote interface {
+	FindNodedataVote(params domain.RequestParams) (domain.Response[model.NodedataVote], error)
+	GetAllNodedataVote(params domain.RequestParams) (domain.Response[model.NodedataVote], error)
+	GetNodedataVote(id string) (*model.NodedataVote, error)
+	CreateNodedataVote(userID string, data *model.NodedataVoteInput) (*model.NodedataVote, error)
+	UpdateNodedataVote(id string, userID string, data *model.NodedataVote) (*model.NodedataVote, error)
+	DeleteNodedataVote(id string) (model.NodedataVote, error)
+	GqlGetNodedataVote(params domain.RequestParams) ([]*model.NodedataVote, error)
 }
 
 type Review interface {
-	FindReview(params domain.RequestParams) (domain.Response[domain.Review], error)
-	GetAllReview(params domain.RequestParams) (domain.Response[domain.Review], error)
-	CreateReview(userID string, review *domain.Review) (*domain.Review, error)
+	FindReview(params domain.RequestParams) (domain.Response[model.Review], error)
+	GetAllReview(params domain.RequestParams) (domain.Response[model.Review], error)
+	CreateReview(userID string, review *model.Review) (*model.Review, error)
 
 	GqlGetReviews(params domain.RequestParams) ([]*model.Review, error)
 	GqlGetCountReviews(params domain.RequestParams) (*model.ReviewInfo, error)
@@ -96,6 +114,14 @@ type Apps interface {
 	FindLanguage(params domain.RequestParams) (domain.Response[domain.Language], error)
 	UpdateLanguage(id string, data interface{}) (domain.Language, error)
 	DeleteLanguage(id string) (domain.Language, error)
+}
+
+type Country interface {
+	CreateCountry(userID string, data *domain.CountryInput) (domain.Country, error)
+	GetCountry(id string) (domain.Country, error)
+	FindCountry(params domain.RequestParams) (domain.Response[domain.Country], error)
+	UpdateCountry(id string, data interface{}) (domain.Country, error)
+	DeleteCountry(id string) (domain.Country, error)
 }
 
 type Tag interface {
@@ -141,12 +167,23 @@ type Amenity interface {
 	GqlGetAmenitys(params domain.RequestParams) ([]*model.Amenity, error)
 }
 
+type AmenityGroup interface {
+	FindAmenityGroup(params domain.RequestParams) (domain.Response[model.AmenityGroup], error)
+	GetAllAmenityGroup(params domain.RequestParams) (domain.Response[model.AmenityGroup], error)
+	CreateAmenityGroup(userID string, AmenityGroup *model.AmenityGroup) (*model.AmenityGroup, error)
+	UpdateAmenityGroup(id string, userID string, data *model.AmenityGroup) (*model.AmenityGroup, error)
+	DeleteAmenityGroup(id string) (model.AmenityGroup, error)
+	GqlGetAmenityGroups(params domain.RequestParams) ([]*model.AmenityGroup, error)
+}
+
 type Repositories struct {
 	Action
 	Address
 	Amenity
+	AmenityGroup
 	Authorization
 	Apps
+	Country
 
 	Image
 	Review
@@ -154,6 +191,7 @@ type Repositories struct {
 	Track
 	Node
 	Nodedata
+	NodedataVote
 	Tag
 	Tagopt
 	Ticket
@@ -165,14 +203,17 @@ func NewRepositories(mongodb *mongo.Database, i18n config.I18nConfig) *Repositor
 		Action:        NewActionMongo(mongodb, i18n),
 		Address:       NewAddressMongo(mongodb, i18n),
 		Amenity:       NewAmenityMongo(mongodb, i18n),
+		AmenityGroup:  NewAmenityGroupMongo(mongodb, i18n),
 		Authorization: NewAuthMongo(mongodb),
 		Apps:          NewAppsMongo(mongodb, i18n),
+		Country:       NewCountryMongo(mongodb, i18n),
 		Image:         NewImageMongo(mongodb, i18n),
 		Review:        NewReviewMongo(mongodb, i18n),
 		User:          NewUserMongo(mongodb, i18n),
 		Track:         NewTrackMongo(mongodb, i18n),
 		Node:          NewNodeMongo(mongodb, i18n),
 		Nodedata:      NewNodedataMongo(mongodb, i18n),
+		NodedataVote:  NewNodedataVoteMongo(mongodb, i18n),
 		Tag:           NewTagMongo(mongodb, i18n),
 		Tagopt:        NewTagoptMongo(mongodb, i18n),
 		Ticket:        NewTicketMongo(mongodb, i18n),

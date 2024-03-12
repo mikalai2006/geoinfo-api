@@ -44,22 +44,14 @@ func (r *amenityResolver) Tags(ctx context.Context, obj *model.Amenity) ([]*stri
 	return result, nil
 }
 
-// CreatedAt is the resolver for the createdAt field.
-func (r *amenityResolver) CreatedAt(ctx context.Context, obj *model.Amenity) (string, error) {
-	return obj.CreatedAt.String(), nil
-}
-
-// UpdatedAt is the resolver for the updatedAt field.
-func (r *amenityResolver) UpdatedAt(ctx context.Context, obj *model.Amenity) (string, error) {
-	return obj.UpdatedAt.String(), nil
-}
-
 // Amenities is the resolver for the amenities field.
 func (r *queryResolver) Amenities(ctx context.Context, limit *int, skip *int, input *model.FetchAmenity) (*model.PaginationAmenity, error) {
-	gc, err := utils.GinContextFromContext(ctx)
-	lang := gc.MustGet("i18nLocale").(string)
-
 	var results *model.PaginationAmenity
+	gc, err := utils.GinContextFromContext(ctx)
+	if err != nil {
+		return results, err
+	}
+	lang := gc.MustGet("i18nLocale").(string)
 
 	allItems, err := r.Repo.Amenity.GqlGetAmenitys(domain.RequestParams{
 		Options: domain.Options{Limit: int64(*limit)},
@@ -100,6 +92,9 @@ func (r *queryResolver) Amenities(ctx context.Context, limit *int, skip *int, in
 func (r *queryResolver) Amenity(ctx context.Context, id *string) (*model.Amenity, error) {
 	var result *model.Amenity
 	gc, err := utils.GinContextFromContext(ctx)
+	if err != nil {
+		return result, err
+	}
 	lang := gc.MustGet("i18nLocale").(string)
 
 	filter := bson.D{}
@@ -136,3 +131,16 @@ func (r *queryResolver) Amenity(ctx context.Context, id *string) (*model.Amenity
 func (r *Resolver) Amenity() generated.AmenityResolver { return &amenityResolver{r} }
 
 type amenityResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *amenityResolver) CreatedAt(ctx context.Context, obj *model.Amenity) (string, error) {
+	return obj.CreatedAt.String(), nil
+}
+func (r *amenityResolver) UpdatedAt(ctx context.Context, obj *model.Amenity) (string, error) {
+	return obj.UpdatedAt.String(), nil
+}

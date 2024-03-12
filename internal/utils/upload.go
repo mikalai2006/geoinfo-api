@@ -57,6 +57,7 @@ func UploadResizeMultipleFile(c *gin.Context, info *model.ImageInput, nameField 
 
 		// add original.
 		originalFileName := strings.TrimSuffix(filepath.Base(file.Filename), filepath.Ext(file.Filename))
+
 		now := time.Now()
 		filenameOriginal := strings.ReplaceAll(strings.ToLower(originalFileName), " ", "-") + "-" + fmt.Sprintf("%v", now.Unix())
 		filePaths = append(filePaths, model.IImagePaths{
@@ -64,24 +65,26 @@ func UploadResizeMultipleFile(c *gin.Context, info *model.ImageInput, nameField 
 			Ext:  fileExt,
 		})
 		objImages.Images = append(objImages.Images, VMode{
-			Quality: 100,
+			Quality: 70,
 			Name:    filenameOriginal,
 			Ext:     fileExt,
+			Resize:  true,
+			Size:    600,
 		})
 
-		// add adaptive.
-		for i := range imageConfig.Sizes {
-			dataSize := imageConfig.Sizes[i]
-			filenameLg := fmt.Sprintf("%v-%v-%v", dataSize.Size, strings.ReplaceAll(strings.ToLower(originalFileName), " ", "-"), now.Unix())
+		// // add adaptive.
+		// for i := range imageConfig.Sizes {
+		// 	dataSize := imageConfig.Sizes[i]
+		// 	filenameLg := fmt.Sprintf("%v-%v-%v", dataSize.Size, strings.ReplaceAll(strings.ToLower(originalFileName), " ", "-"), now.Unix())
 
-			objImages.Images = append(objImages.Images, VMode{
-				Quality: dataSize.Quality,
-				Name:    filenameLg,
-				Resize:  true,
-				Size:    dataSize.Size,
-				Ext:     fileExt,
-			})
-		}
+		// 	objImages.Images = append(objImages.Images, VMode{
+		// 		Quality: dataSize.Quality,
+		// 		Name:    filenameLg,
+		// 		Resize:  true,
+		// 		Size:    dataSize.Size,
+		// 		Ext:     fileExt,
+		// 	})
+		// }
 
 		// add xs.
 		// filenameXs := "xs-" + strings.ReplaceAll(strings.ToLower(originalFileName), " ", "-") + "-" + fmt.Sprintf("%v", now.Unix())
@@ -96,6 +99,7 @@ func UploadResizeMultipleFile(c *gin.Context, info *model.ImageInput, nameField 
 
 		readerFile, _ := file.Open()
 		imageFile, err := imaging.Decode(readerFile, imaging.AutoOrientation(true))
+
 		if err != nil {
 			// log.Fatal(err)
 			return filePaths, err

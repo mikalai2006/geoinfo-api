@@ -126,6 +126,7 @@ func (r *AmenityMongo) CreateAmenity(userID string, amenity *model.Amenity) (*mo
 	newAmenity := model.Amenity{
 		UserID:      userIDPrimitive,
 		Key:         amenity.Key,
+		Group:       amenity.Group,
 		Title:       amenity.Title,
 		Description: amenity.Description,
 		Props:       amenity.Props,
@@ -183,7 +184,7 @@ func (r *AmenityMongo) UpdateAmenity(id string, userID string, data *model.Ameni
 	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
 	defer cancel()
 
-	fmt.Println("hello")
+	fmt.Println("hello UpdateAmenity")
 	// userIDPrimitive, err := primitive.ObjectIDFromHex(userID)
 	// if err != nil {
 	// 	return nil, err
@@ -213,6 +214,7 @@ func (r *AmenityMongo) UpdateAmenity(id string, userID string, data *model.Ameni
 
 	_, err = collection.UpdateOne(ctx, filter, bson.M{"$set": bson.M{
 		"key":         data.Key,
+		"group":       data.Group,
 		"title":       data.Title,
 		"description": data.Description,
 		"props":       data.Props,

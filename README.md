@@ -23,6 +23,7 @@ NAME_COOKIE_REFRESH=***** // name cookie for resresh token
 
 SALT=***** // custom string
 SIGNING_KEY=***** // custom string
+NAME_COOKIE_REFRESH=***** // custom string
 
 MONGODB_HOST=*****
 MONGODB_PORT=*****

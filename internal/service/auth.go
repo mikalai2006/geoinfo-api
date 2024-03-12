@@ -71,6 +71,7 @@ func (s *AuthService) CreateAuth(auth *domain.SignInInput) (string, error) {
 		Verification: domain.Verification{
 			Code: verificationCode,
 		},
+		MaxDistance: auth.MaxDistance,
 	}
 
 	id, err := s.repository.CreateAuth(authData)
@@ -116,6 +117,7 @@ func (s *AuthService) CreateSession(auth *domain.Auth) (domain.ResponseTokens, e
 	claims := domain.DataForClaims{
 		Roles:  auth.Roles,
 		UserID: auth.ID.Hex(),
+		Md:     auth.MaxDistance,
 		UID:    auth.UserData.ID.Hex(),
 	}
 

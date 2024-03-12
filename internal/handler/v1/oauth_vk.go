@@ -129,10 +129,11 @@ func (h *HandlerV1) MeVk(c *gin.Context) {
 
 	// fmt.Println("input Vk")
 	input := &domain.SignInInput{
-		Login:    bodyResponse.Response[0].FirstName,
-		Strategy: "jwt",
-		Password: "1",
-		VkID:     fmt.Sprintf("%d", bodyResponse.Response[0].ID),
+		Login:       bodyResponse.Response[0].FirstName,
+		Strategy:    "jwt",
+		Password:    "1",
+		VkID:        fmt.Sprintf("%d", bodyResponse.Response[0].ID),
+		MaxDistance: 100,
 	}
 
 	// fmt.Println("input Vk", input)
@@ -184,6 +185,6 @@ func (h *HandlerV1) MeVk(c *gin.Context) {
 	parameters.Add("token", tokens.AccessToken)
 	pathRequest.RawQuery = parameters.Encode()
 	// c.Redirect(http.StatusMovedPermanently, path)
-	c.SetCookie("jwt-handmade", tokens.RefreshToken, h.oauth.TimeExpireCookie, "/", c.Request.URL.Hostname(), false, true)
+	c.SetCookie(h.auth.NameCookieRefresh, tokens.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", c.Request.URL.Hostname(), false, true)
 	c.Redirect(http.StatusFound, pathRequest.String())
 }

@@ -146,7 +146,7 @@ func GetParamsFromRequest[V any](c *gin.Context, filterStruct V, i18n *config.I1
 		opts.Sort = testBson
 	}
 	// TODO opts.Limit.
-	if (opts.Limit == 0 || opts.Limit > 500) && opts.Limit != 100000 {
+	if (opts.Limit == 0 || opts.Limit > 500) && opts.Limit != 10000 {
 		opts.Limit = 10
 	}
 	params.Filter = dataFilter
@@ -158,4 +158,13 @@ func GetParamsFromRequest[V any](c *gin.Context, filterStruct V, i18n *config.I1
 
 func GetIntPointer(value int) *int {
 	return &value
+}
+
+func Contains[T comparable](s []T, e T) bool {
+	for _, v := range s {
+		if v == e {
+			return true
+		}
+	}
+	return false
 }

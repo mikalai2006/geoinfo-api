@@ -13,14 +13,55 @@ type PaginationReview struct {
 	Data  []*Review `json:"data,omitempty"`
 }
 
+// type Review struct {
+// 	ID     primitive.ObjectID `json:"_id" bson:"_id,omitempty"`
+// 	UserID string             `json:"userId" bson:"user_id"`
+// 	OsmID  string             `json:"osmId" bson:"osm_id"`
+// 	Review string             `json:"review" bson:"review"`
+// 	Rate   int                `json:"rate" bson:"rate"`
+
+// 	User User `json:"user" bson:"user,omitempty"`
+
+// 	CreatedAt time.Time `json:"createdAt" bson:"created_at"`
+// 	UpdatedAt time.Time `json:"updatedAt" bson:"updated_at"`
+// }
+
 type Review struct {
-	ID        primitive.ObjectID `json:"_id" bson:"_id,omitempty"`
-	UserID    string             `json:"userId" bson:"user_id"`
-	OsmID     string             `json:"osmId" bson:"osm_id"`
-	Review    string             `json:"review" bson:"review"`
-	Rate      int                `json:"rate" bson:"rate"`
-	CreatedAt time.Time          `json:"createdAt" bson:"created_at"`
-	UpdatedAt time.Time          `json:"updatedAt" bson:"updated_at"`
+	ID     primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	UserID primitive.ObjectID `json:"userId" bson:"user_id" primitive:"true"`
+	OsmID  string             `json:"osmId" bson:"osm_id"`
+
+	Review string `json:"review" bson:"review"`
+	Rate   int    `json:"rate" bson:"rate"`
+
+	Publish   bool      `json:"publish" bson:"publish"`
+	User      User      `json:"user,omitempty" bson:"user,omitempty"`
+	CreatedAt time.Time `json:"createdAt" bson:"created_at"`
+	UpdatedAt time.Time `json:"updatedAt" bson:"updated_at"`
+}
+
+type ReviewInput struct {
+	ID     primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	UserID primitive.ObjectID `json:"userId" bson:"user_id" primitive:"true"`
+	OsmID  string             `json:"osmId" bson:"osm_id"`
+
+	Review string `json:"review" bson:"review"`
+	Rate   int    `json:"rate" bson:"rate"`
+
+	Publish   bool      `json:"publish" bson:"publish"`
+	CreatedAt time.Time `json:"createdAt" bson:"created_at"`
+	UpdatedAt time.Time `json:"updatedAt" bson:"updated_at"`
+}
+
+type ReviewInputData struct {
+	OsmID string `json:"osmId" bson:"osm_id"  form:"osmId"`
+
+	Review string `json:"review" bson:"review"  form:"review"`
+	Rate   int    `json:"rate" bson:"rate" form:"rate"`
+
+	Publish   bool      `json:"publish" bson:"publish" form:"publish"`
+	CreatedAt time.Time `json:"createdAt" bson:"created_at"`
+	UpdatedAt time.Time `json:"updatedAt" bson:"updated_at"`
 }
 
 // type ReviewRate struct {

@@ -15,6 +15,7 @@ const (
 	authorizationHeader = "Authorization"
 	userCtx             = "userId"
 	userRoles           = "roles"
+	maxDistance         = "maxDistance"
 	uid                 = "uid"
 )
 
@@ -23,7 +24,7 @@ func SetUserIdentity(c *gin.Context) {
 
 	header := c.GetHeader(authorizationHeader)
 	// fmt.Println("header=", header)
-	// jwtCookie, _ := c.Cookie("jwt-handmade")
+	// jwtCookie, _ := c.Cookie(h.auth.NameCookieRefresh)
 	// fmt.Println("jwtCookie=", jwtCookie)
 
 	if header == "" {
@@ -67,6 +68,7 @@ func SetUserIdentity(c *gin.Context) {
 	}
 	c.Set(userCtx, claims.Subject)
 	c.Set(userRoles, claims.Roles)
+	c.Set(maxDistance, claims.Md)
 	c.Set(uid, claims.Uid)
 	// session := sessions.Default(c)
 	// user := session.Get(userkey)
@@ -85,7 +87,7 @@ func SetUserIdentityGraphql(c *gin.Context) {
 
 	header := c.GetHeader(authorizationHeader)
 	// fmt.Println("header=", header)
-	// jwtCookie, _ := c.Cookie("jwt-handmade")
+	// jwtCookie, _ := c.Cookie(h.auth.NameCookieRefresh)
 	// fmt.Println("jwtCookie=", jwtCookie)
 
 	authError := false
@@ -123,10 +125,12 @@ func SetUserIdentityGraphql(c *gin.Context) {
 		c.Set(userCtx, claims.Subject)
 		c.Set(userRoles, claims.Roles)
 		c.Set(uid, claims.Uid)
+		c.Set(maxDistance, claims.Md)
 	} else {
 		c.Set(userCtx, nil)
 		c.Set(userRoles, nil)
 		c.Set(uid, nil)
+		c.Set(maxDistance, nil)
 
 	}
 
@@ -158,6 +162,17 @@ func GetRoles(c *gin.Context) ([]string, error) {
 		return nil, errors.New("roles not found")
 	}
 	return roles.([]string), nil
+}
+
+func GetMaxDistance(c *gin.Context) (int, error) {
+	md, ok := c.Get(maxDistance)
+	if !ok && md != nil {
+		return 0, errors.New("max distance not found")
+	}
+	if md == nil {
+		md = 5000000
+	}
+	return md.(int), nil
 }
 
 func GetUID(c *gin.Context) (string, error) {

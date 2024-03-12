@@ -15,16 +15,18 @@ type HandlerV1 struct {
 	repositories *repository.Repositories
 	services     *service.Services
 	oauth        config.OauthConfig
+	auth         config.AuthConfig
 	i18n         config.I18nConfig
 	imageConfig  config.IImageConfig
 }
 
-func NewHandler(services *service.Services, repositories *repository.Repositories, db *mongo.Database, oauth *config.OauthConfig, i18n *config.I18nConfig, imageConfig *config.IImageConfig) *HandlerV1 {
+func NewHandler(services *service.Services, repositories *repository.Repositories, db *mongo.Database, oauth *config.OauthConfig, auth *config.AuthConfig, i18n *config.I18nConfig, imageConfig *config.IImageConfig) *HandlerV1 {
 	return &HandlerV1{
 		repositories: repositories,
 		db:           db,
 		services:     services,
 		oauth:        *oauth,
+		auth:         *auth,
 		i18n:         *i18n,
 		imageConfig:  *imageConfig,
 	}
@@ -42,6 +44,7 @@ func (h *HandlerV1) Init(api *gin.RouterGroup) {
 		h.registerReview(v1)
 		h.RegisterUser(v1)
 		h.RegisterApp(v1)
+		h.RegisterCountry(v1)
 		h.RegisterImage(v1)
 		h.registerAddress(v1)
 		h.registerTrack(v1)
@@ -52,7 +55,9 @@ func (h *HandlerV1) Init(api *gin.RouterGroup) {
 		h.registerTicket(v1)
 		h.registerLike(v1)
 		h.registerAmenity(v1)
+		h.registerAmenityGroup(v1)
 		h.registerNodedata(v1)
+		h.registerNodedataVote(v1)
 		h.registerAction(v1)
 
 		v1.GET("/", func(c *gin.Context) {

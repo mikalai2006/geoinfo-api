@@ -7,6 +7,7 @@ package resolver
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/mikalai2006/geoinfo-api/graph/generated"
 	"github.com/mikalai2006/geoinfo-api/graph/loaders"
@@ -78,34 +79,6 @@ func (r *nodeResolver) AmenityID(ctx context.Context, obj *model.Node) (string, 
 // Props is the resolver for the props field.
 func (r *nodeResolver) Props(ctx context.Context, obj *model.Node) (interface{}, error) {
 	return obj.Props, nil
-}
-
-// User is the resolver for the user field.
-func (r *nodeResolver) User(ctx context.Context, obj *model.Node) (*model.User, error) {
-	var result *model.User
-	gc, err := utils.GinContextFromContext(ctx)
-	if err != nil {
-		return result, err
-	}
-	lang := gc.MustGet("i18nLocale").(string)
-
-	filter := bson.D{}
-	filter = append(filter, bson.E{"_id", obj.UserID})
-
-	allItems, err := r.Repo.User.GqlGetUsers(domain.RequestParams{
-		Options: domain.Options{Limit: 1, Skip: 0},
-		Filter:  filter,
-		Lang:    lang,
-	})
-	if err != nil {
-		return result, err
-	}
-
-	if len(allItems) > 0 {
-		result = allItems[0]
-	}
-
-	return result, nil
 }
 
 // Like is the resolver for the like field.
@@ -188,49 +161,74 @@ func (r *nodeResolver) ReviewsInfo(ctx context.Context, obj *model.Node) (*model
 	return &result, nil
 }
 
-// CreatedAt is the resolver for the createdAt field.
-func (r *nodeResolver) CreatedAt(ctx context.Context, obj *model.Node) (string, error) {
-	return obj.CreatedAt.String(), nil
-}
-
-// UpdatedAt is the resolver for the updatedAt field.
-func (r *nodeResolver) UpdatedAt(ctx context.Context, obj *model.Node) (string, error) {
-	return obj.UpdatedAt.String(), nil
-}
-
 // Nodes is the resolver for the nodes field.
-func (r *queryResolver) Nodes(ctx context.Context, first *int, after *string, limit *int, skip *int, input *model.ParamsNode) (*model.PaginationNode, error) {
+func (r *queryResolver) Nodes(ctx context.Context, limit *int, skip *int, input *model.ParamsNode) (*model.PaginationNode, error) {
 	var results *model.PaginationNode
 
-	options := options.Find()
-	//options.SetSort(bson.D{{"createdAt", 1}})
-	if limit != nil {
-		options.SetLimit(int64(*limit))
+	gc, err := utils.GinContextFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
-	options.SetSkip(int64(*skip))
+	md, err := middleware.GetMaxDistance(gc)
+	if err != nil {
+		return nil, err
+	}
+	// fmt.Println("max distance=", md)
+
+	// options := options.Find()
+	// //options.SetSort(bson.D{{"createdAt", 1}})
+	// if limit != nil {
+	// 	options.SetLimit(int64(*limit))
+	// }
+	// options.SetSkip(int64(*skip))
 	q := bson.D{}
-	if after != nil {
-		// idPrimitive, err := primitive.ObjectIDFromHex(*after)
-		// if err != nil {
-		// 	return results, err
-		// }
 
-		// q = append(q, bson.E{"_id", bson.D{{"$lt", idPrimitive}}})
-		// q = append(q, bson.E{"createdAt", bson.D{{"$lt", &after}}})
+	// if input.LatA != nil {
+	// 	q = append(q, bson.E{"lat", bson.D{{"$gt", input.LatA}}})
+	// }
+	// if input.LatB != nil {
+	// 	q = append(q, bson.E{"lat", bson.D{{"$lt", input.LatB}}})
+	// }
+	// if input.LonA != nil {
+	// 	q = append(q, bson.E{"lon", bson.D{{"$gt", input.LonA}}})
+	// }
+	// if input.LonB != nil {
+	// 	q = append(q, bson.E{"lon", bson.D{{"$lt", input.LonB}}})
+	// }
+
+	if input.Center != nil && len(input.Center) == 2 {
+
+		lat := *input.Center[0]
+		lon := *input.Center[1]
+		latAccuracy := float64(float64(180*md*1000) / 40075017)
+		lngAccuracy := float64(latAccuracy) / math.Cos(float64(math.Pi/180)*lat)
+
+		latA := lat - float64(latAccuracy)
+		if input.LatA != nil && latA < *input.LatA {
+			latA = *input.LatA
+		}
+		lonA := lon - lngAccuracy
+		if input.LonA != nil && lonA < *input.LonA {
+			lonA = *input.LonA
+		}
+		latB := lat + float64(latAccuracy)
+		if input.LatB != nil && latB > *input.LatB {
+			latB = *input.LatB
+		}
+		lonB := lon + lngAccuracy
+		if input.LonB != nil && lonB > *input.LonB {
+			lonB = *input.LonB
+		}
+		// fmt.Println("center: ", lat, lon)
+		// fmt.Println("latAccuracy: ", latAccuracy)
+		// fmt.Println("lngAccuracy: ", lngAccuracy)
+		// fmt.Println("bounds: ", latA, lonA, ":", latB, lonB)
+		q = append(q, bson.E{"lat", bson.D{{"$gt", latA}}})
+		q = append(q, bson.E{"lon", bson.D{{"$gt", lonA}}})
+		q = append(q, bson.E{"lat", bson.D{{"$lt", latB}}})
+		q = append(q, bson.E{"lon", bson.D{{"$lt", lonB}}})
 	}
 
-	if input.LatA != nil {
-		q = append(q, bson.E{"lat", bson.D{{"$gt", input.LatA}}})
-	}
-	if input.LatB != nil {
-		q = append(q, bson.E{"lat", bson.D{{"$lt", input.LatB}}})
-	}
-	if input.LonA != nil {
-		q = append(q, bson.E{"lon", bson.D{{"$gt", input.LonA}}})
-	}
-	if input.LonB != nil {
-		q = append(q, bson.E{"lon", bson.D{{"$lt", input.LonB}}})
-	}
 	// if input.Type != nil && len(input.Type) > 0 {
 	// 	types := make([]string, len(input.Type))
 	// 	for i := range input.Type {
@@ -245,6 +243,13 @@ func (r *queryResolver) Nodes(ctx context.Context, first *int, after *string, li
 		q = append(q, bson.E{"name", bson.D{{"$regex", strName}}})
 		// fmt.Println("q:", q)
 	}
+
+	// Filter by country code
+	if input.C != nil && len(input.C) > 0 {
+		// strName := primitive.Regex{Pattern: fmt.Sprintf("%v", *input.Query), Options: "i"}
+		q = append(q, bson.E{"ccode", bson.D{{"$in", input.C}}})
+	}
+	// fmt.Println("q:", q, input.C)
 
 	// inputData := []model.NodeFilterTag{}
 	// err := json.Unmarshal([]byte(*input.Filter), &inputData)
@@ -266,112 +271,30 @@ func (r *queryResolver) Nodes(ctx context.Context, first *int, after *string, li
 		"as":           "data",
 	}}})
 
+	type ItemFilter struct {
+		Type      string
+		CountCond int
+	}
+
 	inputData := input.Filter
 	if len(inputData) > 0 {
-		// filterOutput := bson.M{}
-		// filter := []bson.M{}
-		// for i := range inputData {
-		// 	// typeFilter := ""
-		// 	filterTypeOptions := bson.A{}
-		// 	if input.Filter[i].Type != "" {
-		// 		// typeFilter = input.Filter[i].Type
-		// 		filterTypeOptions = append(filterTypeOptions, bson.M{"$eq": bson.A{"$type", input.Filter[i].Type}})
-		// 	} else {
-		// 		continue
-		// 	}
-
-		// 	if len(inputData[i].Options) > 0 {
-		// 		filterOptions := bson.A{}
-		// 		for j := range inputData[i].Options {
-		// 			tID, _ := primitive.ObjectIDFromHex(inputData[i].Options[j].TagID)
-
-		// 			arrValue := bson.A{}
-		// 			for v := range inputData[i].Options[j].Value {
-		// 				arrValue = append(arrValue, inputData[i].Options[j].Value[v])
-		// 			}
-
-		// 			filterOptions = append(filterOptions, bson.M{
-		// 				"$and": bson.A{
-		// 					bson.M{
-		// 						"$eq": bson.A{"$$item.tag_id", tID},
-		// 					},
-		// 					bson.M{
-		// 						"$in": bson.A{"$$item.data.value", arrValue},
-		// 					},
-		// 				},
-		// 				// "data.tag_id": tID,
-		// 				// "data.data.value": bson.D{
-		// 				// 	{"$in", arrValue},
-		// 				// },
-		// 			})
-		// 		}
-		// 		filterTypeOptions = append(filterTypeOptions, bson.M{"$and": filterOptions})
-		// 		// filterTypeOptions["$and"] = filterOptions
-		// 	}
-
-		// 	filter = append(filter, bson.M{"$and": filterTypeOptions})
-		// }
-		// filterOutput["$or"] = filter
-		// // filterOutput = append(filterOutput, bson.E{"$or", filter})
-
-		// pipe = append(pipe, bson.D{
-		// 	{"$addFields", bson.M{
-		// 		"dataCount": bson.M{
-		// 			"$size": bson.M{
-		// 				"$filter": bson.M{
-		// 					"input": "$data",
-		// 					"as":    "item",
-		// 					"cond":  filterOutput,
-		// 				},
-		// 			},
-		// 		},
-		// 	}},
-		// })
-
-		// pipe = append(pipe, bson.D{
-		// 	{"$match", bson.M{
-		// 		"dataCount": bson.M{
-		// 			"$gt": 0,
-		// 		},
-		// 	}}})
-		// fmt.Println("pipe=", pipe)
-
-		//////////////////// 2
-		filterNodeData := mongo.Pipeline{}
-		// filterNodeData = append(filterNodeData, bson.D{{Key: "$lookup", Value: bson.M{
-		// 	"from": "node",
-		// 	// "let":  bson.D{{Key: "nodeId", Value: bson.D{{"$toString", "$_id"}}}},
-		// 	// "pipeline": mongo.Pipeline{
-		// 	// 	bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$node_id", "$$nodeId"}}}}},
-		// 	// },
-		// 	"localField":   "node_id",
-		// 	"foreignField": "_id",
-		// 	"as":           "node",
-		// }}})
-		// filterNodeData = append(filterNodeData, bson.D{{"$unwind", bson.D{{"path", "$node"}}}})
-
+		// -> 1
+		itemFilter := []ItemFilter{}
+		filterOutput := bson.M{}
 		filter := []bson.M{}
 		for i := range inputData {
+			newItemFilter := ItemFilter{
+				Type:      input.Filter[i].Type,
+				CountCond: len(inputData[i].Options),
+			}
 			// typeFilter := ""
 			filterTypeOptions := bson.A{}
 			if input.Filter[i].Type != "" {
-				filterTypeOptions = append(filterTypeOptions, bson.M{"type": input.Filter[i].Type})
+				// typeFilter = input.Filter[i].Type
+				filterTypeOptions = append(filterTypeOptions, bson.M{"$eq": bson.A{"$type", input.Filter[i].Type}})
 			} else {
 				continue
 			}
-
-			// if input.LatA != nil {
-			// 	filterTypeOptions = append(filterTypeOptions, bson.M{"lat": bson.D{{"$gt", *input.LatA}}})
-			// }
-			// if input.LatB != nil {
-			// 	filterTypeOptions = append(filterTypeOptions, bson.M{"lat": bson.D{{"$lt", *input.LatB}}})
-			// }
-			// if input.LonA != nil {
-			// 	filterTypeOptions = append(filterTypeOptions, bson.M{"lon": bson.D{{"$gt", *input.LonA}}})
-			// }
-			// if input.LonB != nil {
-			// 	filterTypeOptions = append(filterTypeOptions, bson.M{"lon": bson.D{{"$lt", *input.LonB}}})
-			// }
 
 			if len(inputData[i].Options) > 0 {
 				filterOptions := bson.A{}
@@ -384,43 +307,170 @@ func (r *queryResolver) Nodes(ctx context.Context, first *int, after *string, li
 					}
 
 					filterOptions = append(filterOptions, bson.M{
-						"tag_id": tID,
-						"data.value": bson.D{
-							{"$in", arrValue},
+						"$and": bson.A{
+							bson.M{
+								"$eq": bson.A{"$$item.tag_id", tID},
+							},
+							bson.M{
+								"$in": bson.A{"$$item.data.value", arrValue},
+							},
 						},
+						// "data.tag_id": tID,
+						// "data.data.value": bson.D{
+						// 	{"$in", arrValue},
+						// },
 					})
 				}
-				filterTypeOptions = append(filterTypeOptions, bson.M{"$and": filterOptions})
+				filterTypeOptions = append(filterTypeOptions, bson.M{"$or": filterOptions})
 				// filterTypeOptions["$and"] = filterOptions
 			}
 
 			filter = append(filter, bson.M{"$and": filterTypeOptions})
+			itemFilter = append(itemFilter, newItemFilter)
 		}
-		filterNodeData = append(filterNodeData, bson.D{{"$match", bson.D{{"$or", filter}}}})
+		filterOutput["$or"] = filter
+		// filterOutput = append(filterOutput, bson.E{"$or", filter})
 
-		fmt.Println("filterOutput=", filterNodeData)
+		pipeBranches := bson.A{}
+		for i := range itemFilter {
+			pipeBranches = append(pipeBranches, bson.M{
+				"case": bson.M{
+					"$eq": bson.A{"$type", itemFilter[i].Type},
+				},
+				"then": itemFilter[i].CountCond,
+			})
+		}
+		// fmt.Println(pipeBranches)
+		pipe = append(pipe, bson.D{
+			{"$addFields", bson.M{
+				"countCond": bson.M{
+					"$switch": bson.M{
+						"branches": pipeBranches,
+						"default":  -1,
+					},
+				},
+			}},
+		})
 
-		var allAllowOpts []model.Nodedata
-		// if limit != nil {
-		// 	filterOutput = append(filterOutput, bson.M{"$limit": limit})
-		// }
-		cur, err := r.DB.Collection(repository.TblNodedata).Aggregate(ctx, filterNodeData)
-		if err != nil {
-			return results, err
-		}
-		if er := cur.All(ctx, &allAllowOpts); er != nil {
-			return results, er
-		}
-		fmt.Println("len=", len(allAllowOpts))
-		IDs := []primitive.ObjectID{}
-		for e := range allAllowOpts {
-			IDs = append(IDs, allAllowOpts[e].NodeID)
-		}
-		fmt.Println("IDs len=", len(IDs))
-		fmt.Println("filterOutput <<<<<=================")
-
-		pipe = append(pipe, bson.D{{"$match", bson.D{{"_id", bson.D{{"$in", IDs}}}}}})
+		pipe = append(pipe, bson.D{
+			{"$addFields", bson.M{
+				"dataCount": bson.M{
+					"$size": bson.M{
+						"$filter": bson.M{
+							"input": "$data",
+							"as":    "item",
+							"cond":  filterOutput,
+						},
+					},
+				},
+			}},
+		})
+		// pipe = append(pipe, bson.D{
+		// 	{"$addFields", bson.M{
+		// 		"data": bson.M{
+		// 			"count": "$dataCount",
+		// 		},
+		// 	}},
+		// })
+		pipe = append(pipe, bson.D{
+			{"$match", bson.M{
+				// "dataCount": bson.M{
+				// 	"$gt": 0,
+				// },
+				"$expr": bson.M{
+					"$and": bson.A{
+						bson.M{"$gte": bson.A{"$dataCount", "$countCond"}},
+						bson.M{"$ne": bson.A{"$countCond", -1}},
+					},
+				},
+			}}})
 		// fmt.Println("pipe=", pipe)
+
+		//////////////////// 2
+		// filterNodeData := mongo.Pipeline{}
+		// // filterNodeData = append(filterNodeData, bson.D{{Key: "$lookup", Value: bson.M{
+		// // 	"from": "node",
+		// // 	// "let":  bson.D{{Key: "nodeId", Value: bson.D{{"$toString", "$_id"}}}},
+		// // 	// "pipeline": mongo.Pipeline{
+		// // 	// 	bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$node_id", "$$nodeId"}}}}},
+		// // 	// },
+		// // 	"localField":   "node_id",
+		// // 	"foreignField": "_id",
+		// // 	"as":           "node",
+		// // }}})
+		// // filterNodeData = append(filterNodeData, bson.D{{"$unwind", bson.D{{"path", "$node"}}}})
+
+		// filter := []bson.M{}
+		// for i := range inputData {
+		// 	// typeFilter := ""
+		// 	filterTypeOptions := bson.A{}
+		// 	if input.Filter[i].Type != "" {
+		// 		filterTypeOptions = append(filterTypeOptions, bson.M{"type": input.Filter[i].Type})
+		// 	} else {
+		// 		continue
+		// 	}
+
+		// 	// if input.LatA != nil {
+		// 	// 	filterTypeOptions = append(filterTypeOptions, bson.M{"lat": bson.D{{"$gt", *input.LatA}}})
+		// 	// }
+		// 	// if input.LatB != nil {
+		// 	// 	filterTypeOptions = append(filterTypeOptions, bson.M{"lat": bson.D{{"$lt", *input.LatB}}})
+		// 	// }
+		// 	// if input.LonA != nil {
+		// 	// 	filterTypeOptions = append(filterTypeOptions, bson.M{"lon": bson.D{{"$gt", *input.LonA}}})
+		// 	// }
+		// 	// if input.LonB != nil {
+		// 	// 	filterTypeOptions = append(filterTypeOptions, bson.M{"lon": bson.D{{"$lt", *input.LonB}}})
+		// 	// }
+
+		// 	if len(inputData[i].Options) > 0 {
+		// 		filterOptions := bson.A{}
+		// 		for j := range inputData[i].Options {
+		// 			tID, _ := primitive.ObjectIDFromHex(inputData[i].Options[j].TagID)
+
+		// 			arrValue := bson.A{}
+		// 			for v := range inputData[i].Options[j].Value {
+		// 				arrValue = append(arrValue, inputData[i].Options[j].Value[v])
+		// 			}
+
+		// 			filterOptions = append(filterOptions, bson.M{
+		// 				"tag_id": tID,
+		// 				"data.value": bson.D{
+		// 					{"$in", arrValue},
+		// 				},
+		// 			})
+		// 		}
+		// 		filterTypeOptions = append(filterTypeOptions, bson.M{"$and": filterOptions})
+		// 		// filterTypeOptions["$and"] = filterOptions
+		// 	}
+
+		// 	filter = append(filter, bson.M{"$and": filterTypeOptions})
+		// }
+		// filterNodeData = append(filterNodeData, bson.D{{"$match", bson.D{{"$or", filter}}}})
+
+		// fmt.Println("filterOutput=", filterNodeData)
+
+		// var allAllowOpts []model.Nodedata
+		// // if limit != nil {
+		// // 	filterOutput = append(filterOutput, bson.M{"$limit": limit})
+		// // }
+		// cur, err := r.DB.Collection(repository.TblNodedata).Aggregate(ctx, filterNodeData)
+		// if err != nil {
+		// 	return results, err
+		// }
+		// if er := cur.All(ctx, &allAllowOpts); er != nil {
+		// 	return results, er
+		// }
+		// fmt.Println("len=", len(allAllowOpts))
+		// IDs := []primitive.ObjectID{}
+		// for e := range allAllowOpts {
+		// 	IDs = append(IDs, allAllowOpts[e].NodeID)
+		// }
+		// fmt.Println("IDs len=", len(IDs))
+		// fmt.Println("filterOutput <<<<<=================")
+
+		// pipe = append(pipe, bson.D{{"$match", bson.D{{"_id", bson.D{{"$in", IDs}}}}}})
+		// // fmt.Println("pipe=", pipe)
 	}
 
 	// if input.Name != nil && *input.Name != "" {
@@ -472,6 +522,7 @@ func (r *queryResolver) Nodes(ctx context.Context, first *int, after *string, li
 	if limit != nil {
 		pipe = append(pipe, bson.D{{"$limit", limit}})
 	}
+	// pipe = append(pipe, bson.D{{"$sort", bson.D{{"lat", 1}}}})
 	var allItems []model.Node
 	cursor, err := r.DB.Collection(repository.TblNode).Aggregate(ctx, pipe) //Aggregate(ctx, pipe) // Find(ctx, q, options)
 	if err != nil {
@@ -492,8 +543,8 @@ func (r *queryResolver) Nodes(ctx context.Context, first *int, after *string, li
 
 		data[i] = &allItems[i]
 	}
-
-	total := 0
+	// fmt.Println("Find total: ", len(data))
+	total := len(data)
 	results = &model.PaginationNode{
 		Total: &total,
 		Data:  data,
@@ -505,7 +556,7 @@ func (r *queryResolver) Nodes(ctx context.Context, first *int, after *string, li
 }
 
 // Osm is the resolver for the osm field.
-func (r *queryResolver) Osm(ctx context.Context, first *int, after *string, limit *int, skip *int, lonA *float64, latA *float64, lonB *float64, latB *float64) ([]*model.Node, error) {
+func (r *queryResolver) Osm(ctx context.Context, limit *int, skip *int, lonA *float64, latA *float64, lonB *float64, latB *float64) ([]*model.Node, error) {
 	var results []*model.Node
 
 	options := options.Find()
@@ -515,15 +566,6 @@ func (r *queryResolver) Osm(ctx context.Context, first *int, after *string, limi
 	}
 	options.SetSkip(int64(*skip))
 	q := bson.D{}
-	if after != nil {
-		// idPrimitive, err := primitive.ObjectIDFromHex(*after)
-		// if err != nil {
-		// 	return results, err
-		// }
-
-		// q = append(q, bson.E{"_id", bson.D{{"$lt", idPrimitive}}})
-		// q = append(q, bson.E{"createdAt", bson.D{{"$lt", &after}}})
-	}
 
 	if latA != nil {
 		q = append(q, bson.E{"lat", bson.D{{"$gt", latA}}})
@@ -561,7 +603,7 @@ func (r *queryResolver) Osm(ctx context.Context, first *int, after *string, limi
 }
 
 // Node is the resolver for the node field.
-func (r *queryResolver) Node(ctx context.Context, id *string, osmID *string) (*model.Node, error) {
+func (r *queryResolver) Node(ctx context.Context, id *string, osmID *string, lat *float64, lon *float64) (*model.Node, error) {
 	var result *model.Node
 
 	filter := bson.D{}
@@ -574,6 +616,9 @@ func (r *queryResolver) Node(ctx context.Context, id *string, osmID *string) (*m
 		filter = append(filter, bson.E{"_id", userIDPrimitive})
 	} else if osmID != nil {
 		filter = append(filter, bson.E{"osm_id", osmID})
+	} else if lat != nil && lon != nil {
+		filter = append(filter, bson.E{"lat", lat})
+		filter = append(filter, bson.E{"lon", lon})
 	}
 
 	pipe := mongo.Pipeline{}
@@ -581,14 +626,126 @@ func (r *queryResolver) Node(ctx context.Context, id *string, osmID *string) (*m
 	pipe = append(pipe, bson.D{{"$limit", 1}})
 
 	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"from": "users",
+		"as":   "userb",
+		"let":  bson.D{{Key: "userId", Value: "$user_id"}},
+		"pipeline": mongo.Pipeline{
+			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$userId"}}}}},
+			bson.D{{"$limit", 1}},
+			bson.D{{
+				Key: "$lookup",
+				Value: bson.M{
+					"from": "image",
+					"as":   "images",
+					"let":  bson.D{{Key: "serviceId", Value: bson.D{{"$toString", "$_id"}}}},
+					"pipeline": mongo.Pipeline{
+						bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$service_id", "$$serviceId"}}}}},
+					},
+				},
+			}},
+		},
+	}}})
+	pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"user": bson.M{"$first": "$userb"}}}})
+	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"as":   "data",
 		"from": "nodedata",
-		// "let":  bson.D{{Key: "nodeId", Value: bson.D{{"$toString", "$_id"}}}},
-		// "pipeline": mongo.Pipeline{
-		// 	bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$node_id", "$$nodeId"}}}}},
-		// },
-		"localField":   "_id",
-		"foreignField": "node_id",
-		"as":           "data",
+		"let":  bson.D{{Key: "nodeId", Value: "$_id"}},
+		"pipeline": mongo.Pipeline{
+			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$node_id", "$$nodeId"}}}}},
+			bson.D{{Key: "$lookup", Value: bson.M{
+				"from": "users",
+				"as":   "usera",
+				"let":  bson.D{{Key: "userId", Value: "$user_id"}},
+				"pipeline": mongo.Pipeline{
+					bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$userId"}}}}},
+					bson.D{{"$limit", 1}},
+					bson.D{{
+						Key: "$lookup",
+						Value: bson.M{
+							"as":   "images",
+							"from": "image",
+							"let":  bson.D{{Key: "serviceId", Value: bson.D{{"$toString", "$_id"}}}},
+							"pipeline": mongo.Pipeline{
+								bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$service_id", "$$serviceId"}}}}},
+							},
+						},
+					}},
+				},
+			}}},
+			bson.D{{Key: "$set", Value: bson.M{"user": bson.M{"$first": "$usera"}}}},
+
+			// audit section
+			bson.D{{Key: "$lookup", Value: bson.M{
+				"as":   "audit",
+				"from": "nodedata_audit",
+				"let":  bson.D{{Key: "nodedataId", Value: "$_id"}},
+				"pipeline": mongo.Pipeline{
+					bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$nodedata_id", "$$nodedataId"}}}}},
+					bson.D{{Key: "$lookup", Value: bson.M{
+						"from": "users",
+						"as":   "userc",
+						"let":  bson.D{{Key: "userId", Value: "$user_id"}},
+						"pipeline": mongo.Pipeline{
+							bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$userId"}}}}},
+							bson.D{{"$limit", 1}},
+							bson.D{{
+								Key: "$lookup",
+								Value: bson.M{
+									"as":   "images",
+									"from": "image",
+									"let":  bson.D{{Key: "serviceId", Value: bson.D{{"$toString", "$_id"}}}},
+									"pipeline": mongo.Pipeline{
+										bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$service_id", "$$serviceId"}}}}},
+									},
+								},
+							}},
+						},
+					}}},
+					bson.D{{Key: "$set", Value: bson.M{"user": bson.M{"$first": "$userc"}}}},
+				},
+				// "localField":   "_id",
+				// "foreignField": "node_id",
+			}}},
+		},
+		// "localField":   "_id",
+		// "foreignField": "node_id",
+	}}})
+
+	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"as":   "images",
+		"from": "image",
+		"let":  bson.D{{Key: "serviceId", Value: bson.D{{"$toString", "$_id"}}}},
+		"pipeline": mongo.Pipeline{
+			bson.D{{Key: "$match", Value: bson.M{"$and": bson.A{
+				bson.M{"$expr": bson.M{"$eq": [2]string{"$service_id", "$$serviceId"}}},
+				bson.M{"$expr": bson.M{"$eq": [2]string{"$service", "node"}}},
+			}},
+			}},
+			bson.D{{Key: "$lookup", Value: bson.M{
+				"from": "users",
+				"as":   "usera",
+				"let":  bson.D{{Key: "userId", Value: "$user_id"}},
+				"pipeline": mongo.Pipeline{
+					bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$userId"}}}}},
+					bson.D{{"$limit", 1}},
+					bson.D{{
+						Key: "$lookup",
+						Value: bson.M{
+							"as":   "images",
+							"from": "image",
+							"let":  bson.D{{Key: "serviceId", Value: bson.D{{"$toString", "$_id"}}}},
+							"pipeline": mongo.Pipeline{
+								bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$service_id", "$$serviceId"}}}}},
+							},
+						},
+					}},
+				},
+			}}},
+			bson.D{{Key: "$set", Value: bson.M{"user": bson.M{"$first": "$usera"}}}},
+		},
+
+		// "localField":   "_id",
+		// "foreignField": "node_id",
 	}}})
 
 	// if err := r.DB.Collection(repository.TblNode).FindOne(ctx, filter).Decode(&result); err != nil {
@@ -607,7 +764,9 @@ func (r *queryResolver) Node(ctx context.Context, id *string, osmID *string) (*m
 		return result, er
 	}
 
-	result = &allItems[0]
+	if len(allItems) > 0 {
+		result = &allItems[0]
+	}
 
 	return result, nil
 }
@@ -620,31 +779,3 @@ func (r *Resolver) Node() generated.NodeResolver { return &nodeResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type nodeResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *nodeResolver) Data(ctx context.Context, obj *model.Node) ([]*model.Nodedata, error) {
-	gc, err := utils.GinContextFromContext(ctx)
-	lang := gc.MustGet("i18nLocale").(string)
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := r.Repo.Nodedata.GqlGetNodedatas(domain.RequestParams{
-		// Options: domain.Options{Limit: 10},
-		Filter: bson.M{"node_id": obj.ID, "status": bson.M{"$gt": 0}},
-		Lang:   lang,
-	})
-	if err != nil {
-		return result, err
-	}
-	// result, errs := loaders.GetTags(ctx, obj.Tags)
-	// if len(errs) > 0 {
-	// 	fmt.Println("Error:", errs)
-	// }
-	return result, nil
-}

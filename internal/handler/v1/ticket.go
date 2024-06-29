@@ -14,9 +14,9 @@ import (
 func (h *HandlerV1) registerTicket(router *gin.RouterGroup) {
 	Ticket := router.Group("/ticket")
 	Ticket.GET("/", h.FindTicket)
-	Ticket.POST("/", middleware.SetUserIdentity, h.CreateTicket)
-	Ticket.POST("/list/", middleware.SetUserIdentity, h.CreateListTicket)
-	Ticket.DELETE("/:id", middleware.SetUserIdentity, h.DeleteTicket)
+	Ticket.POST("/", h.CreateTicket)
+	Ticket.POST("/list/", h.CreateListTicket)
+	Ticket.DELETE("/:id", h.DeleteTicket)
 }
 
 func (h *HandlerV1) CreateTicket(c *gin.Context) {

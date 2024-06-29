@@ -19,10 +19,10 @@ import (
 func (h *HandlerV1) registerAmenityGroup(router *gin.RouterGroup) {
 	AmenityGroup := router.Group("/amenitygroup")
 	AmenityGroup.GET("", h.FindAmenityGroup)
-	AmenityGroup.POST("", middleware.SetUserIdentity, h.CreateAmenityGroup)
-	AmenityGroup.POST("/list/", middleware.SetUserIdentity, h.CreateListAmenityGroup)
-	AmenityGroup.PATCH("/:id", middleware.SetUserIdentity, h.UpdateAmenityGroup)
-	AmenityGroup.DELETE("/:id", middleware.SetUserIdentity, h.DeleteAmenityGroup)
+	AmenityGroup.POST("", h.CreateAmenityGroup)
+	AmenityGroup.POST("/list/", h.CreateListAmenityGroup)
+	AmenityGroup.PATCH("/:id", h.UpdateAmenityGroup)
+	AmenityGroup.DELETE("/:id", h.DeleteAmenityGroup)
 }
 
 func (h *HandlerV1) CreateAmenityGroup(c *gin.Context) {

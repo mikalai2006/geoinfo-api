@@ -37,3 +37,7 @@ func (s *UserService) UpdateUser(id string, user *model.User) (model.User, error
 func (s *UserService) Iam(userID string) (model.User, error) {
 	return s.repo.Iam(userID)
 }
+
+func (s *UserService) SetStat(userID string, statData model.UserStat) (model.User, error) {
+	return s.repo.SetStat(userID, statData)
+}

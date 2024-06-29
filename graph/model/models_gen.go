@@ -60,7 +60,7 @@ type FetchNodedataAudit struct {
 type FetchReview struct {
 	ID     *string `json:"id,omitempty"`
 	UserID *string `json:"userId,omitempty"`
-	OsmID  *string `json:"osmId,omitempty"`
+	NodeID *string `json:"nodeId,omitempty"`
 }
 
 type FetchTagopt struct {
@@ -71,6 +71,9 @@ type FetchTagopt struct {
 
 type Hello struct {
 	Hello string `json:"hello"`
+}
+
+type Mutation struct {
 }
 
 type NewNode struct {
@@ -176,15 +179,18 @@ type ParamsTag struct {
 	Description *string `json:"description,omitempty"`
 }
 
+type Query struct {
+}
+
 type ReviewEdge struct {
 	Cursor string  `json:"cursor"`
 	Node   *Review `json:"node,omitempty"`
 }
 
 type ReviewInfo struct {
-	Count   *int        `json:"count,omitempty"`
-	Value   *int        `json:"value,omitempty"`
-	Ratings interface{} `json:"ratings,omitempty"`
+	Count   *int `json:"count,omitempty"`
+	Value   *int `json:"value,omitempty"`
+	Ratings any  `json:"ratings,omitempty"`
 }
 
 type ReviewsConnection struct {

@@ -1,0 +1,35 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+type NodeAudit {
+  id: ID!
+  userId: String!
+  nodeId: String!
+  message: String!
+  status: Int!
+  props: Any!
+  user: User
+  # f: String
+  # p:String
+
+  createdAt:Time!
+  updatedAt:Time!
+}
+
+# type PaginationNodeAudit {
+#   total: Int,
+#   limit: Int,
+#   skip: Int,
+#   data: [NodeAudit]
+# }
+
+# input ParamsNodeAudit {
+#   id: ID
+# 	status: Int
+# 	message: String
+# }
+
+# extend type Query {
+#   audits(limit: Int, skip:Int=0, input: ParamsNodeAudit): PaginationNodeAudit @auth
+#   audit(id: ID, nodeId: String): NodeAudit @auth
+# }

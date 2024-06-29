@@ -290,39 +290,49 @@ func (r *ReviewMongo) CreateReview(userID string, review *model.Review) (*model.
 		return nil, err
 	}
 
-	var existReview model.Review
-	r.db.Collection(TblReview).FindOne(ctx, bson.M{"osm_id": review.OsmID, "user_id": userIDPrimitive}).Decode(&existReview)
+	// var existReview model.Review
+	// r.db.Collection(TblReview).FindOne(ctx, bson.M{"node_id": review.NodeID, "user_id": userIDPrimitive}).Decode(&existReview)
 
-	if existReview.OsmID == "" {
-
-		newReview := model.ReviewInput{
-			Review:    review.Review,
-			Rate:      review.Rate,
-			OsmID:     review.OsmID,
-			UserID:    userIDPrimitive,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		}
-
-		res, err := collection.InsertOne(ctx, newReview)
-		if err != nil {
-			return nil, err
-		}
-
-		err = r.db.Collection(TblReview).FindOne(ctx, bson.M{"_id": res.InsertedID}).Decode(&result)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		updateReview := &model.ReviewInput{
-			Rate:   review.Rate,
-			Review: review.Review,
-		}
-		result, err = r.UpdateReview(existReview.ID.Hex(), userID, updateReview)
-		if err != nil {
-			return nil, err
-		}
+	// if existReview.NodeID.IsZero() {
+	updatedAt := review.UpdatedAt
+	if updatedAt.IsZero() {
+		updatedAt = time.Now()
 	}
+
+	newReview := model.ReviewInput{
+		Review:    review.Review,
+		Rate:      review.Rate,
+		NodeID:    review.NodeID,
+		UserID:    userIDPrimitive,
+		CreatedAt: updatedAt,
+		UpdatedAt: updatedAt,
+	}
+
+	res, err := collection.InsertOne(ctx, newReview)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.db.Collection(TblReview).FindOne(ctx, bson.M{"_id": res.InsertedID}).Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+	// } else {
+	// 	updatedAt := review.UpdatedAt
+	// 	if updatedAt.IsZero() {
+	// 		updatedAt = time.Now()
+	// 	}
+
+	// 	updateReview := &model.ReviewInput{
+	// 		Rate:      review.Rate,
+	// 		Review:    review.Review,
+	// 		UpdatedAt: updatedAt,
+	// 	}
+	// 	result, err = r.UpdateReview(existReview.ID.Hex(), userID, updateReview)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 
 	return result, nil
 }
@@ -356,6 +366,33 @@ func (r *ReviewMongo) UpdateReview(id string, userID string, data *model.ReviewI
 	}
 
 	err = collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return result, err
+	}
+
+	return result, nil
+}
+
+func (r *ReviewMongo) DeleteReview(id string) (*model.Review, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
+	defer cancel()
+
+	var result = &model.Review{}
+	collection := r.db.Collection(TblReview)
+
+	idPrimitive, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return result, err
+	}
+
+	filter := bson.M{"_id": idPrimitive}
+
+	err = collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return result, err
+	}
+
+	_, err = collection.DeleteOne(ctx, filter)
 	if err != nil {
 		return result, err
 	}

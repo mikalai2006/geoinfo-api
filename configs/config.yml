@@ -6,7 +6,7 @@ mongodb:
   dbtest: "geoinfo_api_db_test"
   sslmode: false
 auth:
-  accessTokenTTL: 120m #2 hours
+  accessTokenTTL: 30m # in minutes
   refreshTokenTTL: 43200m #30 days
 # oauth:
 #   timeExpireCookie: 86400 #24h

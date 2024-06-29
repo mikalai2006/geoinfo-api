@@ -30,7 +30,7 @@ type Address interface {
 
 type Authorization interface {
 	CreateAuth(auth *domain.SignInInput) (string, error)
-	GetAuth(auth *domain.Auth) (domain.Auth, error)
+	GetAuth(id string) (domain.Auth, error)
 	CheckExistAuth(auth *domain.SignInInput) (domain.Auth, error)
 	GetByCredentials(auth *domain.SignInInput) (domain.Auth, error)
 	SetSession(authID primitive.ObjectID, session domain.Session) error
@@ -53,6 +53,21 @@ type Node interface {
 	DeleteNode(id string) (model.Node, error)
 
 	FindForKml(params domain.RequestParams) (domain.Response[domain.Kml], error)
+	CreateFile(params domain.RequestParams) (domain.Response[domain.NodeFileItem], error)
+}
+
+type NodeAudit interface {
+	CreateNodeAudit(userID string, nodeAudit *model.NodeAuditInput) (*model.NodeAudit, error)
+	FindNodeAudit(params domain.RequestParams) (domain.Response[model.NodeAudit], error)
+	UpdateNodeAudit(id string, userID string, data *model.NodeAuditInput) (*model.NodeAudit, error)
+	DeleteNodeAudit(id string) (model.NodeAudit, error)
+}
+
+type NodeVote interface {
+	CreateNodeVote(userID string, data *model.NodeVote) (*model.NodeVote, error)
+	FindNodeVote(params domain.RequestParams) (domain.Response[model.NodeVote], error)
+	UpdateNodeVote(id string, userID string, data *model.NodeVoteInput) (*model.NodeVote, error)
+	DeleteNodeVote(id string) (model.NodeVote, error)
 }
 
 type Nodedata interface {
@@ -82,6 +97,8 @@ type Review interface {
 	FindReview(params domain.RequestParams) (domain.Response[model.Review], error)
 	GetAllReview(params domain.RequestParams) (domain.Response[model.Review], error)
 	CreateReview(userID string, review *model.Review) (*model.Review, error)
+	UpdateReview(id string, userID string, data *model.ReviewInput) (*model.Review, error)
+	DeleteReview(id string) (*model.Review, error)
 
 	GqlGetReviews(params domain.RequestParams) ([]*model.Review, error)
 	GqlGetCountReviews(params domain.RequestParams) (*model.ReviewInfo, error)
@@ -94,6 +111,8 @@ type User interface {
 	DeleteUser(id string) (model.User, error)
 	UpdateUser(id string, user *model.User) (model.User, error)
 	Iam(userID string) (model.User, error)
+
+	SetStat(userID string, statData model.UserStat) (model.User, error)
 
 	GqlGetUsers(params domain.RequestParams) ([]*model.User, error)
 }
@@ -114,6 +133,14 @@ type Apps interface {
 	FindLanguage(params domain.RequestParams) (domain.Response[domain.Language], error)
 	UpdateLanguage(id string, data interface{}) (domain.Language, error)
 	DeleteLanguage(id string) (domain.Language, error)
+}
+
+type Currency interface {
+	CreateCurrency(userID string, data *domain.CurrencyInput) (domain.Currency, error)
+	GetCurrency(id string) (domain.Currency, error)
+	FindCurrency(params domain.RequestParams) (domain.Response[domain.Currency], error)
+	UpdateCurrency(id string, data interface{}) (domain.Currency, error)
+	DeleteCurrency(id string) (domain.Currency, error)
 }
 
 type Country interface {
@@ -184,12 +211,15 @@ type Repositories struct {
 	Authorization
 	Apps
 	Country
+	Currency
 
 	Image
 	Review
 	User
 	Track
 	Node
+	NodeAudit
+	NodeVote
 	Nodedata
 	NodedataVote
 	Tag
@@ -207,11 +237,14 @@ func NewRepositories(mongodb *mongo.Database, i18n config.I18nConfig) *Repositor
 		Authorization: NewAuthMongo(mongodb),
 		Apps:          NewAppsMongo(mongodb, i18n),
 		Country:       NewCountryMongo(mongodb, i18n),
+		Currency:      NewCurrencyMongo(mongodb, i18n),
 		Image:         NewImageMongo(mongodb, i18n),
 		Review:        NewReviewMongo(mongodb, i18n),
 		User:          NewUserMongo(mongodb, i18n),
 		Track:         NewTrackMongo(mongodb, i18n),
 		Node:          NewNodeMongo(mongodb, i18n),
+		NodeVote:      NewNodeVoteMongo(mongodb, i18n),
+		NodeAudit:     NewNodeAuditMongo(mongodb, i18n),
 		Nodedata:      NewNodedataMongo(mongodb, i18n),
 		NodedataVote:  NewNodedataVoteMongo(mongodb, i18n),
 		Tag:           NewTagMongo(mongodb, i18n),

@@ -17,9 +17,9 @@ import (
 func (h *HandlerV1) registerLike(router *gin.RouterGroup) {
 	Like := router.Group("/like")
 	Like.GET("", h.FindLike)
-	Like.POST("", middleware.SetUserIdentity, h.CreateLike)
-	Like.PATCH("/:id", middleware.SetUserIdentity, h.UpdateLike)
-	Like.DELETE("/:id", middleware.SetUserIdentity, h.DeleteLike)
+	Like.POST("", h.CreateLike)
+	Like.PATCH("/:id", h.UpdateLike)
+	Like.DELETE("/:id", h.DeleteLike)
 }
 
 func (h *HandlerV1) CreateLike(c *gin.Context) {

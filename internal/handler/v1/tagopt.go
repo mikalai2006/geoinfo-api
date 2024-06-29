@@ -18,10 +18,10 @@ import (
 func (h *HandlerV1) registerTagopt(router *gin.RouterGroup) {
 	Tagopt := router.Group("/tagopt")
 	Tagopt.GET("/", h.FindTagopt)
-	Tagopt.POST("/", middleware.SetUserIdentity, h.CreateTagopt)
-	Tagopt.POST("/list/", middleware.SetUserIdentity, h.CreateListTagopt)
-	Tagopt.PATCH("/:id", middleware.SetUserIdentity, h.UpdateTagopt)
-	Tagopt.DELETE("/:id", middleware.SetUserIdentity, h.DeleteTagopt)
+	Tagopt.POST("/", h.SetUserFromRequest, h.CreateTagopt)
+	Tagopt.POST("/list/", h.SetUserFromRequest, h.CreateListTagopt)
+	Tagopt.PATCH("/:id", h.SetUserFromRequest, h.UpdateTagopt)
+	Tagopt.DELETE("/:id", h.SetUserFromRequest, h.DeleteTagopt)
 }
 
 func (h *HandlerV1) CreateTagopt(c *gin.Context) {

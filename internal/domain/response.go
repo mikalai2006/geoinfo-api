@@ -12,6 +12,7 @@ type Response[D any] struct {
 type ResponseTokens struct {
 	AccessToken  string `json:"access_token" bson:"access_token"`
 	RefreshToken string `json:"refresh_token" bson:"refresh_token"`
+	ExpiresIn    int64  `json:"expires_in" bson:"expires_in"`
 }
 
 type GeneralFieldDB struct {

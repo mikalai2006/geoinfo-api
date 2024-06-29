@@ -16,8 +16,8 @@ import (
 func (h *HandlerV1) registerAddress(router *gin.RouterGroup) {
 	address := router.Group("/address")
 	address.GET("/", h.FindAddress)
-	address.POST("/", middleware.SetUserIdentity, h.CreateAddress)
-	address.POST("/list/", middleware.SetUserIdentity, h.CreateListAddress)
+	address.POST("/", h.CreateAddress)
+	address.POST("/list/", h.CreateListAddress)
 }
 
 func (h *HandlerV1) CreateAddress(c *gin.Context) {

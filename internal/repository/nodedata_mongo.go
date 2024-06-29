@@ -85,6 +85,7 @@ func (r *NodedataMongo) FindNodedata(params domain.RequestParams) (domain.Respon
 	// 	resultSlice[i] = d
 	// }
 	copy(resultSlice, results)
+	// fmt.Println("results::", len(results))
 
 	count, err := r.db.Collection(TblNodedata).CountDocuments(ctx, bson.M{})
 	if err != nil {
@@ -189,6 +190,13 @@ func (r *NodedataMongo) CreateNodedata(userID string, data *model.NodedataInput)
 		return nil, err
 	}
 
+	// // change user stat
+	// _, _ = r.db.Collection(tblUsers).UpdateOne(ctx, bson.M{"_id": userIDPrimitive}, bson.D{
+	// 	{"$inc", bson.D{
+	// 		{"user_stat.nodedata", 1},
+	// 	}},
+	// })
+
 	err = r.db.Collection(TblNodedata).FindOne(ctx, bson.M{"_id": res.InsertedID}).Decode(&result)
 	if err != nil {
 		return nil, err
@@ -229,6 +237,18 @@ func (r *NodedataMongo) GqlGetNodedatas(params domain.RequestParams) ([]*model.N
 		},
 	}}})
 	pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"user": bson.M{"$first": "$userb"}}}})
+
+	// // get tag
+	// pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+	// 	"from": TblTag,
+	// 	"as":   "tags",
+	// 	"let":  bson.D{{Key: "tagId", Value: "$tag_id"}},
+	// 	"pipeline": mongo.Pipeline{
+	// 		bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$tagId"}}}}},
+	// 		bson.D{{"$limit", 1}},
+	// 	},
+	// }}})
+	// pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"tag": bson.M{"$first": "$tags"}}}})
 
 	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
 		"from": "nodedata_vote",
@@ -328,6 +348,19 @@ func (r *NodedataMongo) DeleteNodedata(id string) (model.Nodedata, error) {
 	if err != nil {
 		return result, err
 	}
+
+	// // change user stat
+	// _, _ = r.db.Collection(tblUsers).UpdateOne(ctx, bson.M{"_id": result.UserID}, bson.D{
+	// 	{"$inc", bson.D{
+	// 		{"user_stat.nodedata", -1},
+	// 	}},
+	// }) //, options.Update().SetUpsert(true)
+
+	// // remove likes.
+	// _, err = r.db.Collection(TblNodedataVote).DeleteMany(ctx, bson.M{"nodedata_id": idPrimitive})
+	// if err != nil {
+	// 	return result, err
+	// }
 
 	return result, nil
 }

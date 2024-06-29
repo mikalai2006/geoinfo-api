@@ -19,10 +19,10 @@ import (
 func (h *HandlerV1) registerAction(router *gin.RouterGroup) {
 	action := router.Group("/action")
 	action.GET("/", h.FindAction)
-	action.POST("/", middleware.SetUserIdentity, h.CreateAction)
-	action.POST("/list/", middleware.SetUserIdentity, h.CreateListAction)
-	action.PATCH("/:id", middleware.SetUserIdentity, h.UpdateAction)
-	action.DELETE("/:id", middleware.SetUserIdentity, h.DeleteAction)
+	action.POST("/", h.CreateAction)
+	action.POST("/list/", h.CreateListAction)
+	action.PATCH("/:id", h.UpdateAction)
+	action.DELETE("/:id", h.DeleteAction)
 }
 
 func (h *HandlerV1) CreateAction(c *gin.Context) {

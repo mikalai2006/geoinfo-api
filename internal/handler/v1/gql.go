@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-gonic/gin"
@@ -27,6 +28,7 @@ func graphqlHandler(mongoDB *mongo.Database, repositories *repository.Repositori
 	h := handler.NewDefaultServer(generated.NewExecutableSchema(c))
 
 	return func(c *gin.Context) {
+		h.SetQueryCache(graphql.NoCache{})
 		h.ServeHTTP(c.Writer, c.Request)
 	}
 }

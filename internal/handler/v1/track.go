@@ -14,8 +14,8 @@ import (
 func (h *HandlerV1) registerTrack(router *gin.RouterGroup) {
 	track := router.Group("/track")
 	track.GET("/", h.FindTrack)
-	track.POST("/", middleware.SetUserIdentity, h.CreateTrack)
-	track.POST("/list/", middleware.SetUserIdentity, h.CreateListTrack)
+	track.POST("/", h.CreateTrack)
+	track.POST("/list/", h.CreateListTrack)
 }
 
 func (h *HandlerV1) CreateTrack(c *gin.Context) {

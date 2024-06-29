@@ -78,18 +78,26 @@ func (r *AuthMongo) CheckExistAuth(auth *domain.SignInInput) (domain.Auth, error
 	return user, err
 }
 
-func (r *AuthMongo) GetAuth(auth *domain.Auth) (domain.Auth, error) {
-	var user domain.Auth
+func (r *AuthMongo) GetAuth(id string) (domain.Auth, error) {
+	var auth domain.Auth
 
 	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
 	defer cancel()
 
-	query := bson.M{"login": auth.Login, "password": auth.Password}
+	idUser, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return auth, err
+	}
+
+	query := bson.M{"_id": idUser}
 	// fmt.Println("")
 	// fmt.Printf("GetAuth: query=%s", query)
-	err := r.db.Collection(TblAuth).FindOne(ctx, query).Decode(&user)
+	err = r.db.Collection(TblAuth).FindOne(ctx, query).Decode(&auth)
+	if err != nil {
+		return auth, err
+	}
 
-	return user, err
+	return auth, err
 }
 
 func (r *AuthMongo) GetByCredentials(auth *domain.SignInInput) (domain.Auth, error) {

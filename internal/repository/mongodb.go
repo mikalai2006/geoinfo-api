@@ -29,6 +29,8 @@ const (
 	tblTrack          = "track"
 	TblNode           = "node"
 	TblNodeAudit      = "node_audit"
+	TblNodeVote       = "node_vote"
+	TblNodeHistory    = "node_history"
 	TblNodedata       = "nodedata"
 	TblNodedataVote   = "nodedata_vote"
 	TblNodedataAudit  = "nodedata_audit"
@@ -56,6 +58,7 @@ const (
 	tblFields  = "fields"
 
 	TblLanguage = "langs"
+	TblCurrency = "currency"
 
 	TblProduct = "products"
 

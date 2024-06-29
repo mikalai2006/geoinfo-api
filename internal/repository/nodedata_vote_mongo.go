@@ -158,47 +158,101 @@ func (r *NodedataVoteMongo) CreateNodedataVote(userID string, data *model.Nodeda
 		return nil, err
 	}
 
-	fmt.Println(bson.M{"nodedata_id": nodedataIDPrimitive, "user_id": userIDPrimitive})
+	// // fmt.Println(bson.M{"nodedata_id": nodedataIDPrimitive, "user_id": userIDPrimitive})
 
-	var existVote model.NodedataVote
-	r.db.Collection(TblNodedataVote).FindOne(ctx, bson.M{"nodedata_id": nodedataIDPrimitive, "user_id": userIDPrimitive}).Decode(&existVote)
-	// if err != nil {
-	// 	if errors.Is(err, mongo.ErrNoDocuments) {
-	// 		return result, model.ErrAddressNotFound
-	// 	}
-	// 	return nil, err
-	// }
+	// var existVote model.NodedataVote
+	// r.db.Collection(TblNodedataVote).FindOne(ctx, bson.M{"nodedata_id": nodedataIDPrimitive, "user_id": userIDPrimitive}).Decode(&existVote)
+	// // if err != nil {
+	// // 	if errors.Is(err, mongo.ErrNoDocuments) {
+	// // 		return result, model.ErrAddressNotFound
+	// // 	}
+	// // 	return nil, err
+	// // }
+	// var existNodedata model.Nodedata
+	// r.db.Collection(TblNodedata).FindOne(ctx, bson.M{"_id": nodedataIDPrimitive}).Decode(&existNodedata)
 
-	if (existVote == model.NodedataVote{}) {
-		newNodedataVote := model.NodedataVoteMongo{
-			UserID:     userIDPrimitive,
-			NodedataID: nodedataIDPrimitive,
-			Value:      data.Value,
-			// Status:     100, //data.Status,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		}
-
-		res, err := collection.InsertOne(ctx, newNodedataVote)
-		if err != nil {
-			return nil, err
-		}
-
-		err = r.db.Collection(TblNodedataVote).FindOne(ctx, bson.M{"_id": res.InsertedID}).Decode(&result)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		updateNodedataVote := &model.NodedataVote{
-			// UserID:     userIDPrimitive,
-			// NodedataID: nodedataIDPrimitive,
-			Value: data.Value,
-		}
-		result, err = r.UpdateNodedataVote(existVote.ID.Hex(), userID, updateNodedataVote)
-		if err != nil {
-			return nil, err
-		}
+	// if (existVote == model.NodedataVote{}) {
+	newNodedataVote := model.NodedataVoteMongo{
+		UserID:     userIDPrimitive,
+		NodedataID: nodedataIDPrimitive,
+		Value:      data.Value,
+		// Status:     100, //data.Status,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
+
+	res, err := collection.InsertOne(ctx, newNodedataVote)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.db.Collection(TblNodedataVote).FindOne(ctx, bson.M{"_id": res.InsertedID}).Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	// 	// // set stat active user
+	// 	// statFragment := bson.D{}
+	// 	// if result.Value > 0 {
+	// 	// 	statFragment = append(statFragment, bson.E{"user_stat.nodedataLike", 1})
+	// 	// } else {
+	// 	// 	statFragment = append(statFragment, bson.E{"user_stat.nodedataDLike", 1})
+	// 	// }
+	// 	// _, _ = r.db.Collection(tblUsers).UpdateOne(ctx, bson.M{"_id": result.UserID}, bson.D{
+	// 	// 	{"$inc", statFragment},
+	// 	// })
+
+	// 	// // set stat author user
+	// 	// if !existNodedata.UserID.IsZero() {
+	// 	// 	statFragment := bson.D{}
+	// 	// 	if result.Value > 0 {
+	// 	// 		statFragment = append(statFragment, bson.E{"user_stat.nodedataAuthorLike", 1})
+	// 	// 	} else {
+	// 	// 		statFragment = append(statFragment, bson.E{"user_stat.nodedataAuthorDLike", 1})
+	// 	// 	}
+	// 	// 	_, _ = r.db.Collection(tblUsers).UpdateOne(ctx, bson.M{"_id": existNodedata.UserID}, bson.D{
+	// 	// 		{"$inc", statFragment},
+	// 	// 	})
+	// 	// }
+	// } else {
+	// 	updateNodedataVote := &model.NodedataVote{
+	// 		// UserID:     userIDPrimitive,
+	// 		// NodedataID: nodedataIDPrimitive,
+	// 		Value: data.Value,
+	// 	}
+	// 	result, err = r.UpdateNodedataVote(existVote.ID.Hex(), userID, updateNodedataVote)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+
+	// 	// // set stat active user
+	// 	// statFragment := bson.D{}
+	// 	// if result.Value > 0 {
+	// 	// 	statFragment = append(statFragment, bson.E{"user_stat.nodedataLike", 1})
+	// 	// 	statFragment = append(statFragment, bson.E{"user_stat.nodedataDLike", -1})
+	// 	// } else {
+	// 	// 	statFragment = append(statFragment, bson.E{"user_stat.nodedataLike", -1})
+	// 	// 	statFragment = append(statFragment, bson.E{"user_stat.nodedataDLike", 1})
+	// 	// }
+	// 	// _, _ = r.db.Collection(tblUsers).UpdateOne(ctx, bson.M{"_id": result.UserID}, bson.D{
+	// 	// 	{"$inc", statFragment},
+	// 	// })
+
+	// 	// // set stat author user
+	// 	// if !existNodedata.UserID.IsZero() {
+	// 	// 	statFragment := bson.D{}
+	// 	// 	if result.Value > 0 {
+	// 	// 		statFragment = append(statFragment, bson.E{"user_stat.nodedataAuthorLike", 1})
+	// 	// 		statFragment = append(statFragment, bson.E{"user_stat.nodedataAuthorDLike", -1})
+	// 	// 	} else {
+	// 	// 		statFragment = append(statFragment, bson.E{"user_stat.nodedataAuthorLike", -1})
+	// 	// 		statFragment = append(statFragment, bson.E{"user_stat.nodedataAuthorDLike", 1})
+	// 	// 	}
+	// 	// 	_, _ = r.db.Collection(tblUsers).UpdateOne(ctx, bson.M{"_id": existNodedata.UserID}, bson.D{
+	// 	// 		{"$inc", statFragment},
+	// 	// 	})
+	// 	// }
+	// }
 
 	return result, nil
 }
@@ -285,6 +339,19 @@ func (r *NodedataVoteMongo) DeleteNodedataVote(id string) (model.NodedataVote, e
 	if err != nil {
 		return result, err
 	}
+
+	// // change user stat
+	// // countValue := 0
+	// // if result.Value > 0 {
+	// // 	countValue = -5
+	// // } else {
+	// // 	countValue = 5
+	// // }
+	// _, _ = r.db.Collection(tblUsers).UpdateOne(ctx, bson.M{"_id": result.UserID}, bson.D{
+	// 	{"$inc", bson.D{
+	// 		{"user_stat.countTagLike", -1},
+	// 	}},
+	// })
 
 	_, err = collection.DeleteOne(ctx, filter)
 	if err != nil {

@@ -96,6 +96,41 @@ func Run(configPath string) {
 	srv := server.NewServer(cfg, handlers.InitRoutes(cfg, mongoDB))
 
 	go func() {
+
+		// // create a scheduler
+		// s, err := gocron.NewScheduler()
+		// if err != nil {
+		// 	// handle error
+		// 	logger.Errorf("Error gocron: %s", err.Error())
+		// }
+
+		// // add a job to the scheduler
+		// j, err := s.NewJob(
+		// 	gocron.DurationJob(
+		// 		1*time.Second,
+		// 	),
+		// 	gocron.NewTask(
+		// 		func(a string, b int) {
+		// 			// do things
+		// 			langs, err := services.Apps.FindLanguage(domain.RequestParams{Filter: bson.D{}})
+		// 			if err != nil {
+		// 				logger.Errorf("Error gocron services: %s", err.Error())
+		// 			}
+		// 			fmt.Println(langs.Total)
+		// 		},
+		// 		"hello",
+		// 		1,
+		// 	),
+		// )
+		// if err != nil {
+		// 	// handle error
+		// 	logger.Errorf("Error gocron task: %s", err.Error())
+		// }
+		// // each job has a unique id
+		// fmt.Println(j.ID())
+		// // start the scheduler
+		// s.Start()
+
 		if er := srv.Run(); !errors.Is(er, http.ErrServerClosed) {
 			logger.Errorf("Error starting server: %s", er.Error())
 		}

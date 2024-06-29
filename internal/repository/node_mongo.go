@@ -132,6 +132,11 @@ func (r *NodeMongo) CreateNode(userID string, node *model.Node) (*model.Node, er
 		return nil, err
 	}
 
+	createdAt := node.CreatedAt
+	if createdAt.IsZero() {
+		createdAt = time.Now()
+	}
+
 	newNode := model.NodeInput{
 		UserID:    userIDPrimitive,
 		OsmID:     node.OsmID,
@@ -142,7 +147,7 @@ func (r *NodeMongo) CreateNode(userID string, node *model.Node) (*model.Node, er
 		AmenityID: node.AmenityID,
 		Name:      node.Name,
 		CCode:     node.CCode,
-		CreatedAt: time.Now(),
+		CreatedAt: createdAt,
 		UpdatedAt: time.Now(),
 	}
 
@@ -150,6 +155,23 @@ func (r *NodeMongo) CreateNode(userID string, node *model.Node) (*model.Node, er
 	if err != nil {
 		return nil, err
 	}
+
+	// change user stat
+	// var operations []mongo.WriteModel
+	// operationA := mongo.NewUpdateOneModel()
+	// operationA.SetFilter(bson.M{"_id": userIDPrimitive})
+	// operationA.SetUpdate(bson.D{
+	// 	{"$inc", bson.D{
+	// 		{"user_stat.node", 1},
+	// 	}},
+	// })
+	// operations = append(operations, operationA)
+	// _, err = r.db.Collection(TblNode).BulkWrite(ctx, operations)
+	// _, _ = r.db.Collection(tblUsers).UpdateOne(ctx, bson.M{"_id": userIDPrimitive}, bson.D{
+	// 	{"$inc", bson.D{
+	// 		{"user_stat.node", 1},
+	// 	}},
+	// })
 
 	err = r.db.Collection(TblNode).FindOne(ctx, bson.M{"_id": res.InsertedID}).Decode(&result)
 	if err != nil {
@@ -193,7 +215,7 @@ func (r *NodeMongo) UpdateNode(id string, userID string, data *model.Node) (*mod
 		AmenityID: oldResult.AmenityID,
 		Props:     oldResult.Props,
 	}
-	_, err = r.db.Collection(TblNodeAudit).InsertOne(ctx, oldNodeAudit)
+	_, err = r.db.Collection(TblNodeHistory).InsertOne(ctx, oldNodeAudit)
 	if err != nil {
 		return result, err
 	}
@@ -296,16 +318,30 @@ func (r *NodeMongo) DeleteNode(id string) (model.Node, error) {
 		return result, err
 	}
 
-	// remove nodedata.
-	_, err = r.db.Collection(TblNodedata).DeleteMany(ctx, bson.M{"node_id": idPrimitive})
-	if err != nil {
-		return result, err
-	}
-	// remove reviews.
-	_, err = r.db.Collection(TblReview).DeleteMany(ctx, bson.M{"osm_id": result.OsmID})
-	if err != nil {
-		return result, err
-	}
+	// change user stat
+	// _, _ = r.db.Collection(tblUsers).UpdateOne(ctx, bson.M{"_id": result.UserID}, bson.D{
+	// 	{"$inc", bson.D{
+	// 		{"user_stat.node", -1},
+	// 	}},
+	// })
+
+	// // remove nodedata.
+	// _, err = r.db.Collection(TblNodedata).DeleteMany(ctx, bson.M{"node_id": idPrimitive})
+	// if err != nil {
+	// 	return result, err
+	// }
+
+	// // remove reviews.
+	// _, err = r.db.Collection(TblReview).DeleteMany(ctx, bson.M{"node_id": idPrimitive})
+	// if err != nil {
+	// 	return result, err
+	// }
+
+	// // remove audits.
+	// _, err = r.db.Collection(TblNodeAudit).DeleteMany(ctx, bson.M{"node_id": idPrimitive})
+	// if err != nil {
+	// 	return result, err
+	// }
 
 	return result, nil
 }
@@ -448,4 +484,60 @@ func (r *NodeMongo) FindForKml(params domain.RequestParams) (domain.Response[dom
 		Data:  resultSlice,
 	}
 	return response, nil
+}
+
+func (r *NodeMongo) CreateFile(params domain.RequestParams) (domain.Response[domain.NodeFileItem], error) {
+	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
+	defer cancel()
+
+	var results domain.Response[domain.NodeFileItem]
+
+	pipe, err := CreatePipeline(params, &r.i18n)
+	if err != nil {
+		return results, err
+	}
+	// fmt.Println("params lang=", params.Lang)
+
+	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"from": "nodedata",
+		// "let":  bson.D{{Key: "nodeId", Value: bson.D{{"$toString", "$_id"}}}},
+		// "pipeline": mongo.Pipeline{
+		// 	bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$node_id", "$$nodeId"}}}}},
+		// },
+		"localField":   "_id",
+		"foreignField": "node_id",
+		"as":           "data",
+	}}})
+
+	var allItems []domain.NodeFileItem
+	cursor, err := r.db.Collection(TblNode).Aggregate(ctx, pipe) //Aggregate(ctx, pipe) // Find(ctx, q, options)
+	if err != nil {
+		return results, err
+	}
+	defer cursor.Close(ctx)
+	if er := cursor.All(ctx, &allItems); er != nil {
+		return results, er
+	}
+
+	// fmt.Println("allItems len=", len(allItems))
+
+	if len(allItems) == 0 {
+		return results, nil
+	}
+
+	data := make([]domain.NodeFileItem, len(allItems))
+	for i, _ := range allItems {
+
+		data[i] = allItems[i]
+	}
+	// fmt.Println("Find total: ", len(data))
+	total := len(data)
+
+	results = domain.Response[domain.NodeFileItem]{
+		Total: total,
+		Skip:  int(params.Options.Skip),
+		Limit: int(params.Options.Limit),
+		Data:  data,
+	}
+	return results, nil
 }

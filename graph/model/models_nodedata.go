@@ -27,9 +27,11 @@ type Nodedata struct {
 	Dlike       int64                        `json:"dlike" bson:"dlike"`
 
 	// Type string `json:"type" bson:"type"`
-	User  User            `json:"user,omitempty" bson:"user,omitempty"`
-	Audit []NodedataAudit `json:"audit,omitempty" bson:"audit,omitempty"`
-	Votes []NodedataVote  `json:"votes,omitempty" bson:"votes,omitempty"`
+	User   User            `json:"user,omitempty" bson:"user,omitempty"`
+	Audit  []NodedataAudit `json:"audit,omitempty" bson:"audit,omitempty"`
+	Votes  []NodedataVote  `json:"votes,omitempty" bson:"votes,omitempty"`
+	Tag    Tag             `json:"tag" bson:"tag"`
+	Tagopt Tagopt          `json:"tagopt" bson:"tagopt"`
 
 	CreatedAt time.Time `json:"createdAt" bson:"created_at"`
 	UpdatedAt time.Time `json:"updatedAt" bson:"updated_at"`

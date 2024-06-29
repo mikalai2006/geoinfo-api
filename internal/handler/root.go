@@ -42,7 +42,7 @@ func NewHandler(services *service.Services, repositories *repository.Repositorie
 
 func (h *Handler) InitRoutes(cfg *config.Config, mongoDB *mongo.Database) *gin.Engine {
 	// appG := app.Gin{C: *gin.Context}
-	router := gin.New()
+	router := gin.New() // New() // Default
 	router.Use(
 		gin.Recovery(),
 		gin.Logger(),
@@ -80,6 +80,8 @@ func (h *Handler) InitRoutes(cfg *config.Config, mongoDB *mongo.Database) *gin.E
 	router.Static("/images", "./public")
 	router.Static("/css", "./public/css")
 	router.Static("/js", "./public/js")
+	router.Static("/files", "./public/files")
+	// router.GET("/debug/vars", expvar.Handler())
 
 	// var upgrader = websocket.Upgrader{
 	// 	ReadBufferSize:  1024,

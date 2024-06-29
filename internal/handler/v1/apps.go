@@ -13,11 +13,11 @@ import (
 
 func (h *HandlerV1) RegisterApp(router *gin.RouterGroup) {
 	lang := router.Group("/lang")
-	lang.POST("", middleware.SetUserIdentity, h.createLanguage)
+	lang.POST("", h.SetUserFromRequest, h.createLanguage)
 	lang.GET("", h.findLanguage)
 	lang.GET("/:id", h.getLanguage)
-	lang.PATCH("/:id", middleware.SetUserIdentity, h.updateLanguage)
-	lang.DELETE("/:id", middleware.SetUserIdentity, h.deleteLanguage)
+	lang.PATCH("/:id", h.SetUserFromRequest, h.updateLanguage)
+	lang.DELETE("/:id", h.SetUserFromRequest, h.deleteLanguage)
 }
 
 func (h *HandlerV1) createLanguage(c *gin.Context) {

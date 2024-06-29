@@ -1,13 +1,11 @@
 package v1
 
 import (
-	"encoding/json"
 	"errors"
 	"math"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 	"github.com/mikalai2006/geoinfo-api/graph/model"
 	"github.com/mikalai2006/geoinfo-api/internal/domain"
 	"github.com/mikalai2006/geoinfo-api/internal/middleware"
@@ -20,73 +18,142 @@ import (
 func (h *HandlerV1) registerNodedataVote(router *gin.RouterGroup) {
 	NodedataVote := router.Group("/nodedatavote")
 	NodedataVote.GET("", h.FindNodedataVote)
-	NodedataVote.POST("", middleware.SetUserIdentity, h.CreateNodedataVote)
-	NodedataVote.PATCH("/:id", middleware.SetUserIdentity, h.UpdateNodedataVote)
-	NodedataVote.DELETE("/:id", middleware.SetUserIdentity, h.DeleteNodedataVote)
+	NodedataVote.POST("", h.CreateNodedataVote)
+	NodedataVote.POST("/list", h.CreateNodedataVoteList)
+	NodedataVote.PATCH("/:id", h.UpdateNodedataVote)
+	NodedataVote.DELETE("/:id", h.DeleteNodedataVote)
 }
 
 func (h *HandlerV1) CreateNodedataVote(c *gin.Context) {
 	appG := app.Gin{C: c}
-	userID, err := middleware.GetUID(c)
-	if err != nil {
-		// c.AbortWithError(http.StatusUnauthorized, err)
-		appG.ResponseError(http.StatusUnauthorized, err, gin.H{"hello": "world"})
-		return
-	}
+	// userID, err := middleware.GetUID(c)
+	// if err != nil {
+	// 	// c.AbortWithError(http.StatusUnauthorized, err)
+	// 	appG.ResponseError(http.StatusUnauthorized, err, gin.H{"hello": "world"})
+	// 	return
+	// }
 
 	// var input *model.NodedataVote
 	// if er := c.BindJSON(&input); er != nil {
 	// 	appG.ResponseError(http.StatusBadRequest, er, nil)
 	// 	return
 	// }
-	var a map[string]json.RawMessage //  map[string]interface{}
-	if er := c.ShouldBindBodyWith(&a, binding.JSON); er != nil {
+	// var a map[string]json.RawMessage //  map[string]interface{}
+	// if er := c.ShouldBindBodyWith(&a, binding.JSON); er != nil {
+	// 	appG.ResponseError(http.StatusBadRequest, er, nil)
+	// 	return
+	// }
+	// input, er := utils.BindJSON2[model.NodedataVoteInput](a)
+	// if er != nil {
+	// 	appG.ResponseError(http.StatusBadRequest, er, nil)
+	// 	return
+	// }
+
+	var input *model.NodedataVoteInput
+	if er := c.BindJSON(&input); er != nil {
 		appG.ResponseError(http.StatusBadRequest, er, nil)
 		return
 	}
-	input, er := utils.BindJSON2[model.NodedataVoteInput](a)
-	if er != nil {
+
+	nodedataVote, err := h.CreateOrExistNodedataVote(c, input)
+	if err != nil {
+		appG.ResponseError(http.StatusBadRequest, err, nil)
+		return
+	}
+
+	c.JSON(http.StatusOK, nodedataVote)
+}
+
+func (h *HandlerV1) CreateNodedataVoteList(c *gin.Context) {
+	appG := app.Gin{C: c}
+
+	var input []*model.NodedataVoteInput
+	if er := c.BindJSON(&input); er != nil {
 		appG.ResponseError(http.StatusBadRequest, er, nil)
 		return
 	}
+
+	if len(input) == 0 {
+		appG.ResponseError(http.StatusBadRequest, errors.New("list must be with element(s)"), nil)
+		return
+	}
+
+	var result []*model.NodedataVote
+	for i := range input {
+		nodedataVote, err := h.CreateOrExistNodedataVote(c, input[i])
+		if err != nil {
+			appG.ResponseError(http.StatusBadRequest, err, nil)
+			return
+		}
+
+		result = append(result, nodedataVote)
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (h *HandlerV1) CreateOrExistNodedataVote(c *gin.Context, input *model.NodedataVoteInput) (*model.NodedataVote, error) {
+	appG := app.Gin{C: c}
+	userID, err := middleware.GetUID(c)
+	if err != nil {
+		// c.AbortWithError(http.StatusUnauthorized, err)
+		appG.ResponseError(http.StatusUnauthorized, err, gin.H{"hello": "world"})
+		return nil, err
+	}
+	var result *model.NodedataVote
 
 	nodedataIDPrimitive, err := primitive.ObjectIDFromHex(input.NodedataID)
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
-		return
+		return result, err
 	}
 	userIDPrimitive, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
-		return
+		return result, err
 	}
 
+	// check exist nodedata
+	existNodedatas, err := h.services.Nodedata.FindNodedata(domain.RequestParams{
+		Options: domain.Options{Limit: 1},
+		Filter:  bson.D{{"_id", nodedataIDPrimitive}},
+	})
+	if err != nil {
+		appG.ResponseError(http.StatusBadRequest, err, nil)
+		return result, err
+	}
+	if len(existNodedatas.Data) == 0 {
+		// appG.ResponseError(http.StatusBadRequest, errors.New("not found nodedata"), nil)
+		return result, nil
+	}
+
+	// check exist vote
 	existNodedataVote, err := h.services.NodedataVote.FindNodedataVote(domain.RequestParams{
 		Options: domain.Options{Limit: 1},
 		Filter:  bson.D{{"value", input.Value}, {"nodedata_id", nodedataIDPrimitive}, {"user_id", userIDPrimitive}}, // {"tag_id", input.TagID},
 	})
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
-		return
+		return result, err
 	}
 	if len(existNodedataVote.Data) > 0 {
-		appG.ResponseError(http.StatusBadRequest, model.ErrNodedataVoteExistValue, nil)
-		return
+		// appG.ResponseError(http.StatusBadRequest, model.ErrNodedataVoteExistValue, nil)
+		return &existNodedataVote.Data[0], nil
 	}
 
-	NodedataVote, err := h.services.NodedataVote.CreateNodedataVote(userID, &input)
+	result, err = h.services.NodedataVote.CreateNodedataVote(userID, input)
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
-		return
+		return result, err
 	}
 
 	// update counter votes nodedata.
 	votes, err := h.services.NodedataVote.FindNodedataVote(domain.RequestParams{
-		Filter: bson.D{{"nodedata_id", NodedataVote.NodedataID}},
+		Filter: bson.D{{"nodedata_id", result.NodedataID}},
 	})
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
-		return
+		return result, err
 	}
 
 	like := 0
@@ -102,17 +169,17 @@ func (h *HandlerV1) CreateNodedataVote(c *gin.Context) {
 	if dlike > 5 {
 		status = -1
 	}
-	_, err = h.services.Nodedata.UpdateNodedata(NodedataVote.NodedataID.Hex(), userID, &model.Nodedata{
+	_, err = h.services.Nodedata.UpdateNodedata(result.NodedataID.Hex(), userID, &model.Nodedata{
 		Like:   int64(like),
 		Dlike:  int64(math.Abs(float64(dlike))),
 		Status: int64(status),
 	})
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
-		return
+		return result, err
 	}
 
-	c.JSON(http.StatusOK, NodedataVote)
+	return result, nil
 }
 
 // @Summary NodedataVote Get all NodedataVotes

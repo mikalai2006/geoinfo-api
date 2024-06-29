@@ -11,6 +11,7 @@ import (
 	"github.com/mikalai2006/geoinfo-api/internal/middleware"
 	"github.com/mikalai2006/geoinfo-api/pkg/app"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (h *HandlerV1) registerAuth(router *gin.RouterGroup) {
@@ -20,8 +21,8 @@ func (h *HandlerV1) registerAuth(router *gin.RouterGroup) {
 	auth.POST("/logout", h.Logout)
 	auth.POST("/refresh", h.tokenRefresh)
 	auth.GET("/refresh", h.tokenRefresh)
-	auth.GET("/verification/:code", middleware.SetUserIdentity, h.VerificationAuth)
-	auth.GET("/iam", middleware.SetUserIdentity, h.getIam)
+	auth.GET("/verification/:code", h.SetUserFromRequest, h.VerificationAuth)
+	auth.GET("/iam", h.SetUserFromRequest, h.getIam)
 }
 
 func (h *HandlerV1) getIam(c *gin.Context) {
@@ -47,21 +48,33 @@ func (h *HandlerV1) getIam(c *gin.Context) {
 		return
 	}
 
-	// implementation max distance.
-	md, err := middleware.GetMaxDistance(c)
+	// get auth data for user
+	authData, err := h.services.GetAuth(users.UserID.Hex())
 	if err != nil {
 		appG.ResponseError(http.StatusUnauthorized, err, nil)
 		return
 	}
-	users.Md = md
+	if !authData.ID.IsZero() {
+		users.Md = authData.MaxDistance
+		users.Roles = authData.Roles
+		fmt.Println("authData", authData)
+	}
 
-	// implementation roles for user.
-	roles, err := middleware.GetRoles(c)
-	if err != nil {
-		appG.ResponseError(http.StatusUnauthorized, err, nil)
-		return
-	}
-	users.Roles = roles
+	// // implementation max distance.
+	// md, err := middleware.GetMaxDistance(c)
+	// if err != nil {
+	// 	appG.ResponseError(http.StatusUnauthorized, err, nil)
+	// 	return
+	// }
+	// users.Md = md
+
+	// // implementation roles for user.
+	// roles, err := middleware.GetRoles(c)
+	// if err != nil {
+	// 	appG.ResponseError(http.StatusUnauthorized, err, nil)
+	// 	return
+	// }
+	// users.Roles = roles
 
 	c.JSON(http.StatusOK, users)
 }
@@ -172,10 +185,10 @@ func (h *HandlerV1) SignIn(c *gin.Context) {
 		appG.ResponseError(http.StatusBadRequest, errors.New("request must be with email or login"), nil)
 		return
 	}
-	if input.Password == "" {
-		appG.ResponseError(http.StatusBadRequest, errors.New("empty password"), nil)
-		return
-	}
+	// if input.Password == "" {
+	// 	appG.ResponseError(http.StatusBadRequest, errors.New("empty password"), nil)
+	// 	return
+	// }
 
 	if input.Strategy == "local" {
 		tokens, err := h.services.Authorization.SignIn(input)
@@ -188,6 +201,7 @@ func (h *HandlerV1) SignIn(c *gin.Context) {
 		c.JSON(http.StatusOK, domain.ResponseTokens{
 			AccessToken:  tokens.AccessToken,
 			RefreshToken: tokens.RefreshToken,
+			ExpiresIn:    tokens.ExpiresIn,
 		})
 	}
 	// else {
@@ -218,15 +232,19 @@ func (h *HandlerV1) tokenRefresh(c *gin.Context) {
 	// session := sessions.Default(c)
 	var input domain.RefreshInput
 
-	if jwtCookie == "" {
-		if err := c.BindJSON(&input); err != nil {
-			appG.ResponseError(http.StatusUnauthorized, err, nil)
-			return
-		}
-	} else {
+	// if jwtCookie == "" {
+	if err := c.BindJSON(&input); err != nil {
+		appG.ResponseError(http.StatusUnauthorized, err, nil)
+		return
+	}
+	// } else {
+	// 	input.Token = jwtCookie
+	// }
+	fmt.Println("refresh input.Token  = ", input.Token)
+	fmt.Println("jwtCookie  = ", jwtCookie)
+	if input.Token == "" {
 		input.Token = jwtCookie
 	}
-	// fmt.Println("refresh input.Token  = ", input.Token)
 
 	if input.Token == "" && jwtCookie == "" {
 		appG.ResponseError(http.StatusUnauthorized, errors.New("not found token"), nil)
@@ -236,9 +254,14 @@ func (h *HandlerV1) tokenRefresh(c *gin.Context) {
 	}
 
 	res, err := h.services.Authorization.RefreshTokens(input.Token)
-	if err != nil {
+	if err != nil && err != mongo.ErrNoDocuments {
 		appG.ResponseError(http.StatusUnauthorized, err, nil)
 		return
+	}
+	if err == mongo.ErrNoDocuments {
+		c.SetCookie(h.auth.NameCookieRefresh, "", -1, "/", c.Request.URL.Hostname(), false, true)
+	} else {
+		c.SetCookie(h.auth.NameCookieRefresh, res.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", c.Request.URL.Hostname(), false, true)
 	}
 
 	// userData, err := h.services.User.FindUser(domain.RequestParams{Filter: bson.D{{"user_id": res.}}})
@@ -247,11 +270,12 @@ func (h *HandlerV1) tokenRefresh(c *gin.Context) {
 	// 	return
 	// }
 
-	c.SetCookie(h.auth.NameCookieRefresh, res.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", c.Request.URL.Hostname(), false, true)
+	// c.SetCookie(h.auth.NameCookieRefresh, res.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", c.Request.URL.Hostname(), false, true)
 
 	c.JSON(http.StatusOK, domain.ResponseTokens{
 		AccessToken:  res.AccessToken,
 		RefreshToken: res.RefreshToken,
+		ExpiresIn:    res.ExpiresIn,
 	})
 }
 

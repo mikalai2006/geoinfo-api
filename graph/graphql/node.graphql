@@ -17,6 +17,7 @@ type Node {
   amenityId: String!
   props: Any!
   user: User
+  my: Boolean
   ccode: String!
   # f: String
   # p:String
@@ -25,6 +26,7 @@ type Node {
   reviews: [Review]
   address: Address
   reviewsInfo: ReviewInfo
+  audits: [NodeAudit]
 
   createdAt:Time!
   updatedAt:Time!
@@ -81,10 +83,10 @@ input ParamsNode {
 }
 
 extend type Query {
-  nodes(limit: Int, skip:Int=0, input: ParamsNode): PaginationNode
-  osm(limit: Int, skip:Int=0, lonA:Float, latA:Float, lonB:Float, latB:Float): [Node]
+  nodes(limit: Int, skip:Int=0, input: ParamsNode): PaginationNode @auth
+  osm(limit: Int, skip:Int=0, lonA:Float, latA:Float, lonB:Float, latB:Float): [Node] @auth
   
-  node(id: ID, osmId: String, lat: Float, lon: Float): Node
+  node(id: ID, osmId: String, lat: Float, lon: Float): Node @auth
 }
 
 input NewNode {

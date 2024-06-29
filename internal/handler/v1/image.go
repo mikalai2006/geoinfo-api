@@ -28,11 +28,11 @@ import (
 
 func (h *HandlerV1) RegisterImage(router *gin.RouterGroup) {
 	route := router.Group("/image")
-	route.POST("", middleware.SetUserIdentity, h.createImage)
+	route.POST("", h.SetUserFromRequest, h.createImage)
 	route.GET("", h.findImage)
 	route.GET("/:id", h.getImage)
-	route.GET("/:id/dir", middleware.SetUserIdentity, h.getImageDirs)
-	route.DELETE("/:id", middleware.SetUserIdentity, h.deleteImage)
+	route.GET("/:id/dir", h.SetUserFromRequest, h.getImageDirs)
+	route.DELETE("/:id", h.SetUserFromRequest, h.deleteImage)
 }
 
 func (h *HandlerV1) getImage(c *gin.Context) {

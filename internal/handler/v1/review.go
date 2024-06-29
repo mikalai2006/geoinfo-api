@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,17 +14,18 @@ import (
 func (h *HandlerV1) registerReview(router *gin.RouterGroup) {
 	review := router.Group("/review")
 	review.GET("/", h.FindReview)
-	review.POST("", middleware.SetUserIdentity, h.CreateReview)
+	review.POST("", h.CreateReview)
+	review.POST("/list", h.CreateReviewList)
 }
 
 func (h *HandlerV1) CreateReview(c *gin.Context) {
 	appG := app.Gin{C: c}
-	userID, err := middleware.GetUID(c)
-	if err != nil {
-		// c.AbortWithError(http.StatusUnauthorized, err)
-		appG.ResponseError(http.StatusUnauthorized, err, gin.H{"hello": "world"})
-		return
-	}
+	// userID, err := middleware.GetUID(c)
+	// if err != nil {
+	// 	// c.AbortWithError(http.StatusUnauthorized, err)
+	// 	appG.ResponseError(http.StatusUnauthorized, err, gin.H{"hello": "world"})
+	// 	return
+	// }
 
 	var input *model.Review
 	if er := c.BindJSON(&input); er != nil {
@@ -31,13 +33,46 @@ func (h *HandlerV1) CreateReview(c *gin.Context) {
 		return
 	}
 
-	review, err := h.services.Review.CreateReview(userID, input)
+	review, err := h.CreateOrExistReview(c, input) //h.services.Review.CreateReview(userID, input)
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
 		return
 	}
 
 	c.JSON(http.StatusOK, review)
+}
+
+func (h *HandlerV1) CreateReviewList(c *gin.Context) {
+	appG := app.Gin{C: c}
+	userID, err := middleware.GetUID(c)
+	if err != nil || userID == "" {
+		// c.AbortWithError(http.StatusUnauthorized, err)
+		appG.ResponseError(http.StatusUnauthorized, err, gin.H{"hello": "world"})
+		return
+	}
+
+	var input []*model.Review
+	if er := c.BindJSON(&input); er != nil {
+		appG.ResponseError(http.StatusBadRequest, er, nil)
+		return
+	}
+
+	if len(input) == 0 {
+		appG.ResponseError(http.StatusBadRequest, errors.New("list must be with element(s)"), nil)
+		return
+	}
+
+	var result []*model.Review
+	for i := range input {
+		review, err := h.CreateOrExistReview(c, input[i]) //h.services.Review.CreateReview(userID, input)
+		if err != nil {
+			appG.ResponseError(http.StatusBadRequest, err, nil)
+			return
+		}
+		result = append(result, review)
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 // @Summary Review Get all reviews
@@ -111,4 +146,42 @@ func (h *HandlerV1) UpdateReview(c *gin.Context) {
 
 func (h *HandlerV1) DeleteReview(c *gin.Context) {
 
+}
+
+func (h *HandlerV1) CreateOrExistReview(c *gin.Context, input *model.Review) (*model.Review, error) {
+	appG := app.Gin{C: c}
+	userID, err := middleware.GetUID(c)
+	if err != nil {
+		// c.AbortWithError(http.StatusUnauthorized, err)
+		appG.ResponseError(http.StatusUnauthorized, err, gin.H{"hello": "world"})
+		return nil, err
+	}
+	var result *model.Review
+
+	// userIDPrimitive, err := primitive.ObjectIDFromHex(userID)
+	// if err != nil {
+	// 	appG.ResponseError(http.StatusBadRequest, err, nil)
+	// 	return result, err
+	// }
+
+	// existReviews, err := h.services.Review.FindReview(domain.RequestParams{
+	// 	Options: domain.Options{Limit: 1},
+	// 	Filter:  bson.D{{"node_id", input.NodeID}, {"user_id", userIDPrimitive}},
+	// })
+	// if err != nil {
+	// 	appG.ResponseError(http.StatusBadRequest, err, nil)
+	// 	return result, err
+	// }
+	// if len(existReviews.Data) > 0 {
+	// 	fmt.Println("existReviews =")
+	// 	// appG.ResponseError(http.StatusBadRequest, model.ErrNodedataVoteExistValue, nil)
+	// 	return &existReviews.Data[0], nil
+	// }
+
+	result, err = h.services.Review.CreateReview(userID, input)
+	if err != nil {
+		appG.ResponseError(http.StatusBadRequest, err, nil)
+		return result, err
+	}
+	return result, nil
 }

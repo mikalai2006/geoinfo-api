@@ -44,6 +44,7 @@ func (r *CountryMongo) CreateCountry(userID string, data *domain.CountryInput) (
 		Name:      data.Name,
 		Code:      data.Code,
 		SortOrder: data.SortOrder,
+		Image:     data.Image,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}

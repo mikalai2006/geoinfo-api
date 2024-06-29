@@ -28,6 +28,7 @@ type Address interface {
 
 type Authorization interface {
 	CreateAuth(auth *domain.SignInInput) (string, error)
+	GetAuth(id string) (domain.Auth, error)
 	SignIn(input *domain.SignInInput) (domain.ResponseTokens, error)
 	ExistAuth(auth *domain.SignInInput) (domain.Auth, error)
 	CreateSession(auth *domain.Auth) (domain.ResponseTokens, error)
@@ -50,6 +51,21 @@ type Node interface {
 	DeleteNode(id string) (model.Node, error)
 
 	FindForKml(params domain.RequestParams) (domain.Response[domain.Kml], error)
+	CreateFile(params domain.RequestParams) (domain.Response[domain.NodeFileItem], error)
+}
+
+type NodeAudit interface {
+	CreateNodeAudit(userID string, nodeAudit *model.NodeAuditInput) (*model.NodeAudit, error)
+	FindNodeAudit(params domain.RequestParams) (domain.Response[model.NodeAudit], error)
+	UpdateNodeAudit(id string, userID string, data *model.NodeAuditInput) (*model.NodeAudit, error)
+	DeleteNodeAudit(id string) (model.NodeAudit, error)
+}
+
+type NodeVote interface {
+	CreateNodeVote(userID string, data *model.NodeVote) (*model.NodeVote, error)
+	FindNodeVote(params domain.RequestParams) (domain.Response[model.NodeVote], error)
+	UpdateNodeVote(id string, userID string, data *model.NodeVoteInput) (*model.NodeVote, error)
+	DeleteNodeVote(id string) (model.NodeVote, error)
 }
 
 type Nodedata interface {
@@ -71,10 +87,12 @@ type NodedataVote interface {
 }
 
 type Review interface {
+	CreateReview(userID string, review *model.Review) (*model.Review, error)
 	FindReview(params domain.RequestParams) (domain.Response[model.Review], error)
+	UpdateReview(id string, userID string, data *model.ReviewInput) (*model.Review, error)
+	DeleteReview(id string) (*model.Review, error)
 
 	GetAllReview(params domain.RequestParams) (domain.Response[model.Review], error)
-	CreateReview(userID string, review *model.Review) (*model.Review, error)
 }
 type User interface {
 	GetUser(id string) (model.User, error)
@@ -83,6 +101,8 @@ type User interface {
 	DeleteUser(id string) (model.User, error)
 	UpdateUser(id string, user *model.User) (model.User, error)
 	Iam(userID string) (model.User, error)
+
+	SetStat(id string, statData model.UserStat) (model.User, error)
 }
 
 type Image interface {
@@ -98,6 +118,14 @@ type Country interface {
 	FindCountry(params domain.RequestParams) (domain.Response[domain.Country], error)
 	UpdateCountry(id string, data interface{}) (domain.Country, error)
 	DeleteCountry(id string) (domain.Country, error)
+}
+
+type Currency interface {
+	CreateCurrency(userID string, data *domain.CurrencyInput) (domain.Currency, error)
+	GetCurrency(id string) (domain.Currency, error)
+	FindCurrency(params domain.RequestParams) (domain.Response[domain.Currency], error)
+	UpdateCurrency(id string, data interface{}) (domain.Currency, error)
+	DeleteCurrency(id string) (domain.Currency, error)
 }
 
 type Apps interface {
@@ -158,11 +186,14 @@ type Services struct {
 	Authorization
 	Apps
 	Country
+	Currency
 	Image
 	Review
 	User
 	Track
 	Node
+	NodeAudit
+	NodeVote
 	Nodedata
 	NodedataVote
 	Tag
@@ -185,33 +216,57 @@ type ConfigServices struct {
 }
 
 func NewServices(cfgService *ConfigServices) *Services {
-	return &Services{
-		Authorization: NewAuthService(
-			cfgService.Repositories.Authorization,
-			cfgService.Hasher,
-			cfgService.TokenManager,
-			cfgService.RefreshTokenTTL,
-			cfgService.AccessTokenTTL,
-			cfgService.OtpGenerator,
-			cfgService.VerificationCodeLength,
-		),
-		Action:       NewActionService(cfgService.Repositories.Action, cfgService.I18n),
-		Address:      NewAddressService(cfgService.Repositories.Address, cfgService.I18n),
-		Amenity:      NewAmenityService(cfgService.Repositories.Amenity, cfgService.I18n),
-		AmenityGroup: NewAmenityGroupService(cfgService.Repositories.AmenityGroup, cfgService.I18n),
-		Review:       NewReviewService(cfgService.Repositories.Review),
-		Apps:         NewAppsService(cfgService.Repositories, cfgService.I18n),
-		Country:      NewCountryService(cfgService.Repositories, cfgService.I18n),
-		Image:        NewImageService(cfgService.Repositories.Image, cfgService.ImageService),
-		User:         NewUserService(cfgService.Repositories.User),
-		Track:        NewTrackService(cfgService.Repositories.Track),
-		Node:         NewNodeService(cfgService.Repositories.Node),
-		Nodedata:     NewNodedataService(cfgService.Repositories.Nodedata),
-		NodedataVote: NewNodedataVoteService(cfgService.Repositories.NodedataVote),
-		Tag:          NewTagService(cfgService.Repositories.Tag),
-		Tagopt:       NewTagoptService(cfgService.Repositories.Tagopt),
-		Ticket:       NewTicketService(cfgService.Repositories.Ticket),
+	Authorization := NewAuthService(
+		cfgService.Repositories.Authorization,
+		cfgService.Hasher,
+		cfgService.TokenManager,
+		cfgService.RefreshTokenTTL,
+		cfgService.AccessTokenTTL,
+		cfgService.OtpGenerator,
+		cfgService.VerificationCodeLength,
+	)
+	Action := NewActionService(cfgService.Repositories.Action, cfgService.I18n)
+	Address := NewAddressService(cfgService.Repositories.Address, cfgService.I18n)
+	Amenity := NewAmenityService(cfgService.Repositories.Amenity, cfgService.I18n)
+	AmenityGroup := NewAmenityGroupService(cfgService.Repositories.AmenityGroup, cfgService.I18n)
+	User := NewUserService(cfgService.Repositories.User)
+	// Review := NewReviewService(cfgService.Repositories.Review)
+	Apps := NewAppsService(cfgService.Repositories, cfgService.I18n)
+	Country := NewCountryService(cfgService.Repositories, cfgService.I18n)
+	Currency := NewCurrencyService(cfgService.Repositories, cfgService.I18n)
+	Image := NewImageService(cfgService.Repositories.Image, cfgService.ImageService)
+	Track := NewTrackService(cfgService.Repositories.Track)
+	Node := NewNodeService(cfgService.Repositories.Node, User)
+	NodeAudit := NewNodeAuditService(cfgService.Repositories.NodeAudit)
+	NodeVote := NewNodeVoteService(cfgService.Repositories.NodeVote)
+	// Nodedata:=     NewNodedataService(cfgService.Repositories.Nodedata, cfgService.Repositories.User, cfgService.Repositories.NodedataVote, *Services)
+	NodedataVote := NewNodedataVoteService(cfgService.Repositories.NodedataVote, cfgService.Repositories.User, cfgService.Repositories.Nodedata)
+	Tag := NewTagService(cfgService.Repositories.Tag)
+	Tagopt := NewTagoptService(cfgService.Repositories.Tagopt)
+	Ticket := NewTicketService(cfgService.Repositories.Ticket)
+	Like := NewLikeService(cfgService.Repositories.Like)
 
-		Like: NewLikeService(cfgService.Repositories.Like),
+	return &Services{
+		Authorization: Authorization,
+		Action:        Action,
+		Address:       Address,
+		Amenity:       Amenity,
+		AmenityGroup:  AmenityGroup,
+		User:          User,
+		Apps:          Apps,
+		Like:          Like,
+		Country:       Country,
+		Image:         Image,
+		Track:         Track,
+		Node:          Node,
+		NodeAudit:     NodeAudit,
+		NodeVote:      NodeVote,
+		Nodedata:      NewNodedataService(cfgService.Repositories.Nodedata, User, NodedataVote),
+		Tag:           Tag,
+		Tagopt:        Tagopt,
+		Ticket:        Ticket,
+		Review:        NewReviewService(cfgService.Repositories.Review, User),
+		Currency:      Currency,
+		NodedataVote:  NodedataVote,
 	}
 }

@@ -226,6 +226,7 @@ type KmlNodedata struct {
 	TagoptID primitive.ObjectID `json:"tagoptId" bson:"tagopt_id"`
 	// Name     string                       `json:"name" bson:"name"`
 	Tag         model.Tag                    `json:"tag" bson:"tag"`
+	Tagopt      model.Tagopt                 `json:"tagopt" bson:"tagopt"`
 	Data        model.NodedataData           `json:"data" bson:"data"`
 	Title       string                       `json:"title" bson:"title"`
 	Description string                       `json:"description" bson:"description"`

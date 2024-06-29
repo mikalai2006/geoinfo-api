@@ -18,10 +18,10 @@ import (
 func (h *HandlerV1) registerTag(router *gin.RouterGroup) {
 	Tag := router.Group("/tag")
 	Tag.GET("", h.FindTag)
-	Tag.POST("", middleware.SetUserIdentity, h.CreateTag)
-	Tag.POST("/list/", middleware.SetUserIdentity, h.CreateListTag)
-	Tag.PATCH("/:id", middleware.SetUserIdentity, h.UpdateTag)
-	Tag.DELETE("/:id", middleware.SetUserIdentity, h.DeleteTag)
+	Tag.POST("", h.SetUserFromRequest, h.CreateTag)
+	Tag.POST("/list/", h.SetUserFromRequest, h.CreateListTag)
+	Tag.PATCH("/:id", h.SetUserFromRequest, h.UpdateTag)
+	Tag.DELETE("/:id", h.SetUserFromRequest, h.DeleteTag)
 }
 
 func (h *HandlerV1) CreateTag(c *gin.Context) {

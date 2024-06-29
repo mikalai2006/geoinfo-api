@@ -1,7 +1,7 @@
 type Review {
   id: ID!
   userId: String!
-  osmId: String!
+  nodeId: String!
 
   review: String!
   rate: Int!
@@ -20,7 +20,7 @@ type ReviewInfo {
 input FetchReview {
   id: ID
   userId: String
-  osmId: String
+  nodeId: String
 }
 
 type PaginationReview {
@@ -44,14 +44,3 @@ extend type Query {
   reviewsConnection(first: Int = 20, after: ID, limit: Int=10, skip:Int=0, input:FetchReview): ReviewsConnection
   review(input:FetchReview): Review
 }
-
-# input NewNode {
-#   lat: Float!
-#   lon: Float!
-#   type: String!
-#   osmId: String!
-# }
-
-# extend type Mutation {
-#   createNode(input: NewNode!): Node! @auth
-# }

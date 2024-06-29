@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -51,9 +52,10 @@ func (h *HandlerV1) OAuthGoogle(c *gin.Context) {
 	parameters.Add("scope", scope)
 	parameters.Add("response_type", "code")
 	parameters.Add("state", urlReferer)
+	// fmt.Println("client URL(state): ", urlReferer)
 
 	pathRequest.RawQuery = parameters.Encode()
-	fmt.Println("Google auth1::: ", pathRequest.String())
+	// fmt.Println("Google auth1::: ", pathRequest.String())
 	c.Redirect(http.StatusFound, pathRequest.String())
 }
 
@@ -79,7 +81,7 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 		// appG.ResponseError(http.StatusBadRequest, errors.New("no correct code"), nil)
 		return
 	}
-	fmt.Println("error!!!!!!!!!!!!!!!!!!!!!!!!!!")
+	// fmt.Println("error!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 	pathRequest, err := url.Parse(h.oauth.GoogleTokenURI)
 	if err != nil {
@@ -218,6 +220,10 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 	}
 	parameters = url.Values{}
 	parameters.Add("token", tokens.AccessToken)
+	if len(clientURL) == 0 || clientURL == "http://localhost:8081/" {
+		parameters.Add("rt", tokens.RefreshToken)
+		parameters.Add("exp", strconv.FormatInt(tokens.ExpiresIn, 10))
+	}
 	pathRequest.RawQuery = parameters.Encode()
 	c.SetCookie(h.auth.NameCookieRefresh, tokens.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", c.Request.URL.Hostname(), false, true)
 	c.Redirect(http.StatusFound, pathRequest.String())

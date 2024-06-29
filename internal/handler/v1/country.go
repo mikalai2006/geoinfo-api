@@ -14,12 +14,12 @@ import (
 
 func (h *HandlerV1) RegisterCountry(router *gin.RouterGroup) {
 	country := router.Group("/country")
-	country.POST("", middleware.SetUserIdentity, h.createCountry)
+	country.POST("", h.SetUserFromRequest, h.createCountry)
 	country.GET("", h.findCountry)
 	country.GET("/:id", h.getCountry)
-	country.POST("/list/", middleware.SetUserIdentity, h.CreateListCountry)
-	country.PATCH("/:id", middleware.SetUserIdentity, h.updateCountry)
-	country.DELETE("/:id", middleware.SetUserIdentity, h.deleteCountry)
+	country.POST("/list/", h.SetUserFromRequest, h.CreateListCountry)
+	country.PATCH("/:id", h.SetUserFromRequest, h.updateCountry)
+	country.DELETE("/:id", h.SetUserFromRequest, h.deleteCountry)
 }
 
 func (h *HandlerV1) createCountry(c *gin.Context) {

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mikalai2006/geoinfo-api/internal/domain"
 	"github.com/mikalai2006/geoinfo-api/pkg/app"
 	"github.com/mikalai2006/geoinfo-api/pkg/auths"
 )
@@ -17,70 +18,71 @@ const (
 	userRoles           = "roles"
 	maxDistance         = "maxDistance"
 	uid                 = "uid"
+	authCtx             = "Auth"
 )
 
-func SetUserIdentity(c *gin.Context) {
-	appG := app.Gin{C: c}
+// func SetUserIdentity(c *gin.Context) {
+// 	appG := app.Gin{C: c}
 
-	header := c.GetHeader(authorizationHeader)
-	// fmt.Println("header=", header)
-	// jwtCookie, _ := c.Cookie(h.auth.NameCookieRefresh)
-	// fmt.Println("jwtCookie=", jwtCookie)
+// 	header := c.GetHeader(authorizationHeader)
+// 	// fmt.Println("header=", header)
+// 	// jwtCookie, _ := c.Cookie(h.auth.NameCookieRefresh)
+// 	// fmt.Println("jwtCookie=", jwtCookie)
 
-	if header == "" {
-		// c.AbortWithStatusJSON(http.StatusUnauthorized, errors.New("empty auth header"))
-		appG.ResponseError(http.StatusUnauthorized, errors.New("empty auth header"), nil)
-		return
-	}
+// 	if header == "" {
+// 		// c.AbortWithStatusJSON(http.StatusUnauthorized, errors.New("empty auth header"))
+// 		appG.ResponseError(http.StatusUnauthorized, errors.New("empty auth header"), nil)
+// 		return
+// 	}
 
-	headerParts := strings.Split(header, " ")
-	countParts := 2
-	if len(headerParts) != countParts {
-		// c.AbortWithError(http.StatusUnauthorized, errors.New("invalid auth header"))
-		appG.ResponseError(http.StatusUnauthorized, errors.New("invalid auth header"), nil)
-		return
-	}
+// 	headerParts := strings.Split(header, " ")
+// 	countParts := 2
+// 	if len(headerParts) != countParts {
+// 		// c.AbortWithError(http.StatusUnauthorized, errors.New("invalid auth header"))
+// 		appG.ResponseError(http.StatusUnauthorized, errors.New("invalid auth header"), nil)
+// 		return
+// 	}
 
-	if headerParts[1] == "" {
-		// c.AbortWithError(http.StatusUnauthorized, errors.New("invalid auth header"))
-		appG.ResponseError(http.StatusUnauthorized, errors.New("invalid auth header"), nil)
-		return
-	}
+// 	if headerParts[1] == "" {
+// 		// c.AbortWithError(http.StatusUnauthorized, errors.New("invalid auth header"))
+// 		appG.ResponseError(http.StatusUnauthorized, errors.New("invalid auth header"), nil)
+// 		return
+// 	}
 
-	// parse token
-	// userId, err := h.services.Authorization.ParseToken(headerParts[1])
-	// if err != nil {
-	// 	newErrorResponse(c, http.StatusUnauthorized, err.Error())
-	// 	return
-	// }
-	tokenManager, err := auths.NewManager(os.Getenv("SIGNING_KEY"))
-	if err != nil {
-		// c.AbortWithError(http.StatusUnauthorized, err)
-		appG.ResponseError(http.StatusUnauthorized, err, nil)
-		return
-	}
+// 	// parse token
+// 	// userId, err := h.services.Authorization.ParseToken(headerParts[1])
+// 	// if err != nil {
+// 	// 	newErrorResponse(c, http.StatusUnauthorized, err.Error())
+// 	// 	return
+// 	// }
+// 	tokenManager, err := auths.NewManager(os.Getenv("SIGNING_KEY"))
+// 	if err != nil {
+// 		// c.AbortWithError(http.StatusUnauthorized, err)
+// 		appG.ResponseError(http.StatusUnauthorized, err, nil)
+// 		return
+// 	}
 
-	claims, err := tokenManager.Parse(string(headerParts[1]))
-	if err != nil {
-		// c.AbortWithError(http.StatusUnauthorized, err)
-		appG.ResponseError(http.StatusUnauthorized, err, nil)
-		return
-	}
-	c.Set(userCtx, claims.Subject)
-	c.Set(userRoles, claims.Roles)
-	c.Set(maxDistance, claims.Md)
-	c.Set(uid, claims.Uid)
-	// session := sessions.Default(c)
-	// user := session.Get(userkey)
-	// if user == nil {
-	// 	// Abort the request with the appropriate error code
-	// 	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-	// 	return
-	// }
-	// logrus.Printf("user session= %s", user)
-	// // Continue down the chain to handler etc
-	// c.Next()
-}
+// 	claims, err := tokenManager.Parse(string(headerParts[1]))
+// 	if err != nil {
+// 		// c.AbortWithError(http.StatusUnauthorized, err)
+// 		appG.ResponseError(http.StatusUnauthorized, err, nil)
+// 		return
+// 	}
+// 	c.Set(userCtx, claims.Subject)
+// 	c.Set(userRoles, claims.Roles)
+// 	c.Set(maxDistance, claims.Md)
+// 	c.Set(uid, claims.Uid)
+// 	// session := sessions.Default(c)
+// 	// user := session.Get(userkey)
+// 	// if user == nil {
+// 	// 	// Abort the request with the appropriate error code
+// 	// 	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+// 	// 	return
+// 	// }
+// 	// logrus.Printf("user session= %s", user)
+// 	// // Continue down the chain to handler etc
+// 	// c.Next()
+// }
 
 func SetUserIdentityGraphql(c *gin.Context) {
 	appG := app.Gin{C: c}
@@ -187,4 +189,18 @@ func GetUID(c *gin.Context) (string, error) {
 	}
 
 	return idString, nil
+}
+
+func GetAuthFromCtx(c *gin.Context) (domain.Auth, error) {
+	value, ex := c.Get(authCtx)
+	if !ex {
+		return domain.Auth{}, errors.New("auth is missing from ctx")
+	}
+
+	auth, ok := value.(domain.Auth)
+	if !ok {
+		return domain.Auth{}, errors.New("failed to convert value from ctx to domain.Auth")
+	}
+
+	return auth, nil
 }

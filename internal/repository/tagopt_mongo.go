@@ -233,6 +233,7 @@ func (r *TagoptMongo) UpdateTagopt(id string, userID string, data *model.TagoptI
 	// data = obj
 
 	collection := r.db.Collection(TblTagopt)
+	collectionNodedata := r.db.Collection(TblNodedata)
 
 	idPrimitive, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -251,6 +252,12 @@ func (r *TagoptMongo) UpdateTagopt(id string, userID string, data *model.TagoptI
 	}
 	if data.Value != "" {
 		newData["value"] = data.Value
+
+		// update relation nodedatas
+		_, err = collectionNodedata.UpdateMany(ctx, bson.M{"tagopt_id": idPrimitive}, bson.M{"$set": bson.D{{"data.value", data.Value}}})
+		if err != nil {
+			return result, err
+		}
 	}
 	if data.Title != "" {
 		newData["title"] = data.Title

@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/mikalai2006/geoinfo-api/internal/domain"
@@ -88,6 +89,10 @@ func (s *AuthService) ExistAuth(auth *domain.SignInInput) (domain.Auth, error) {
 	return s.repository.CheckExistAuth(auth)
 }
 
+func (s *AuthService) GetAuth(id string) (domain.Auth, error) {
+	return s.repository.GetAuth(id)
+}
+
 func (s *AuthService) SignIn(auth *domain.SignInInput) (domain.ResponseTokens, error) {
 	var result domain.ResponseTokens
 	passwordHash, err := s.hasher.Hash(auth.Password)
@@ -130,6 +135,16 @@ func (s *AuthService) CreateSession(auth *domain.Auth) (domain.ResponseTokens, e
 	if err != nil {
 		return res, err
 	}
+
+	// expiresIn := time.Now().Add(s.refreshTokenTTL)
+
+	timeDuration := s.accessTokenTTL
+	timeExpires := time.Now().Local().Add(time.Second * time.Duration(timeDuration.Seconds()))
+	// time.Hour*time.Duration(timeDuration.Hours()) +
+	// 	time.Minute*time.Duration(timeDuration.Minutes()) +
+	fmt.Println("expiresIn: ", timeExpires, timeExpires.UnixMilli(), s.refreshTokenTTL)
+
+	res.ExpiresIn = timeExpires.UnixMilli()
 
 	session := domain.Session{
 		RefreshToken: res.RefreshToken,

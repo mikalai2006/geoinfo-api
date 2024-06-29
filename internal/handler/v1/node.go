@@ -26,23 +26,24 @@ import (
 func (h *HandlerV1) registerNode(router *gin.RouterGroup) {
 	node := router.Group("/node")
 	node.GET("", h.FindNode)
-	node.POST("", middleware.SetUserIdentity, h.CreateNode)
-	node.POST("/list/", middleware.SetUserIdentity, h.CreateListNode)
-	node.PATCH("/:id", middleware.SetUserIdentity, h.UpdateNode)
-	node.DELETE("/:id", middleware.SetUserIdentity, h.DeleteNode)
+	node.POST("", h.CreateNode)
+	node.POST("/list/", h.CreateListNode)
+	node.PATCH("/:id", h.UpdateNode)
+	node.DELETE("/:id", h.DeleteNode)
 
-	node.GET("/zip", middleware.SetUserIdentity, h.CreateZip)
-	node.GET("/parsekml", middleware.SetUserIdentity, h.ParseKML)
+	node.GET("/zip", h.CreateZip)
+	node.GET("/parsekml", h.ParseKML)
+	// node.GET("/duplicate", h.FindRepeat)
 }
 
 func (h *HandlerV1) CreateNode(c *gin.Context) {
 	appG := app.Gin{C: c}
-	userID, err := middleware.GetUID(c)
-	if err != nil {
-		// c.AbortWithError(http.StatusUnauthorized, err)
-		appG.ResponseError(http.StatusUnauthorized, err, gin.H{"hello": "world"})
-		return
-	}
+	// userID, err := middleware.GetUID(c)
+	// if err != nil {
+	// 	// c.AbortWithError(http.StatusUnauthorized, err)
+	// 	appG.ResponseError(http.StatusUnauthorized, err, gin.H{"hello": "world"})
+	// 	return
+	// }
 
 	var input *model.Node
 	if er := c.BindJSON(&input); er != nil {
@@ -50,11 +51,47 @@ func (h *HandlerV1) CreateNode(c *gin.Context) {
 		return
 	}
 
+	node, err := h.CreateOrExistNode(c, input)
+	if err != nil {
+		appG.ResponseError(http.StatusBadRequest, err, nil)
+		return
+	}
+
+	c.JSON(http.StatusOK, node)
+}
+
+func (h *HandlerV1) CreateOrExistNode(c *gin.Context, input *model.Node) (*model.Node, error) {
+	appG := app.Gin{C: c}
+	userID, err := middleware.GetUID(c)
+	if err != nil {
+		// c.AbortWithError(http.StatusUnauthorized, err)
+		appG.ResponseError(http.StatusUnauthorized, err, gin.H{"hello": "world"})
+		return nil, err
+	}
+
+	// // check exist node
+	// existNode, err := h.services.Node.FindNode(domain.RequestParams{
+	// 	Filter: bson.D{
+	// 		{"lat", bson.M{"$lt": node.Lat + 0.001, "$gt": node.Lat - 0.001}},
+	// 		{"lon", bson.M{"$lt": node.Lon + 0.001, "$gt": node.Lon - 0.001}},
+	// 		{"type", node.Type},
+	// 	},
+	// 	Options: domain.Options{
+	// 		Limit: 1,
+	// 	},
+	// })
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// if len(existNode.Data) > 0 {
+	// 	return &existNode.Data[0], nil
+	// }
 	// check exist node
 	existNode, err := h.services.Node.FindNode(domain.RequestParams{
 		Filter: bson.D{
-			{"lat", bson.M{"$lt": input.Lat + 0.001, "$gt": input.Lat - 0.001}},
-			{"lon", bson.M{"$lt": input.Lon + 0.001, "$gt": input.Lon - 0.001}},
+			{"lat", bson.M{"$lt": input.Lat + 0.00015, "$gt": input.Lat - 0.00015}},
+			{"lon", bson.M{"$lt": input.Lon + 0.00015, "$gt": input.Lon - 0.00015}},
 			{"type", input.Type},
 		},
 		Options: domain.Options{
@@ -63,20 +100,20 @@ func (h *HandlerV1) CreateNode(c *gin.Context) {
 	})
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
-		return
+		return nil, err
 	}
 
+	// if exist node
 	if len(existNode.Data) > 0 {
-
-		appG.ResponseError(http.StatusBadRequest, errors.New("existSameNode"), nil)
-		return
+		//appG.ResponseError(http.StatusBadRequest, errors.New("existSameNode"), nil)
+		return &existNode.Data[0], nil
 	}
 
 	// Get address.
 	pathRequest, err := url.Parse(fmt.Sprintf("https://nominatim.openstreetmap.org/reverse?lat=%f&lon=%f&format=json&accept-language=none", input.Lat, input.Lon))
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
-		return
+		return nil, err
 	}
 	r, _ := http.NewRequestWithContext(c, http.MethodGet, pathRequest.String(), http.NoBody)
 	r.Header.Add("User-Agent", "a127.0.0.1")
@@ -84,30 +121,46 @@ func (h *HandlerV1) CreateNode(c *gin.Context) {
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
-		return
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
-		return
+		return nil, err
 	}
 	var bodyResponse domain.ResponseNominatim
 	if e := json.Unmarshal(bytes, &bodyResponse); e != nil {
 		appG.ResponseError(http.StatusBadRequest, e, nil)
-		return
+		return nil, err
 	}
 
+	var result *model.Node
+
 	if bodyResponse.OsmID != 0 {
-		address, err := h.services.Address.CreateAddress(userID, &domain.AddressInput{
-			OsmID:    fmt.Sprintf("%s/%d", bodyResponse.OsmType, bodyResponse.OsmID),
-			Address:  bodyResponse.Address,
-			DAddress: bodyResponse.DisplayName,
-		})
+		// Check address in to db
+		osmID := fmt.Sprintf("%s/%d", bodyResponse.OsmType, bodyResponse.OsmID)
+		adrDB, err := h.services.Address.FindAddress(domain.RequestParams{Options: domain.Options{Limit: 1},
+			Filter: bson.D{{"osm_id", osmID}}})
 		if err != nil {
 			appG.ResponseError(http.StatusBadRequest, err, nil)
-			return
+			return nil, err
+		}
+
+		address := &domain.Address{}
+		if len(adrDB.Data) > 0 {
+			address = &adrDB.Data[0]
+		} else {
+			address, err = h.services.Address.CreateAddress(userID, &domain.AddressInput{
+				OsmID:    osmID,
+				Address:  bodyResponse.Address,
+				DAddress: bodyResponse.DisplayName,
+			})
+			if err != nil {
+				appG.ResponseError(http.StatusBadRequest, err, nil)
+				return nil, err
+			}
 		}
 
 		input.OsmID = address.OsmID
@@ -120,7 +173,7 @@ func (h *HandlerV1) CreateNode(c *gin.Context) {
 			} else {
 				nameNode = arrStr[0]
 			}
-			input.Name = nameNode
+			input.Name = strings.TrimSpace(nameNode)
 		} else {
 			input.Name = bodyResponse.Name
 		}
@@ -128,21 +181,45 @@ func (h *HandlerV1) CreateNode(c *gin.Context) {
 		if ccode, ok := bodyResponse.Address["country_code"]; ok {
 			input.CCode = ccode.(string)
 		}
-	}
 
-	node, err := h.services.Node.CreateNode(userID, input)
-	if err != nil {
-		appG.ResponseError(http.StatusBadRequest, err, nil)
-		return
-	}
+		node, err := h.services.Node.CreateNode(userID, input)
+		if err != nil {
+			appG.ResponseError(http.StatusBadRequest, err, nil)
+			return nil, err
+		}
 
-	c.JSON(http.StatusOK, node)
+		if len(input.Data) > 0 {
+			for i := range input.Data {
+				inputNodedata := &model.NodedataInput{
+					NodeID:   node.ID.Hex(),
+					Data:     input.Data[i].Data,
+					TagID:    input.Data[i].TagID.Hex(),
+					TagoptID: input.Data[i].TagoptID.Hex(),
+				}
+
+				Nodedata, err := h.CreateOrExistNodedata(c, inputNodedata)
+				// .services.Nodedata.CreateNodedata(userID, inputNodedata)
+				if err != nil {
+					appG.ResponseError(http.StatusBadRequest, err, nil)
+					return nil, err
+				}
+
+				node.Data = append(node.Data, *Nodedata)
+			}
+		}
+		result = node
+	}
+	//  else {
+	// 	fmt.Println("not found osm", bodyResponse.OsmID)
+	// }
+
+	return result, nil
 }
 
 func (h *HandlerV1) CreateListNode(c *gin.Context) {
 	appG := app.Gin{C: c}
 	userID, err := middleware.GetUID(c)
-	if err != nil {
+	if err != nil || userID == "" {
 		// c.AbortWithError(http.StatusUnauthorized, err)
 		appG.ResponseError(http.StatusUnauthorized, err, gin.H{"hello": "world"})
 		return
@@ -161,43 +238,127 @@ func (h *HandlerV1) CreateListNode(c *gin.Context) {
 
 	var result []*model.Node
 	for i := range input {
-		existOsmID, err := h.services.Node.FindNode(domain.RequestParams{
-			Options: domain.Options{Limit: 1},
-			Filter:  bson.D{{"osm_id", input[i].OsmID}},
-		})
+		// existOsmID, err := h.services.Node.FindNode(domain.RequestParams{
+		// 	Options: domain.Options{Limit: 1},
+		// 	Filter:  bson.D{{"osm_id", input[i].OsmID}},
+		// })
+		// if err != nil {
+		// 	appG.ResponseError(http.StatusBadRequest, err, nil)
+		// 	return
+		// }
+
+		// existLatLon := false
+		// if len(existOsmID.Data) > 0 {
+		// 	existLatLon = input[i].Lat == existOsmID.Data[0].Lat && input[i].Lon == existOsmID.Data[0].Lon
+		// 	progress := 0
+		// 	if existLatLon {
+		// 		progress = 100
+		// 	}
+
+		// 	_, err := h.services.Ticket.CreateTicket(userID, &model.Ticket{
+		// 		Title:       "Double osm object",
+		// 		Description: fmt.Sprintf("[osmId]%s[/osmId]: [coords]%v,%v[/coords], [existCoords]%v,%v[/existCoords]", input[i].OsmID, input[i].Lat, input[i].Lon, existOsmID.Data[0].Lat, existOsmID.Data[0].Lon),
+		// 		Status:      !existLatLon,
+		// 		Progress:    progress,
+		// 	})
+		// 	if err != nil {
+		// 		appG.ResponseError(http.StatusBadRequest, err, nil)
+		// 		return
+		// 	}
+		// 	// fmt.Println("Double node:::", input[i].OsmID, input[i].Lat, input[i].Lon)
+		// }
+		// if !existLatLon {
+
+		// // Get address.
+		// pathRequest, err := url.Parse(fmt.Sprintf("https://nominatim.openstreetmap.org/reverse?lat=%f&lon=%f&format=json&accept-language=none", input[i].Lat, input[i].Lon))
+		// if err != nil {
+		// 	appG.ResponseError(http.StatusBadRequest, err, nil)
+		// 	return
+		// }
+		// r, _ := http.NewRequestWithContext(c, http.MethodGet, pathRequest.String(), http.NoBody)
+		// r.Header.Add("User-Agent", "a127.0.0.1")
+
+		// resp, err := http.DefaultClient.Do(r)
+		// if err != nil {
+		// 	appG.ResponseError(http.StatusBadRequest, err, nil)
+		// 	return
+		// }
+		// defer resp.Body.Close()
+
+		// bytes, err := io.ReadAll(resp.Body)
+		// if err != nil {
+		// 	appG.ResponseError(http.StatusBadRequest, err, nil)
+		// 	return
+		// }
+		// var bodyResponse domain.ResponseNominatim
+		// if e := json.Unmarshal(bytes, &bodyResponse); e != nil {
+		// 	appG.ResponseError(http.StatusBadRequest, e, nil)
+		// 	return
+		// }
+
+		// if bodyResponse.OsmID != 0 {
+		// 	address, err := h.services.Address.CreateAddress(userID, &domain.AddressInput{
+		// 		OsmID:    fmt.Sprintf("%s/%d", bodyResponse.OsmType, bodyResponse.OsmID),
+		// 		Address:  bodyResponse.Address,
+		// 		DAddress: bodyResponse.DisplayName,
+		// 	})
+		// 	if err != nil {
+		// 		appG.ResponseError(http.StatusBadRequest, err, nil)
+		// 		return
+		// 	}
+
+		// 	input[i].OsmID = address.OsmID
+
+		// 	if bodyResponse.Name == "" {
+		// 		arrStr := strings.Split(address.DAddress, ",")
+		// 		nameNode := ""
+		// 		if len(arrStr) >= 2 {
+		// 			nameNode = fmt.Sprintf("%s, %s", arrStr[1], arrStr[0])
+		// 		} else {
+		// 			nameNode = arrStr[0]
+		// 		}
+		// 		input[i].Name = strings.TrimSpace(nameNode)
+		// 	} else {
+		// 		input[i].Name = bodyResponse.Name
+		// 	}
+
+		// 	if ccode, ok := bodyResponse.Address["country_code"]; ok {
+		// 		input[i].CCode = ccode.(string)
+		// 	}
+		// }
+
+		// Node, err := h.services.Node.CreateNode(userID, input[i])
+		// if err != nil {
+		// 	appG.ResponseError(http.StatusBadRequest, err, nil)
+		// 	return
+		// }
+
+		// if len(input[i].Data) > 0 {
+		// 	for j := range input[i].Data {
+		// 		inputNodedata := &model.NodedataInput{
+		// 			NodeID:   Node.ID.Hex(),
+		// 			Data:     input[i].Data[j].Data,
+		// 			TagID:    input[i].Data[j].TagID.Hex(),
+		// 			TagoptID: input[i].Data[j].TagoptID.Hex(),
+		// 		}
+
+		// 		Nodedata, err := h.services.Nodedata.CreateNodedata(userID, inputNodedata)
+		// 		if err != nil {
+		// 			appG.ResponseError(http.StatusBadRequest, err, nil)
+		// 			return
+		// 		}
+		// 		Node.Data = append(Node.Data, *Nodedata)
+		// 	}
+		// }
+
+		Node, err := h.CreateOrExistNode(c, input[i])
 		if err != nil {
 			appG.ResponseError(http.StatusBadRequest, err, nil)
 			return
 		}
 
-		existLatLon := false
-		if len(existOsmID.Data) > 0 {
-			existLatLon = input[i].Lat == existOsmID.Data[0].Lat && input[i].Lon == existOsmID.Data[0].Lon
-			progress := 0
-			if existLatLon {
-				progress = 100
-			}
-
-			_, err := h.services.Ticket.CreateTicket(userID, &model.Ticket{
-				Title:       "Double osm object",
-				Description: fmt.Sprintf("[osmId]%s[/osmId]: [coords]%v,%v[/coords], [existCoords]%v,%v[/existCoords]", input[i].OsmID, input[i].Lat, input[i].Lon, existOsmID.Data[0].Lat, existOsmID.Data[0].Lon),
-				Status:      !existLatLon,
-				Progress:    progress,
-			})
-			if err != nil {
-				appG.ResponseError(http.StatusBadRequest, err, nil)
-				return
-			}
-			// fmt.Println("Double node:::", input[i].OsmID, input[i].Lat, input[i].Lon)
-		}
-		if !existLatLon {
-			Node, err := h.services.Node.CreateNode(userID, input[i])
-			if err != nil {
-				appG.ResponseError(http.StatusBadRequest, err, nil)
-				return
-			}
-			result = append(result, Node)
-		}
+		result = append(result, Node)
+		// }
 	}
 
 	c.JSON(http.StatusOK, result)
@@ -248,6 +409,9 @@ func (h *HandlerV1) GetAllNode(c *gin.Context) {
 // @Router /api/Node [get].
 func (h *HandlerV1) FindNode(c *gin.Context) {
 	appG := app.Gin{C: c}
+
+	authData, err := middleware.GetAuthFromCtx(c)
+	fmt.Println("auth ", authData.Roles)
 
 	params, err := utils.GetParamsFromRequest(c, model.NodeInputData{}, &h.i18n)
 	if err != nil {
@@ -357,6 +521,69 @@ func (h *HandlerV1) DeleteNode(c *gin.Context) {
 			return
 		}
 		// fmt.Println("Remove image", image.ID)
+	}
+
+	// find all nodedata for remove.
+	nodedata, err := h.services.Nodedata.FindNodedata(domain.RequestParams{
+		Filter: bson.D{
+			{"node_id", node.ID},
+		},
+		Options: domain.Options{Limit: 1000},
+	})
+	if err != nil {
+		appG.ResponseError(http.StatusBadRequest, err, nil)
+		return
+	}
+
+	for i, _ := range nodedata.Data {
+		_, err := h.services.Nodedata.DeleteNodedata(nodedata.Data[i].ID.Hex())
+		if err != nil {
+			appG.ResponseError(http.StatusBadRequest, err, nil)
+			return
+		}
+		// fmt.Println("Remove nodedata: ", nodedata.Data[i].ID.Hex())
+	}
+
+	// find all reviews for remove.
+	reviews, err := h.services.Review.FindReview(domain.RequestParams{
+		Filter: bson.D{
+			{"node_id", node.ID},
+		},
+		Options: domain.Options{Limit: 1000},
+	})
+	if err != nil {
+		appG.ResponseError(http.StatusBadRequest, err, nil)
+		return
+	}
+
+	for i, _ := range reviews.Data {
+		_, err := h.services.Review.DeleteReview(reviews.Data[i].ID.Hex())
+		if err != nil {
+			appG.ResponseError(http.StatusBadRequest, err, nil)
+			return
+		}
+		// fmt.Println("Remove review: ", reviews.Data[i].ID.Hex())
+	}
+
+	// find all audits for remove.
+	nodeaudits, err := h.services.NodeAudit.FindNodeAudit(domain.RequestParams{
+		Filter: bson.D{
+			{"node_id", node.ID},
+		},
+		Options: domain.Options{Limit: 1000},
+	})
+	if err != nil {
+		appG.ResponseError(http.StatusBadRequest, err, nil)
+		return
+	}
+
+	for i, _ := range nodeaudits.Data {
+		_, err := h.services.NodeAudit.DeleteNodeAudit(nodeaudits.Data[i].ID.Hex())
+		if err != nil {
+			appG.ResponseError(http.StatusBadRequest, err, nil)
+			return
+		}
+		// fmt.Println("Remove nodeaudits: ", nodeaudits.Data[i].ID.Hex())
 	}
 
 	// Remove address.
@@ -643,6 +870,7 @@ func (h *HandlerV1) CreateZip(c *gin.Context) {
 			// StyleURL: fmt.Sprintf("#style_%s", v[0].Type),
 		}
 		for _, g := range v {
+			descriptionArrayForName := []string{}
 			descriptionArray := []string{}
 			contributorsArray := map[string]bool{
 				fmt.Sprintf("%s(%s)", g.User.Name, g.User.Login): true,
@@ -651,8 +879,10 @@ func (h *HandlerV1) CreateZip(c *gin.Context) {
 				for _, t := range g.Data {
 					if t.Data.Value == "yes" {
 						descriptionArray = append(descriptionArray, fmt.Sprintf("<div><span><b>%s</b>,</span></div>", t.Tag.Title))
+						descriptionArrayForName = append(descriptionArrayForName, fmt.Sprintf("%s", t.Tag.Title))
 					} else {
 						descriptionArray = append(descriptionArray, fmt.Sprintf("<div><span><b>%s</b>:%s,</span></div>", t.Tag.Title, t.Data.Value))
+						descriptionArrayForName = append(descriptionArrayForName, fmt.Sprintf("%s:%s", t.Tag.Title, t.Data.Value))
 					}
 
 					contributorsArray[fmt.Sprintf("%s(%s)", t.User.Name, t.User.Login)] = true
@@ -679,7 +909,7 @@ func (h *HandlerV1) CreateZip(c *gin.Context) {
 
 			group.Placemark = append(group.Placemark, domain.KMLPlacemark{
 				ID:   fmt.Sprintf("%s_%s", g.Amenity.Type, g.ID.Hex()),
-				Name: fmt.Sprintf("%s - %s", g.Amenity.Title, g.Name),
+				Name: fmt.Sprintf("%s - %s ::: %s", g.Amenity.Title, g.Name, strings.Join(descriptionArrayForName, ", ")),
 				Description: domain.KMLPlacemarkDescription{
 					Description: description,
 				},
@@ -849,3 +1079,63 @@ func (h *HandlerV1) ParseKML(c *gin.Context) {
 
 	c.JSON(http.StatusOK, fields)
 }
+
+// func (h *HandlerV1) FindRepeat(c *gin.Context) {
+// 	appG := app.Gin{C: c}
+// 	// userID, err := middleware.GetUID(c)
+
+// 	// implementation roles for user.
+// 	roles, err := middleware.GetRoles(c)
+// 	if err != nil {
+// 		appG.ResponseError(http.StatusUnauthorized, err, nil)
+// 		return
+// 	}
+// 	if !utils.Contains(roles, "admin") {
+// 		appG.ResponseError(http.StatusUnauthorized, errors.New("admin zone"), nil)
+// 		return
+// 	}
+
+// 	pathFile := "public"
+// 	nameFile := "doublenode" // "prom"
+// 	w, err := os.Create(fmt.Sprintf("%s/%s.json", pathFile, nameFile))
+// 	if err != nil {
+// 		appG.ResponseError(http.StatusBadRequest, err, nil)
+// 		return
+// 	}
+// 	defer w.Close()
+
+// 	allNodes, err := h.services.Node.FindNode(domain.RequestParams{
+// 		Filter:  bson.D{},
+// 		Options: domain.Options{Limit: 10000000},
+// 	})
+
+// 	fields := []interface{}{}
+// 	for i := 0; i < 1000; i++ {
+// 		doublenodes, err := h.services.Node.FindNode(domain.RequestParams{
+// 			Filter: bson.D{
+// 				{"lat", bson.M{"$lt": allNodes.Data[i].Lat + 0.0001, "$gt": allNodes.Data[i].Lat - 0.0001}},
+// 				{"lon", bson.M{"$lt": allNodes.Data[i].Lon + 0.0001, "$gt": allNodes.Data[i].Lon - 0.0001}},
+// 				{"type", allNodes.Data[i].Type},
+// 			},
+// 			Options: domain.Options{Limit: 20},
+// 		})
+// 		if err != nil {
+// 			appG.ResponseError(http.StatusBadRequest, err, nil)
+// 			return
+// 		}
+
+// 		if len(doublenodes.Data) > 1 {
+// 			fields = append(fields, doublenodes.Data)
+// 		}
+// 	}
+
+// 	b, err := json.Marshal(fields)
+// 	if err != nil {
+// 		appG.ResponseError(http.StatusBadRequest, err, nil)
+// 		return
+// 	}
+
+// 	w.Write(b)
+
+// 	c.JSON(http.StatusOK, fields)
+// }

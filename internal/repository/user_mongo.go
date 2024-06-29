@@ -8,6 +8,7 @@ import (
 	"github.com/mikalai2006/geoinfo-api/graph/model"
 	"github.com/mikalai2006/geoinfo-api/internal/config"
 	"github.com/mikalai2006/geoinfo-api/internal/domain"
+	"github.com/mikalai2006/geoinfo-api/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -114,6 +115,104 @@ func (r *UserMongo) GetUser(id string) (model.User, error) {
 			},
 		},
 	}})
+
+	// // add stat user tag vote.
+	// pipe = append(pipe, bson.D{{
+	// 	Key: "$lookup",
+	// 	Value: bson.M{
+	// 		"from": TblNodedataVote,
+	// 		"as":   "tests",
+	// 		"let":  bson.D{{Key: "userId", Value: "$_id"}},
+	// 		"pipeline": mongo.Pipeline{
+	// 			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$user_id", "$$userId"}}}}},
+	// 			bson.D{
+	// 				{
+	// 					"$group", bson.D{
+	// 						{
+	// 							"_id", "",
+	// 						},
+	// 						{"valueTagLike", bson.D{{"$sum", "$value"}}},
+	// 						{"countTagLike", bson.D{{"$sum", 1}}},
+	// 					},
+	// 				},
+	// 			},
+	// 			bson.D{{Key: "$project", Value: bson.M{"_id": 0, "valueTagLike": "$valueTagLike", "countTagLike": "$countTagLike"}}},
+	// 		},
+	// 	},
+	// }})
+	// pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"test": bson.M{"$first": "$tests"}}}})
+
+	// // add stat user node votes.
+	// pipe = append(pipe, bson.D{{
+	// 	Key: "$lookup",
+	// 	Value: bson.M{
+	// 		"from": TblNodeVote,
+	// 		"as":   "tests2",
+	// 		"let":  bson.D{{Key: "userId", Value: "$_id"}},
+	// 		"pipeline": mongo.Pipeline{
+	// 			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$user_id", "$$userId"}}}}},
+	// 			bson.D{
+	// 				{
+	// 					"$group", bson.D{
+	// 						{
+	// 							"_id", "",
+	// 						},
+	// 						{"valueNodeLike", bson.D{{"$sum", "$value"}}},
+	// 						{"countNodeLike", bson.D{{"$sum", 1}}},
+	// 					},
+	// 				},
+	// 			},
+	// 			bson.D{{Key: "$project", Value: bson.M{"_id": 0, "valueNodeLike": "$valueNodeLike", "countNodeLike": "$countNodeLike"}}},
+	// 		},
+	// 	},
+	// }})
+	// pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"test": bson.D{{
+	// 	"$mergeObjects", bson.A{
+	// 		"$test",
+	// 		bson.M{"$first": "$tests2"},
+	// 	},
+	// }},
+	// }}})
+
+	// // add stat user node votes.
+	// pipe = append(pipe, bson.D{{
+	// 	Key: "$lookup",
+	// 	Value: bson.M{
+	// 		"from": TblNode,
+	// 		"as":   "countNodes",
+	// 		"let":  bson.D{{Key: "userId", Value: "$_id"}},
+	// 		"pipeline": mongo.Pipeline{
+	// 			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$user_id", "$$userId"}}}}},
+	// 		},
+	// 	},
+	// }})
+	// pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"test": bson.D{{
+	// 	"$mergeObjects", bson.A{
+	// 		"$test",
+	// 		bson.M{"countNodes": bson.M{"$size": "$countNodes"}},
+	// 	},
+	// }},
+	// }}})
+
+	// // add stat user added nodedata.
+	// pipe = append(pipe, bson.D{{
+	// 	Key: "$lookup",
+	// 	Value: bson.M{
+	// 		"from": TblNodedata,
+	// 		"as":   "countNodedatas",
+	// 		"let":  bson.D{{Key: "userId", Value: "$_id"}},
+	// 		"pipeline": mongo.Pipeline{
+	// 			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$user_id", "$$userId"}}}}},
+	// 		},
+	// 	},
+	// }})
+	// pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"test": bson.D{{
+	// 	"$mergeObjects", bson.A{
+	// 		"$test",
+	// 		bson.M{"countNodedatas": bson.M{"$size": "$countNodedatas"}},
+	// 	},
+	// }},
+	// }}})
 
 	cursor, err := r.db.Collection(tblUsers).Aggregate(ctx, pipe) // Find(ctx, params.Filter, opts)
 	if err != nil {
@@ -337,4 +436,83 @@ func (r *UserMongo) GqlGetUsers(params domain.RequestParams) ([]*model.User, err
 
 	copy(resultSlice, results)
 	return results, nil
+}
+
+func (r *UserMongo) SetStat(userID string, inputData model.UserStat) (model.User, error) {
+	var result model.User
+	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
+	defer cancel()
+
+	collection := r.db.Collection(tblUsers)
+
+	userIDPrimitive, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return result, err
+	}
+
+	filter := bson.M{"_id": userIDPrimitive}
+
+	err = collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return result, err
+	}
+
+	newData := bson.M{}
+	if inputData.Node != 0 {
+		newData["user_stat.node"] = utils.Max(result.UserStat.Node+inputData.Node, 0)
+	}
+	if inputData.NodeAuthorDLike != 0 {
+		newData["user_stat.nodeAuthorDLike"] = utils.Max(result.UserStat.NodeAuthorDLike+inputData.NodeAuthorDLike, 0)
+	}
+	if inputData.NodeAuthorLike != 0 {
+		newData["user_stat.nodeAuthorLike"] = utils.Max(result.UserStat.NodeAuthorLike+inputData.NodeAuthorLike, 0)
+	}
+	if inputData.NodeDLike != 0 {
+		newData["user_stat.nodeDLike"] = utils.Max(result.UserStat.NodeDLike+inputData.NodeDLike, 0)
+	}
+	if inputData.NodeLike != 0 {
+		newData["user_stat.nodeLike"] = utils.Max(result.UserStat.NodeLike+inputData.NodeLike, 0)
+	}
+	if inputData.Nodedata != 0 {
+		newData["user_stat.nodedata"] = utils.Max(result.UserStat.Nodedata+inputData.Nodedata, 0)
+	}
+	if inputData.NodedataAuthorDLike != 0 {
+		newData["user_stat.nodedataAuthorDLike"] = utils.Max(result.UserStat.NodedataAuthorDLike+inputData.NodedataAuthorDLike, 0)
+	}
+	if inputData.NodedataAuthorLike != 0 {
+		newData["user_stat.nodedataAuthorLike"] = utils.Max(result.UserStat.NodedataAuthorLike+inputData.NodedataAuthorLike, 0)
+	}
+	if inputData.NodedataDLike != 0 {
+		newData["user_stat.nodedataDLike"] = utils.Max(result.UserStat.NodedataDLike+inputData.NodedataDLike, 0)
+	}
+	if inputData.NodedataLike != 0 {
+		newData["user_stat.nodedataLike"] = utils.Max(result.UserStat.NodedataLike+inputData.NodedataLike, 0)
+	}
+	if inputData.Review != 0 {
+		newData["user_stat.review"] = utils.Max(result.UserStat.Review+inputData.Review, 0)
+	}
+
+	// fmt.Println("newData=", newData)
+	err = collection.FindOneAndUpdate(ctx, filter, bson.M{"$set": newData}).Decode(&result)
+	if err != nil {
+		return result, err
+	}
+
+	// var operations []mongo.WriteModel
+	// operationA := mongo.NewUpdateOneModel()
+	// operationA.SetFilter(bson.M{"_id": userIDPrimitive})
+	// operationA.SetUpdate(bson.D{
+	// 	{"$inc", bson.D{
+	// 		{"user_stat.node", 1},
+	// 	}},
+	// })
+	// operations = append(operations, operationA)
+	// _, err = r.db.Collection(TblNode).BulkWrite(ctx, operations)
+
+	err = collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return result, err
+	}
+
+	return result, nil
 }

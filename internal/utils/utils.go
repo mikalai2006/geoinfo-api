@@ -146,7 +146,7 @@ func GetParamsFromRequest[V any](c *gin.Context, filterStruct V, i18n *config.I1
 		opts.Sort = testBson
 	}
 	// TODO opts.Limit.
-	if (opts.Limit == 0 || opts.Limit > 500) && opts.Limit != 10000 {
+	if (opts.Limit == 0 || opts.Limit > 500) && opts.Limit != 100000 {
 		opts.Limit = 10
 	}
 	params.Filter = dataFilter
@@ -167,4 +167,11 @@ func Contains[T comparable](s []T, e T) bool {
 		}
 	}
 	return false
+}
+
+func Max(x, y int64) int64 {
+	if x < y {
+		return y
+	}
+	return x
 }

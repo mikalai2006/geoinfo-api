@@ -225,9 +225,9 @@ func (h *HandlerV1) SignIn(c *gin.Context) {
 func (h *HandlerV1) tokenRefresh(c *gin.Context) {
 	appG := app.Gin{C: c}
 	jwtCookie, _ := c.Cookie(h.auth.NameCookieRefresh)
-	fmt.Sprintf("refresh Cookie %s = %s", h.auth.NameCookieRefresh, jwtCookie)
-	cookie_header := c.GetHeader("cookie")
-	fmt.Println("refresh Cookie_header = ", cookie_header)
+	// fmt.Sprintf("refresh Cookie %s = %s", h.auth.NameCookieRefresh, jwtCookie)
+	// cookie_header := c.GetHeader("cookie")
+	// fmt.Println("refresh Cookie_header = ", cookie_header)
 	// fmt.Println("+++++++++++++")
 	// session := sessions.Default(c)
 	var input domain.RefreshInput
@@ -240,8 +240,8 @@ func (h *HandlerV1) tokenRefresh(c *gin.Context) {
 	// } else {
 	// 	input.Token = jwtCookie
 	// }
-	fmt.Println("refresh input.Token  = ", input.Token)
-	fmt.Println("jwtCookie  = ", jwtCookie)
+	// fmt.Println("refresh input.Token  = ", input.Token)
+	// fmt.Println("jwtCookie  = ", jwtCookie)
 	if input.Token == "" {
 		input.Token = jwtCookie
 	}

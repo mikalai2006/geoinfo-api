@@ -528,7 +528,7 @@ func (h *HandlerV1) DeleteNode(c *gin.Context) {
 		Filter: bson.D{
 			{"node_id", node.ID},
 		},
-		Options: domain.Options{Limit: 1000},
+		Options: domain.Options{Limit: 10000},
 	})
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
@@ -549,7 +549,7 @@ func (h *HandlerV1) DeleteNode(c *gin.Context) {
 		Filter: bson.D{
 			{"node_id", node.ID},
 		},
-		Options: domain.Options{Limit: 1000},
+		Options: domain.Options{Limit: 10000},
 	})
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
@@ -570,7 +570,7 @@ func (h *HandlerV1) DeleteNode(c *gin.Context) {
 		Filter: bson.D{
 			{"node_id", node.ID},
 		},
-		Options: domain.Options{Limit: 1000},
+		Options: domain.Options{Limit: 10000},
 	})
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
@@ -579,6 +579,27 @@ func (h *HandlerV1) DeleteNode(c *gin.Context) {
 
 	for i, _ := range nodeaudits.Data {
 		_, err := h.services.NodeAudit.DeleteNodeAudit(nodeaudits.Data[i].ID.Hex())
+		if err != nil {
+			appG.ResponseError(http.StatusBadRequest, err, nil)
+			return
+		}
+		// fmt.Println("Remove nodeaudits: ", nodeaudits.Data[i].ID.Hex())
+	}
+
+	// find all vote of node for remove.
+	nodeVotes, err := h.services.NodeVote.FindNodeVote(domain.RequestParams{
+		Filter: bson.D{
+			{"node_id", node.ID},
+		},
+		Options: domain.Options{Limit: 10000},
+	})
+	if err != nil {
+		appG.ResponseError(http.StatusBadRequest, err, nil)
+		return
+	}
+
+	for i, _ := range nodeVotes.Data {
+		_, err := h.services.NodeVote.DeleteNodeVote(nodeVotes.Data[i].ID.Hex())
 		if err != nil {
 			appG.ResponseError(http.StatusBadRequest, err, nil)
 			return

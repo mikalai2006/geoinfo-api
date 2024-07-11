@@ -44,6 +44,7 @@ func (h *Handler) InitRoutes(cfg *config.Config, mongoDB *mongo.Database) *gin.E
 	// appG := app.Gin{C: *gin.Context}
 	router := gin.New() // New() // Default
 	router.Use(
+		// gzip.Gzip(gzip.DefaultCompression),
 		gin.Recovery(),
 		gin.Logger(),
 		middleware.Cors,

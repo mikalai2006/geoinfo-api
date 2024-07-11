@@ -6,48 +6,51 @@ package resolver
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/mikalai2006/geoinfo-api/graph/generated"
 	"github.com/mikalai2006/geoinfo-api/graph/model"
-	"github.com/mikalai2006/geoinfo-api/internal/domain"
-	"github.com/mikalai2006/geoinfo-api/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id *string) (*model.User, error) {
-	var result *model.User
-	gc, err := utils.GinContextFromContext(ctx)
-	if err != nil {
-		return result, err
-	}
-	lang := gc.MustGet("i18nLocale").(string)
+	var result model.User
+	// gc, err := utils.GinContextFromContext(ctx)
+	// if err != nil {
+	// 	return result, err
+	// }
+	// lang := gc.MustGet("i18nLocale").(string)
 
 	filter := bson.D{}
 	if id != nil {
 		userIDPrimitive, err := primitive.ObjectIDFromHex(*id)
 		if err != nil {
-			return result, err
+			return &result, err
 		}
 
 		filter = append(filter, bson.E{"_id", userIDPrimitive})
 	}
 
-	allItems, err := r.Repo.User.GqlGetUsers(domain.RequestParams{
-		Options: domain.Options{Limit: 1, Skip: 0},
-		Filter:  filter,
-		Lang:    lang,
-	})
+	// allItems, err := r.Repo.User.GqlGetUsers(domain.RequestParams{
+	// 	Options: domain.Options{Limit: 1, Skip: 0},
+	// 	Filter:  filter,
+	// 	Lang:    lang,
+	// })
+	// if err != nil {
+	// 	return result, err
+	// }
+
+	// if len(allItems) > 0 {
+	// 	result = allItems[0]
+	// }
+	result, err := r.Repo.User.GetUser(*id)
 	if err != nil {
-		return result, err
+		return &result, err
 	}
 
-	if len(allItems) > 0 {
-		result = allItems[0]
-	}
-
-	return result, nil
+	return &result, nil
 }
 
 // ID is the resolver for the id field.
@@ -71,6 +74,9 @@ type userResolver struct{ *Resolver }
 //   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
 //     it when you're done.
 //   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *userResolver) Md(ctx context.Context, obj *model.User) (float64, error) {
+	panic(fmt.Errorf("not implemented: Md - md"))
+}
 func (r *userResolver) LastTime(ctx context.Context, obj *model.User) (string, error) {
 	return obj.LastTime.String(), nil
 }

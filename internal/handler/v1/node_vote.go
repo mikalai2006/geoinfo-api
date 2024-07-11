@@ -2,6 +2,7 @@ package v1
 
 import (
 	"errors"
+	"math"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -103,11 +104,16 @@ func (h *HandlerV1) CreateOrExistNodeVote(c *gin.Context, input *model.NodeVote)
 		// appG.ResponseError(http.StatusBadRequest, errors.New("not found nodedata"), nil)
 		return result, nil
 	}
+	input.NodeUserID = existNodes.Data[0].UserID
 
 	// check exist vote
 	existNodeVote, err := h.services.NodeVote.FindNodeVote(domain.RequestParams{
 		Options: domain.Options{Limit: 1},
-		Filter:  bson.D{{"value", input.Value}, {"node_id", input.NodeID}, {"user_id", userIDPrimitive}}, // {"tag_id", input.TagID},
+		Filter: bson.D{
+			{"value", input.Value},
+			{"node_id", input.NodeID},
+			{"user_id", userIDPrimitive},
+		},
 	})
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
@@ -115,46 +121,49 @@ func (h *HandlerV1) CreateOrExistNodeVote(c *gin.Context, input *model.NodeVote)
 	}
 	if len(existNodeVote.Data) > 0 {
 		// appG.ResponseError(http.StatusBadRequest, model.ErrNodeVoteExistValue, nil)
-		return &existNodeVote.Data[0], nil
+		// return &existNodeVote.Data[0], nil
+		result = &existNodeVote.Data[0]
+	} else {
+		result, err = h.services.NodeVote.CreateNodeVote(userID, input)
+		if err != nil {
+			appG.ResponseError(http.StatusBadRequest, err, nil)
+			return result, err
+		}
 	}
 
-	result, err = h.services.NodeVote.CreateNodeVote(userID, input)
+	// update counter votes node.
+	votes, err := h.services.NodeVote.FindNodeVote(domain.RequestParams{
+		Filter: bson.D{{"node_id", result.NodeID}},
+	})
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
 		return result, err
 	}
 
-	// // update counter votes nodedata.
-	// votes, err := h.services.NodeVote.FindNodeVote(domain.RequestParams{
-	// 	Filter: bson.D{{"node_id", result.NodeID}},
-	// })
-	// if err != nil {
-	// 	appG.ResponseError(http.StatusBadRequest, err, nil)
-	// 	return result, err
-	// }
-
-	// like := 0
-	// dlike := 0
-	// for i, _ := range votes.Data {
-	// 	if votes.Data[i].Value > 0 {
-	// 		like += 1
-	// 	} else {
-	// 		dlike += 1
-	// 	}
-	// }
-	// status := 100
-	// if dlike > 5 {
-	// 	status = -1
-	// }
-	// _, err = h.services.Nodedata.UpdateNodedata(result.NodedataID.Hex(), userID, &model.Nodedata{
-	// 	Like:   int64(like),
-	// 	Dlike:  int64(math.Abs(float64(dlike))),
-	// 	Status: int64(status),
-	// })
-	// if err != nil {
-	// 	appG.ResponseError(http.StatusBadRequest, err, nil)
-	// 	return result, err
-	// }
+	like := 0
+	dlike := 0
+	for i, _ := range votes.Data {
+		if votes.Data[i].Value > 0 {
+			like += 1
+		} else {
+			dlike += 1
+		}
+	}
+	status := 100
+	if dlike > 5 {
+		status = -1
+	}
+	_, err = h.services.Node.UpdateNode(result.NodeID.Hex(), userID, &model.Node{
+		NodeLike: model.NodeLike{
+			Like:   int64(like),
+			Dlike:  int64(math.Abs(float64(dlike))),
+			Status: int64(status),
+		},
+	})
+	if err != nil {
+		appG.ResponseError(http.StatusBadRequest, err, nil)
+		return result, err
+	}
 
 	return result, nil
 }

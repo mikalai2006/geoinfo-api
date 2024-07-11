@@ -3,12 +3,11 @@
 # https://gqlgen.com/getting-started/
 
 
-type NodedataVote {
+type NodeVote {
   id: ID!
   userId: String!
-  nodedataId: String!
   nodeId: String!
-  nodedataUserId: String!
+  nodeUserId: String!
   value: Any!
 
   user: User!
@@ -18,20 +17,20 @@ type NodedataVote {
   updatedAt:Time!
 }
 
-input FetchNodedataVote {
+input FetchNodeVote {
   id: ID
   userId: String
-  nodedataId: String
-  nodedataUserId: String
+  nodeId: String
+  nodeUserId: String
 }
 
-type PaginationNodedataVote {
+type PaginationNodeVote {
   total: Int,
   limit: Int,
   skip: Int,
-  data: [NodedataVote]
+  data: [NodeVote]
 }
 
 extend type Query {
-  nodedatavotes(limit: Int = 10, skip:Int = 0, input:FetchNodedataVote): PaginationNodedataVote
+  nodevotes(limit: Int = 10, skip:Int = 0, input:FetchNodeVote): PaginationNodeVote
 }

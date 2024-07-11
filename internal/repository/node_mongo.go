@@ -199,26 +199,30 @@ func (r *NodeMongo) UpdateNode(id string, userID string, data *model.Node) (*mod
 	// }
 	filter := bson.M{"_id": idPrimitive}
 
-	// Find old data
-	var oldResult *model.Node
-	err = collection.FindOne(ctx, filter).Decode(&oldResult)
-	if err != nil {
-		return result, err
-	}
-	oldNodeAudit := model.NodeInput{
-		UserID:    oldResult.UserID,
-		Lon:       oldResult.Lon,
-		Lat:       oldResult.Lat,
-		Type:      oldResult.Type,
-		Name:      oldResult.Name,
-		OsmID:     oldResult.OsmID,
-		AmenityID: oldResult.AmenityID,
-		Props:     oldResult.Props,
-	}
-	_, err = r.db.Collection(TblNodeHistory).InsertOne(ctx, oldNodeAudit)
-	if err != nil {
-		return result, err
-	}
+	// // Find old data
+	// var oldResult *model.Node
+	// err = collection.FindOne(ctx, filter).Decode(&oldResult)
+	// if err != nil {
+	// 	return result, err
+	// }
+	// oldNodeAudit := model.NodeInput{
+	// 	UserID:    oldResult.UserID,
+	// 	Lon:       oldResult.Lon,
+	// 	Lat:       oldResult.Lat,
+	// 	Type:      oldResult.Type,
+	// 	Name:      oldResult.Name,
+	// 	OsmID:     oldResult.OsmID,
+	// 	AmenityID: oldResult.AmenityID,
+	// 	Props:     oldResult.Props,
+	// 	Status:    oldResult.Status,
+	// 	Like:      oldResult.Like,
+	// 	Dlike:     oldResult.Dlike,
+	// 	UpdatedAt: time.Now(),
+	// }
+	// _, err = r.db.Collection(TblNodeHistory).InsertOne(ctx, oldNodeAudit)
+	// if err != nil {
+	// 	return result, err
+	// }
 
 	newData := bson.M{}
 	if data.Lon != 0 {
@@ -254,6 +258,10 @@ func (r *NodeMongo) UpdateNode(id string, userID string, data *model.Node) (*mod
 	}
 	if data.CCode != "" {
 		newData["ccode"] = data.CCode
+	}
+	test := model.NodeLike{}
+	if data.NodeLike != test {
+		newData["node_like"] = data.NodeLike
 	}
 	// if data.Status != 0 {
 	// 	newData["status"] = data.Status

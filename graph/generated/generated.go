@@ -49,6 +49,7 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Node() NodeResolver
 	NodeAudit() NodeAuditResolver
+	NodeVote() NodeVoteResolver
 	Nodedata() NodedataResolver
 	NodedataAudit() NodedataAuditResolver
 	NodedataVote() NodedataVoteResolver
@@ -56,6 +57,8 @@ type ResolverRoot interface {
 	Review() ReviewResolver
 	Tag() TagResolver
 	Tagopt() TagoptResolver
+	Ticket() TicketResolver
+	TicketMessage() TicketMessageResolver
 	User() UserResolver
 }
 
@@ -171,10 +174,10 @@ type ComplexityRoot struct {
 		ID          func(childComplexity int) int
 		Images      func(childComplexity int) int
 		Lat         func(childComplexity int) int
-		Like        func(childComplexity int) int
 		Lon         func(childComplexity int) int
 		My          func(childComplexity int) int
 		Name        func(childComplexity int) int
+		NodeLike    func(childComplexity int) int
 		OsmID       func(childComplexity int) int
 		Props       func(childComplexity int) int
 		Reviews     func(childComplexity int) int
@@ -199,9 +202,21 @@ type ComplexityRoot struct {
 	}
 
 	NodeLike struct {
-		Dlike func(childComplexity int) int
-		Ilike func(childComplexity int) int
-		Like  func(childComplexity int) int
+		Dlike  func(childComplexity int) int
+		Like   func(childComplexity int) int
+		Status func(childComplexity int) int
+	}
+
+	NodeVote struct {
+		CreatedAt  func(childComplexity int) int
+		ID         func(childComplexity int) int
+		NodeID     func(childComplexity int) int
+		NodeUserID func(childComplexity int) int
+		Owner      func(childComplexity int) int
+		UpdatedAt  func(childComplexity int) int
+		User       func(childComplexity int) int
+		UserID     func(childComplexity int) int
+		Value      func(childComplexity int) int
 	}
 
 	Nodedata struct {
@@ -238,12 +253,16 @@ type ComplexityRoot struct {
 	}
 
 	NodedataVote struct {
-		CreatedAt  func(childComplexity int) int
-		ID         func(childComplexity int) int
-		NodedataID func(childComplexity int) int
-		UpdatedAt  func(childComplexity int) int
-		UserID     func(childComplexity int) int
-		Value      func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		NodeID         func(childComplexity int) int
+		NodedataID     func(childComplexity int) int
+		NodedataUserID func(childComplexity int) int
+		Owner          func(childComplexity int) int
+		UpdatedAt      func(childComplexity int) int
+		User           func(childComplexity int) int
+		UserID         func(childComplexity int) int
+		Value          func(childComplexity int) int
 	}
 
 	PageInfo struct {
@@ -294,6 +313,13 @@ type ComplexityRoot struct {
 		Total func(childComplexity int) int
 	}
 
+	PaginationNodeVote struct {
+		Data  func(childComplexity int) int
+		Limit func(childComplexity int) int
+		Skip  func(childComplexity int) int
+		Total func(childComplexity int) int
+	}
+
 	PaginationNodedata struct {
 		Data  func(childComplexity int) int
 		Limit func(childComplexity int) int
@@ -302,6 +328,13 @@ type ComplexityRoot struct {
 	}
 
 	PaginationNodedataAudit struct {
+		Data  func(childComplexity int) int
+		Limit func(childComplexity int) int
+		Skip  func(childComplexity int) int
+		Total func(childComplexity int) int
+	}
+
+	PaginationNodedataVote struct {
 		Data  func(childComplexity int) int
 		Limit func(childComplexity int) int
 		Skip  func(childComplexity int) int
@@ -329,6 +362,13 @@ type ComplexityRoot struct {
 		Total func(childComplexity int) int
 	}
 
+	PaginationTicket struct {
+		Data  func(childComplexity int) int
+		Limit func(childComplexity int) int
+		Skip  func(childComplexity int) int
+		Total func(childComplexity int) int
+	}
+
 	Query struct {
 		Action            func(childComplexity int, input *model.FetchImage) int
 		Actions           func(childComplexity int, limit *int, skip *int, input *model.FetchAction) int
@@ -348,7 +388,9 @@ type ComplexityRoot struct {
 		NodedataAudit     func(childComplexity int, id *string) int
 		NodedataAudits    func(childComplexity int, limit *int, skip *int, input *model.FetchNodedataAudit) int
 		Nodedatas         func(childComplexity int, first *int, after *string, limit *int, skip *int, input *model.FetchNodedata) int
+		Nodedatavotes     func(childComplexity int, limit *int, skip *int, input *model.FetchNodedataVote) int
 		Nodes             func(childComplexity int, limit *int, skip *int, input *model.ParamsNode) int
+		Nodevotes         func(childComplexity int, limit *int, skip *int, input *model.FetchNodeVote) int
 		Osm               func(childComplexity int, limit *int, skip *int, lonA *float64, latA *float64, lonB *float64, latB *float64) int
 		Review            func(childComplexity int, input *model.FetchReview) int
 		ReviewsConnection func(childComplexity int, first *int, after *string, limit *int, skip *int, input *model.FetchReview) int
@@ -357,6 +399,8 @@ type ComplexityRoot struct {
 		Tagopt            func(childComplexity int, input *model.FetchTagopt) int
 		Tagopts           func(childComplexity int, first *int, after *string, limit *int, skip *int, input *model.FetchTagopt) int
 		Tags              func(childComplexity int, limit *int, skip *int, input *model.ParamsTag) int
+		Ticket            func(childComplexity int, input *model.ParamsTicket) int
+		Tickets           func(childComplexity int, limit *int, skip *int, input *model.ParamsTicket) int
 		User              func(childComplexity int, id *string) int
 	}
 
@@ -424,6 +468,30 @@ type ComplexityRoot struct {
 		Value       func(childComplexity int) int
 	}
 
+	Ticket struct {
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Messages  func(childComplexity int) int
+		Progress  func(childComplexity int) int
+		Status    func(childComplexity int) int
+		Title     func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+		User      func(childComplexity int) int
+		UserID    func(childComplexity int) int
+	}
+
+	TicketMessage struct {
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Images    func(childComplexity int) int
+		Status    func(childComplexity int) int
+		Text      func(childComplexity int) int
+		TicketID  func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+		User      func(childComplexity int) int
+		UserID    func(childComplexity int) int
+	}
+
 	User struct {
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
@@ -431,8 +499,10 @@ type ComplexityRoot struct {
 		Lang      func(childComplexity int) int
 		LastTime  func(childComplexity int) int
 		Login     func(childComplexity int) int
+		Md        func(childComplexity int) int
 		Name      func(childComplexity int) int
 		Online    func(childComplexity int) int
+		Roles     func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
 		UserID    func(childComplexity int) int
 		UserStat  func(childComplexity int) int
@@ -440,6 +510,7 @@ type ComplexityRoot struct {
 	}
 
 	UserStat struct {
+		Country             func(childComplexity int) int
 		Node                func(childComplexity int) int
 		NodeAuthorDLike     func(childComplexity int) int
 		NodeAuthorLike      func(childComplexity int) int
@@ -450,6 +521,7 @@ type ComplexityRoot struct {
 		NodedataAuthorLike  func(childComplexity int) int
 		NodedataDLike       func(childComplexity int) int
 		NodedataLike        func(childComplexity int) int
+		Request             func(childComplexity int) int
 		Review              func(childComplexity int) int
 	}
 }
@@ -515,7 +587,6 @@ type NodeResolver interface {
 
 	My(ctx context.Context, obj *model.Node) (*bool, error)
 
-	Like(ctx context.Context, obj *model.Node) (*model.NodeLike, error)
 	Reviews(ctx context.Context, obj *model.Node) ([]*model.Review, error)
 	Address(ctx context.Context, obj *model.Node) (*model.Address, error)
 	ReviewsInfo(ctx context.Context, obj *model.Node) (*model.ReviewInfo, error)
@@ -527,6 +598,13 @@ type NodeAuditResolver interface {
 	NodeID(ctx context.Context, obj *model.NodeAudit) (string, error)
 
 	Props(ctx context.Context, obj *model.NodeAudit) (any, error)
+}
+type NodeVoteResolver interface {
+	ID(ctx context.Context, obj *model.NodeVote) (string, error)
+	UserID(ctx context.Context, obj *model.NodeVote) (string, error)
+	NodeID(ctx context.Context, obj *model.NodeVote) (string, error)
+	NodeUserID(ctx context.Context, obj *model.NodeVote) (string, error)
+	Value(ctx context.Context, obj *model.NodeVote) (any, error)
 }
 type NodedataResolver interface {
 	ID(ctx context.Context, obj *model.Nodedata) (string, error)
@@ -549,6 +627,8 @@ type NodedataVoteResolver interface {
 	ID(ctx context.Context, obj *model.NodedataVote) (string, error)
 	UserID(ctx context.Context, obj *model.NodedataVote) (string, error)
 	NodedataID(ctx context.Context, obj *model.NodedataVote) (string, error)
+	NodeID(ctx context.Context, obj *model.NodedataVote) (string, error)
+	NodedataUserID(ctx context.Context, obj *model.NodedataVote) (string, error)
 	Value(ctx context.Context, obj *model.NodedataVote) (any, error)
 }
 type QueryResolver interface {
@@ -567,11 +647,13 @@ type QueryResolver interface {
 	Nodes(ctx context.Context, limit *int, skip *int, input *model.ParamsNode) (*model.PaginationNode, error)
 	Osm(ctx context.Context, limit *int, skip *int, lonA *float64, latA *float64, lonB *float64, latB *float64) ([]*model.Node, error)
 	Node(ctx context.Context, id *string, osmID *string, lat *float64, lon *float64) (*model.Node, error)
+	Nodevotes(ctx context.Context, limit *int, skip *int, input *model.FetchNodeVote) (*model.PaginationNodeVote, error)
 	Nodedatas(ctx context.Context, first *int, after *string, limit *int, skip *int, input *model.FetchNodedata) (*model.PaginationNodedata, error)
 	GroupNodeData(ctx context.Context) (*model.GroupNodeData, error)
 	Nodedata(ctx context.Context, id *string) (*model.Nodedata, error)
 	NodedataAudits(ctx context.Context, limit *int, skip *int, input *model.FetchNodedataAudit) (*model.PaginationNodedataAudit, error)
 	NodedataAudit(ctx context.Context, id *string) (*model.NodedataAudit, error)
+	Nodedatavotes(ctx context.Context, limit *int, skip *int, input *model.FetchNodedataVote) (*model.PaginationNodedataVote, error)
 	ReviewsConnection(ctx context.Context, first *int, after *string, limit *int, skip *int, input *model.FetchReview) (*model.ReviewsConnection, error)
 	Review(ctx context.Context, input *model.FetchReview) (*model.Review, error)
 	StatNode(ctx context.Context) (*model.StatNode, error)
@@ -579,6 +661,8 @@ type QueryResolver interface {
 	Tag(ctx context.Context, input *model.ParamsTag) (*model.Tag, error)
 	Tagopts(ctx context.Context, first *int, after *string, limit *int, skip *int, input *model.FetchTagopt) (*model.PaginationTagopt, error)
 	Tagopt(ctx context.Context, input *model.FetchTagopt) (*model.Tagopt, error)
+	Tickets(ctx context.Context, limit *int, skip *int, input *model.ParamsTicket) (*model.PaginationTicket, error)
+	Ticket(ctx context.Context, input *model.ParamsTicket) (*model.Ticket, error)
 	User(ctx context.Context, id *string) (*model.User, error)
 }
 type ReviewResolver interface {
@@ -599,6 +683,18 @@ type TagoptResolver interface {
 
 	Props(ctx context.Context, obj *model.Tagopt) (any, error)
 	User(ctx context.Context, obj *model.Tagopt) (*model.User, error)
+}
+type TicketResolver interface {
+	ID(ctx context.Context, obj *model.Ticket) (string, error)
+	UserID(ctx context.Context, obj *model.Ticket) (string, error)
+}
+type TicketMessageResolver interface {
+	ID(ctx context.Context, obj *model.TicketMessage) (string, error)
+	UserID(ctx context.Context, obj *model.TicketMessage) (string, error)
+	TicketID(ctx context.Context, obj *model.TicketMessage) (string, error)
+
+	CreatedAt(ctx context.Context, obj *model.TicketMessage) (string, error)
+	UpdatedAt(ctx context.Context, obj *model.TicketMessage) (string, error)
 }
 type UserResolver interface {
 	ID(ctx context.Context, obj *model.User) (string, error)
@@ -1140,13 +1236,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Node.Lat(childComplexity), true
 
-	case "Node.like":
-		if e.complexity.Node.Like == nil {
-			break
-		}
-
-		return e.complexity.Node.Like(childComplexity), true
-
 	case "Node.lon":
 		if e.complexity.Node.Lon == nil {
 			break
@@ -1167,6 +1256,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Node.Name(childComplexity), true
+
+	case "Node.nodeLike":
+		if e.complexity.Node.NodeLike == nil {
+			break
+		}
+
+		return e.complexity.Node.NodeLike(childComplexity), true
 
 	case "Node.osmId":
 		if e.complexity.Node.OsmID == nil {
@@ -1301,19 +1397,82 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NodeLike.Dlike(childComplexity), true
 
-	case "NodeLike.ilike":
-		if e.complexity.NodeLike.Ilike == nil {
-			break
-		}
-
-		return e.complexity.NodeLike.Ilike(childComplexity), true
-
 	case "NodeLike.like":
 		if e.complexity.NodeLike.Like == nil {
 			break
 		}
 
 		return e.complexity.NodeLike.Like(childComplexity), true
+
+	case "NodeLike.status":
+		if e.complexity.NodeLike.Status == nil {
+			break
+		}
+
+		return e.complexity.NodeLike.Status(childComplexity), true
+
+	case "NodeVote.createdAt":
+		if e.complexity.NodeVote.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.NodeVote.CreatedAt(childComplexity), true
+
+	case "NodeVote.id":
+		if e.complexity.NodeVote.ID == nil {
+			break
+		}
+
+		return e.complexity.NodeVote.ID(childComplexity), true
+
+	case "NodeVote.nodeId":
+		if e.complexity.NodeVote.NodeID == nil {
+			break
+		}
+
+		return e.complexity.NodeVote.NodeID(childComplexity), true
+
+	case "NodeVote.nodeUserId":
+		if e.complexity.NodeVote.NodeUserID == nil {
+			break
+		}
+
+		return e.complexity.NodeVote.NodeUserID(childComplexity), true
+
+	case "NodeVote.owner":
+		if e.complexity.NodeVote.Owner == nil {
+			break
+		}
+
+		return e.complexity.NodeVote.Owner(childComplexity), true
+
+	case "NodeVote.updatedAt":
+		if e.complexity.NodeVote.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.NodeVote.UpdatedAt(childComplexity), true
+
+	case "NodeVote.user":
+		if e.complexity.NodeVote.User == nil {
+			break
+		}
+
+		return e.complexity.NodeVote.User(childComplexity), true
+
+	case "NodeVote.userId":
+		if e.complexity.NodeVote.UserID == nil {
+			break
+		}
+
+		return e.complexity.NodeVote.UserID(childComplexity), true
+
+	case "NodeVote.value":
+		if e.complexity.NodeVote.Value == nil {
+			break
+		}
+
+		return e.complexity.NodeVote.Value(childComplexity), true
 
 	case "Nodedata.audit":
 		if e.complexity.Nodedata.Audit == nil {
@@ -1518,6 +1677,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NodedataVote.ID(childComplexity), true
 
+	case "NodedataVote.nodeId":
+		if e.complexity.NodedataVote.NodeID == nil {
+			break
+		}
+
+		return e.complexity.NodedataVote.NodeID(childComplexity), true
+
 	case "NodedataVote.nodedataId":
 		if e.complexity.NodedataVote.NodedataID == nil {
 			break
@@ -1525,12 +1691,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NodedataVote.NodedataID(childComplexity), true
 
+	case "NodedataVote.nodedataUserId":
+		if e.complexity.NodedataVote.NodedataUserID == nil {
+			break
+		}
+
+		return e.complexity.NodedataVote.NodedataUserID(childComplexity), true
+
+	case "NodedataVote.owner":
+		if e.complexity.NodedataVote.Owner == nil {
+			break
+		}
+
+		return e.complexity.NodedataVote.Owner(childComplexity), true
+
 	case "NodedataVote.updatedAt":
 		if e.complexity.NodedataVote.UpdatedAt == nil {
 			break
 		}
 
 		return e.complexity.NodedataVote.UpdatedAt(childComplexity), true
+
+	case "NodedataVote.user":
+		if e.complexity.NodedataVote.User == nil {
+			break
+		}
+
+		return e.complexity.NodedataVote.User(childComplexity), true
 
 	case "NodedataVote.userId":
 		if e.complexity.NodedataVote.UserID == nil {
@@ -1735,6 +1922,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PaginationNode.Total(childComplexity), true
 
+	case "PaginationNodeVote.data":
+		if e.complexity.PaginationNodeVote.Data == nil {
+			break
+		}
+
+		return e.complexity.PaginationNodeVote.Data(childComplexity), true
+
+	case "PaginationNodeVote.limit":
+		if e.complexity.PaginationNodeVote.Limit == nil {
+			break
+		}
+
+		return e.complexity.PaginationNodeVote.Limit(childComplexity), true
+
+	case "PaginationNodeVote.skip":
+		if e.complexity.PaginationNodeVote.Skip == nil {
+			break
+		}
+
+		return e.complexity.PaginationNodeVote.Skip(childComplexity), true
+
+	case "PaginationNodeVote.total":
+		if e.complexity.PaginationNodeVote.Total == nil {
+			break
+		}
+
+		return e.complexity.PaginationNodeVote.Total(childComplexity), true
+
 	case "PaginationNodedata.data":
 		if e.complexity.PaginationNodedata.Data == nil {
 			break
@@ -1790,6 +2005,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PaginationNodedataAudit.Total(childComplexity), true
+
+	case "PaginationNodedataVote.data":
+		if e.complexity.PaginationNodedataVote.Data == nil {
+			break
+		}
+
+		return e.complexity.PaginationNodedataVote.Data(childComplexity), true
+
+	case "PaginationNodedataVote.limit":
+		if e.complexity.PaginationNodedataVote.Limit == nil {
+			break
+		}
+
+		return e.complexity.PaginationNodedataVote.Limit(childComplexity), true
+
+	case "PaginationNodedataVote.skip":
+		if e.complexity.PaginationNodedataVote.Skip == nil {
+			break
+		}
+
+		return e.complexity.PaginationNodedataVote.Skip(childComplexity), true
+
+	case "PaginationNodedataVote.total":
+		if e.complexity.PaginationNodedataVote.Total == nil {
+			break
+		}
+
+		return e.complexity.PaginationNodedataVote.Total(childComplexity), true
 
 	case "PaginationReview.data":
 		if e.complexity.PaginationReview.Data == nil {
@@ -1874,6 +2117,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PaginationTagopt.Total(childComplexity), true
+
+	case "PaginationTicket.data":
+		if e.complexity.PaginationTicket.Data == nil {
+			break
+		}
+
+		return e.complexity.PaginationTicket.Data(childComplexity), true
+
+	case "PaginationTicket.limit":
+		if e.complexity.PaginationTicket.Limit == nil {
+			break
+		}
+
+		return e.complexity.PaginationTicket.Limit(childComplexity), true
+
+	case "PaginationTicket.skip":
+		if e.complexity.PaginationTicket.Skip == nil {
+			break
+		}
+
+		return e.complexity.PaginationTicket.Skip(childComplexity), true
+
+	case "PaginationTicket.total":
+		if e.complexity.PaginationTicket.Total == nil {
+			break
+		}
+
+		return e.complexity.PaginationTicket.Total(childComplexity), true
 
 	case "Query.action":
 		if e.complexity.Query.Action == nil {
@@ -2081,6 +2352,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Nodedatas(childComplexity, args["first"].(*int), args["after"].(*string), args["limit"].(*int), args["skip"].(*int), args["input"].(*model.FetchNodedata)), true
 
+	case "Query.nodedatavotes":
+		if e.complexity.Query.Nodedatavotes == nil {
+			break
+		}
+
+		args, err := ec.field_Query_nodedatavotes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Nodedatavotes(childComplexity, args["limit"].(*int), args["skip"].(*int), args["input"].(*model.FetchNodedataVote)), true
+
 	case "Query.nodes":
 		if e.complexity.Query.Nodes == nil {
 			break
@@ -2092,6 +2375,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Nodes(childComplexity, args["limit"].(*int), args["skip"].(*int), args["input"].(*model.ParamsNode)), true
+
+	case "Query.nodevotes":
+		if e.complexity.Query.Nodevotes == nil {
+			break
+		}
+
+		args, err := ec.field_Query_nodevotes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Nodevotes(childComplexity, args["limit"].(*int), args["skip"].(*int), args["input"].(*model.FetchNodeVote)), true
 
 	case "Query.osm":
 		if e.complexity.Query.Osm == nil {
@@ -2183,6 +2478,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Tags(childComplexity, args["limit"].(*int), args["skip"].(*int), args["input"].(*model.ParamsTag)), true
+
+	case "Query.ticket":
+		if e.complexity.Query.Ticket == nil {
+			break
+		}
+
+		args, err := ec.field_Query_ticket_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Ticket(childComplexity, args["input"].(*model.ParamsTicket)), true
+
+	case "Query.tickets":
+		if e.complexity.Query.Tickets == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tickets_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Tickets(childComplexity, args["limit"].(*int), args["skip"].(*int), args["input"].(*model.ParamsTicket)), true
 
 	case "Query.user":
 		if e.complexity.Query.User == nil {
@@ -2497,6 +2816,132 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tagopt.Value(childComplexity), true
 
+	case "Ticket.createdAt":
+		if e.complexity.Ticket.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Ticket.CreatedAt(childComplexity), true
+
+	case "Ticket.id":
+		if e.complexity.Ticket.ID == nil {
+			break
+		}
+
+		return e.complexity.Ticket.ID(childComplexity), true
+
+	case "Ticket.messages":
+		if e.complexity.Ticket.Messages == nil {
+			break
+		}
+
+		return e.complexity.Ticket.Messages(childComplexity), true
+
+	case "Ticket.progress":
+		if e.complexity.Ticket.Progress == nil {
+			break
+		}
+
+		return e.complexity.Ticket.Progress(childComplexity), true
+
+	case "Ticket.status":
+		if e.complexity.Ticket.Status == nil {
+			break
+		}
+
+		return e.complexity.Ticket.Status(childComplexity), true
+
+	case "Ticket.title":
+		if e.complexity.Ticket.Title == nil {
+			break
+		}
+
+		return e.complexity.Ticket.Title(childComplexity), true
+
+	case "Ticket.updatedAt":
+		if e.complexity.Ticket.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Ticket.UpdatedAt(childComplexity), true
+
+	case "Ticket.user":
+		if e.complexity.Ticket.User == nil {
+			break
+		}
+
+		return e.complexity.Ticket.User(childComplexity), true
+
+	case "Ticket.userId":
+		if e.complexity.Ticket.UserID == nil {
+			break
+		}
+
+		return e.complexity.Ticket.UserID(childComplexity), true
+
+	case "TicketMessage.createdAt":
+		if e.complexity.TicketMessage.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.TicketMessage.CreatedAt(childComplexity), true
+
+	case "TicketMessage.id":
+		if e.complexity.TicketMessage.ID == nil {
+			break
+		}
+
+		return e.complexity.TicketMessage.ID(childComplexity), true
+
+	case "TicketMessage.images":
+		if e.complexity.TicketMessage.Images == nil {
+			break
+		}
+
+		return e.complexity.TicketMessage.Images(childComplexity), true
+
+	case "TicketMessage.status":
+		if e.complexity.TicketMessage.Status == nil {
+			break
+		}
+
+		return e.complexity.TicketMessage.Status(childComplexity), true
+
+	case "TicketMessage.text":
+		if e.complexity.TicketMessage.Text == nil {
+			break
+		}
+
+		return e.complexity.TicketMessage.Text(childComplexity), true
+
+	case "TicketMessage.ticketId":
+		if e.complexity.TicketMessage.TicketID == nil {
+			break
+		}
+
+		return e.complexity.TicketMessage.TicketID(childComplexity), true
+
+	case "TicketMessage.updatedAt":
+		if e.complexity.TicketMessage.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.TicketMessage.UpdatedAt(childComplexity), true
+
+	case "TicketMessage.user":
+		if e.complexity.TicketMessage.User == nil {
+			break
+		}
+
+		return e.complexity.TicketMessage.User(childComplexity), true
+
+	case "TicketMessage.userId":
+		if e.complexity.TicketMessage.UserID == nil {
+			break
+		}
+
+		return e.complexity.TicketMessage.UserID(childComplexity), true
+
 	case "User.createdAt":
 		if e.complexity.User.CreatedAt == nil {
 			break
@@ -2539,6 +2984,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Login(childComplexity), true
 
+	case "User.md":
+		if e.complexity.User.Md == nil {
+			break
+		}
+
+		return e.complexity.User.Md(childComplexity), true
+
 	case "User.name":
 		if e.complexity.User.Name == nil {
 			break
@@ -2552,6 +3004,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.Online(childComplexity), true
+
+	case "User.roles":
+		if e.complexity.User.Roles == nil {
+			break
+		}
+
+		return e.complexity.User.Roles(childComplexity), true
 
 	case "User.updatedAt":
 		if e.complexity.User.UpdatedAt == nil {
@@ -2581,77 +3040,91 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Verify(childComplexity), true
 
-	case "UserStat.Node":
+	case "UserStat.country":
+		if e.complexity.UserStat.Country == nil {
+			break
+		}
+
+		return e.complexity.UserStat.Country(childComplexity), true
+
+	case "UserStat.node":
 		if e.complexity.UserStat.Node == nil {
 			break
 		}
 
 		return e.complexity.UserStat.Node(childComplexity), true
 
-	case "UserStat.NodeAuthorDLike":
+	case "UserStat.nodeAuthorDLike":
 		if e.complexity.UserStat.NodeAuthorDLike == nil {
 			break
 		}
 
 		return e.complexity.UserStat.NodeAuthorDLike(childComplexity), true
 
-	case "UserStat.NodeAuthorLike":
+	case "UserStat.nodeAuthorLike":
 		if e.complexity.UserStat.NodeAuthorLike == nil {
 			break
 		}
 
 		return e.complexity.UserStat.NodeAuthorLike(childComplexity), true
 
-	case "UserStat.NodeDLike":
+	case "UserStat.nodeDLike":
 		if e.complexity.UserStat.NodeDLike == nil {
 			break
 		}
 
 		return e.complexity.UserStat.NodeDLike(childComplexity), true
 
-	case "UserStat.NodeLike":
+	case "UserStat.nodeLike":
 		if e.complexity.UserStat.NodeLike == nil {
 			break
 		}
 
 		return e.complexity.UserStat.NodeLike(childComplexity), true
 
-	case "UserStat.Nodedata":
+	case "UserStat.nodedata":
 		if e.complexity.UserStat.Nodedata == nil {
 			break
 		}
 
 		return e.complexity.UserStat.Nodedata(childComplexity), true
 
-	case "UserStat.NodedataAuthorDLike":
+	case "UserStat.nodedataAuthorDLike":
 		if e.complexity.UserStat.NodedataAuthorDLike == nil {
 			break
 		}
 
 		return e.complexity.UserStat.NodedataAuthorDLike(childComplexity), true
 
-	case "UserStat.NodedataAuthorLike":
+	case "UserStat.nodedataAuthorLike":
 		if e.complexity.UserStat.NodedataAuthorLike == nil {
 			break
 		}
 
 		return e.complexity.UserStat.NodedataAuthorLike(childComplexity), true
 
-	case "UserStat.NodedataDLike":
+	case "UserStat.nodedataDLike":
 		if e.complexity.UserStat.NodedataDLike == nil {
 			break
 		}
 
 		return e.complexity.UserStat.NodedataDLike(childComplexity), true
 
-	case "UserStat.NodedataLike":
+	case "UserStat.nodedataLike":
 		if e.complexity.UserStat.NodedataLike == nil {
 			break
 		}
 
 		return e.complexity.UserStat.NodedataLike(childComplexity), true
 
-	case "UserStat.Review":
+	case "UserStat.request":
+		if e.complexity.UserStat.Request == nil {
+			break
+		}
+
+		return e.complexity.UserStat.Request(childComplexity), true
+
+	case "UserStat.review":
 		if e.complexity.UserStat.Review == nil {
 			break
 		}
@@ -2671,8 +3144,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputFetchAmenity,
 		ec.unmarshalInputFetchAmenityGroup,
 		ec.unmarshalInputFetchImage,
+		ec.unmarshalInputFetchNodeVote,
 		ec.unmarshalInputFetchNodedata,
 		ec.unmarshalInputFetchNodedataAudit,
+		ec.unmarshalInputFetchNodedataVote,
 		ec.unmarshalInputFetchReview,
 		ec.unmarshalInputFetchTagopt,
 		ec.unmarshalInputNewNode,
@@ -2680,6 +3155,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputNodeFilterTagOption,
 		ec.unmarshalInputParamsNode,
 		ec.unmarshalInputParamsTag,
+		ec.unmarshalInputParamsTicket,
 	)
 	first := true
 
@@ -3011,7 +3487,12 @@ type Node {
   # f: String
   # p:String
 
-  like: NodeLike
+  nodeLike: NodeLike
+  
+  # like: Int
+  # dlike:Int
+  # status: Int!
+
   reviews: [Review]
   address: Address
   reviewsInfo: ReviewInfo
@@ -3024,7 +3505,7 @@ type Node {
 type NodeLike {
   like: Int
   dlike: Int
-  ilike: Like
+  status: Int
 }
 
 type PaginationNode {
@@ -3123,6 +3604,42 @@ type NodeAudit {
 #   audits(limit: Int, skip:Int=0, input: ParamsNodeAudit): PaginationNodeAudit @auth
 #   audit(id: ID, nodeId: String): NodeAudit @auth
 # }`, BuiltIn: false},
+	{Name: "../graphql/node_vote.graphql", Input: `# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+
+type NodeVote {
+  id: ID!
+  userId: String!
+  nodeId: String!
+  nodeUserId: String!
+  value: Any!
+
+  user: User!
+  owner: User!
+  
+  createdAt:Time!
+  updatedAt:Time!
+}
+
+input FetchNodeVote {
+  id: ID
+  userId: String
+  nodeId: String
+  nodeUserId: String
+}
+
+type PaginationNodeVote {
+  total: Int,
+  limit: Int,
+  skip: Int,
+  data: [NodeVote]
+}
+
+extend type Query {
+  nodevotes(limit: Int = 10, skip:Int = 0, input:FetchNodeVote): PaginationNodeVote
+}`, BuiltIn: false},
 	{Name: "../graphql/nodedata.graphql", Input: `# GraphQL schema example
 #
 # https://gqlgen.com/getting-started/
@@ -3225,12 +3742,34 @@ type NodedataVote {
   id: ID!
   userId: String!
   nodedataId: String!
+  nodeId: String!
+  nodedataUserId: String!
   value: Any!
+
+  user: User!
+  owner: User!
   
   createdAt:Time!
   updatedAt:Time!
 }
-`, BuiltIn: false},
+
+input FetchNodedataVote {
+  id: ID
+  userId: String
+  nodedataId: String
+  nodedataUserId: String
+}
+
+type PaginationNodedataVote {
+  total: Int,
+  limit: Int,
+  skip: Int,
+  data: [NodedataVote]
+}
+
+extend type Query {
+  nodedatavotes(limit: Int = 10, skip:Int = 0, input:FetchNodedataVote): PaginationNodedataVote
+}`, BuiltIn: false},
 	{Name: "../graphql/review.graphql", Input: `type Review {
   id: ID!
   userId: String!
@@ -3454,24 +3993,86 @@ extend type Query {
   tagopt(input:FetchTagopt): Tagopt
 }
 `, BuiltIn: false},
+	{Name: "../graphql/ticket.graphql", Input: `# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+
+type Ticket {
+  id: ID!
+  userId: String!
+  title: String!
+  messages: [TicketMessage]
+  progress: Int,
+  status: Int
+
+  user: User
+  
+  createdAt:Time!
+  updatedAt:Time!
+}
+
+type TicketMessage {
+  id: ID!
+  userId: String!
+  ticketId: String!
+  text: String!
+  status: Int!
+  
+  images: [Image]
+  user: User
+
+  createdAt: String!
+  updatedAt: String!
+}
+
+input ParamsTicket {
+  id: ID
+  userId: String,
+}
+
+type PaginationTicket {
+  total: Int,
+  limit: Int,
+  skip: Int,
+  data: [Ticket]
+}
+
+# type TagEdge {
+#   cursor: ID!
+#   node: Tag
+# }
+
+# type TagsConnection {
+#   edges: [TagEdge!]!
+#   pageInfo: PageInfo!
+# }
+
+extend type Query {
+  tickets(limit: Int=10, skip:Int=0, input:ParamsTicket): PaginationTicket
+  ticket(input:ParamsTicket): Ticket
+}
+`, BuiltIn: false},
 	{Name: "../graphql/user.graphql", Input: `# GraphQL schema example
 #
 # https://gqlgen.com/getting-started/
 
 type UserStat {
-  Node: Int!
-	NodeLike: Int!
-	NodeDLike: Int!
-	NodeAuthorLike: Int!
-	NodeAuthorDLike: Int!
+  node: Int!
+	nodeLike: Int!
+	nodeDLike: Int!
+	nodeAuthorLike: Int!
+	nodeAuthorDLike: Int!
 
-	Nodedata: Int!
-  NodedataLike: Int!
-  NodedataDLike: Int!
-  NodedataAuthorLike: Int!
-  NodedataAuthorDLike: Int!
+	nodedata: Int!
+  nodedataLike: Int!
+  nodedataDLike: Int!
+  nodedataAuthorLike: Int!
+  nodedataAuthorDLike: Int!
+  request: Int!
+  country: Int!
 
-  Review: Int!
+  review: Int!
 }
 
 type User {
@@ -3487,6 +4088,8 @@ type User {
   userStat: UserStat!
 
   images: [Image]!
+  roles: [String]!
+  md: Int!
 
   createdAt:Time!
   updatedAt:Time!
@@ -3962,6 +4565,39 @@ func (ec *executionContext) field_Query_nodedatas_args(ctx context.Context, rawA
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_nodedatavotes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["skip"] = arg1
+	var arg2 *model.FetchNodedataVote
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg2, err = ec.unmarshalOFetchNodedataVote2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐFetchNodedataVote(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg2
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_nodes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -3987,6 +4623,39 @@ func (ec *executionContext) field_Query_nodes_args(ctx context.Context, rawArgs 
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg2, err = ec.unmarshalOParamsNode2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐParamsNode(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_nodevotes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["skip"] = arg1
+	var arg2 *model.FetchNodeVote
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg2, err = ec.unmarshalOFetchNodeVote2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐFetchNodeVote(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -4227,6 +4896,54 @@ func (ec *executionContext) field_Query_tags_args(ctx context.Context, rawArgs m
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg2, err = ec.unmarshalOParamsTag2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐParamsTag(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_ticket_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.ParamsTicket
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOParamsTicket2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐParamsTicket(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tickets_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["skip"] = arg1
+	var arg2 *model.ParamsTicket
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg2, err = ec.unmarshalOParamsTicket2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐParamsTicket(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -6705,6 +7422,10 @@ func (ec *executionContext) fieldContext_Image_user(_ context.Context, field gra
 				return ec.fieldContext_User_userStat(ctx, field)
 			case "images":
 				return ec.fieldContext_User_images(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
+			case "md":
+				return ec.fieldContext_User_md(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_User_createdAt(ctx, field)
 			case "updatedAt":
@@ -7157,8 +7878,8 @@ func (ec *executionContext) fieldContext_Mutation_createNode(ctx context.Context
 				return ec.fieldContext_Node_my(ctx, field)
 			case "ccode":
 				return ec.fieldContext_Node_ccode(ctx, field)
-			case "like":
-				return ec.fieldContext_Node_like(ctx, field)
+			case "nodeLike":
+				return ec.fieldContext_Node_nodeLike(ctx, field)
 			case "reviews":
 				return ec.fieldContext_Node_reviews(ctx, field)
 			case "address":
@@ -7865,6 +8586,10 @@ func (ec *executionContext) fieldContext_Node_user(_ context.Context, field grap
 				return ec.fieldContext_User_userStat(ctx, field)
 			case "images":
 				return ec.fieldContext_User_images(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
+			case "md":
+				return ec.fieldContext_User_md(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_User_createdAt(ctx, field)
 			case "updatedAt":
@@ -7961,8 +8686,8 @@ func (ec *executionContext) fieldContext_Node_ccode(_ context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _Node_like(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Node_like(ctx, field)
+func (ec *executionContext) _Node_nodeLike(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Node_nodeLike(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -7975,7 +8700,7 @@ func (ec *executionContext) _Node_like(ctx context.Context, field graphql.Collec
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Node().Like(rctx, obj)
+		return obj.NodeLike, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7984,25 +8709,25 @@ func (ec *executionContext) _Node_like(ctx context.Context, field graphql.Collec
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.NodeLike)
+	res := resTmp.(model.NodeLike)
 	fc.Result = res
-	return ec.marshalONodeLike2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeLike(ctx, field.Selections, res)
+	return ec.marshalONodeLike2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeLike(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Node_like(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Node_nodeLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Node",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "like":
 				return ec.fieldContext_NodeLike_like(ctx, field)
 			case "dlike":
 				return ec.fieldContext_NodeLike_dlike(ctx, field)
-			case "ilike":
-				return ec.fieldContext_NodeLike_ilike(ctx, field)
+			case "status":
+				return ec.fieldContext_NodeLike_status(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type NodeLike", field.Name)
 		},
@@ -8646,6 +9371,10 @@ func (ec *executionContext) fieldContext_NodeAudit_user(_ context.Context, field
 				return ec.fieldContext_User_userStat(ctx, field)
 			case "images":
 				return ec.fieldContext_User_images(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
+			case "md":
+				return ec.fieldContext_User_md(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_User_createdAt(ctx, field)
 			case "updatedAt":
@@ -8768,9 +9497,9 @@ func (ec *executionContext) _NodeLike_like(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOInt2int(ctx, field.Selections, res)
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_NodeLike_like(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8809,9 +9538,9 @@ func (ec *executionContext) _NodeLike_dlike(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOInt2int(ctx, field.Selections, res)
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_NodeLike_dlike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8827,8 +9556,8 @@ func (ec *executionContext) fieldContext_NodeLike_dlike(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _NodeLike_ilike(ctx context.Context, field graphql.CollectedField, obj *model.NodeLike) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_NodeLike_ilike(ctx, field)
+func (ec *executionContext) _NodeLike_status(ctx context.Context, field graphql.CollectedField, obj *model.NodeLike) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeLike_status(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -8841,7 +9570,7 @@ func (ec *executionContext) _NodeLike_ilike(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Ilike, nil
+		return obj.Status, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8850,33 +9579,475 @@ func (ec *executionContext) _NodeLike_ilike(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(model.Like)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalOLike2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐLike(ctx, field.Selections, res)
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_NodeLike_ilike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_NodeLike_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "NodeLike",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeVote_id(ctx context.Context, field graphql.CollectedField, obj *model.NodeVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeVote_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NodeVote().ID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeVote_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeVote",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeVote_userId(ctx context.Context, field graphql.CollectedField, obj *model.NodeVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeVote_userId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NodeVote().UserID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeVote_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeVote",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeVote_nodeId(ctx context.Context, field graphql.CollectedField, obj *model.NodeVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeVote_nodeId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NodeVote().NodeID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeVote_nodeId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeVote",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeVote_nodeUserId(ctx context.Context, field graphql.CollectedField, obj *model.NodeVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeVote_nodeUserId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NodeVote().NodeUserID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeVote_nodeUserId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeVote",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeVote_value(ctx context.Context, field graphql.CollectedField, obj *model.NodeVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeVote_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NodeVote().Value(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(any)
+	fc.Result = res
+	return ec.marshalNAny2interface(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeVote_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeVote",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Any does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeVote_user(ctx context.Context, field graphql.CollectedField, obj *model.NodeVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeVote_user(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.User)
+	fc.Result = res
+	return ec.marshalNUser2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeVote_user(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeVote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Like_id(ctx, field)
+				return ec.fieldContext_User_id(ctx, field)
 			case "userId":
-				return ec.fieldContext_Like_userId(ctx, field)
-			case "nodeId":
-				return ec.fieldContext_Like_nodeId(ctx, field)
-			case "status":
-				return ec.fieldContext_Like_status(ctx, field)
+				return ec.fieldContext_User_userId(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "login":
+				return ec.fieldContext_User_login(ctx, field)
+			case "lang":
+				return ec.fieldContext_User_lang(ctx, field)
+			case "online":
+				return ec.fieldContext_User_online(ctx, field)
+			case "verify":
+				return ec.fieldContext_User_verify(ctx, field)
+			case "lastTime":
+				return ec.fieldContext_User_lastTime(ctx, field)
+			case "userStat":
+				return ec.fieldContext_User_userStat(ctx, field)
+			case "images":
+				return ec.fieldContext_User_images(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
+			case "md":
+				return ec.fieldContext_User_md(ctx, field)
 			case "createdAt":
-				return ec.fieldContext_Like_createdAt(ctx, field)
+				return ec.fieldContext_User_createdAt(ctx, field)
 			case "updatedAt":
-				return ec.fieldContext_Like_updatedAt(ctx, field)
+				return ec.fieldContext_User_updatedAt(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Like", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeVote_owner(ctx context.Context, field graphql.CollectedField, obj *model.NodeVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeVote_owner(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Owner, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.User)
+	fc.Result = res
+	return ec.marshalNUser2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeVote_owner(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeVote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_User_userId(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "login":
+				return ec.fieldContext_User_login(ctx, field)
+			case "lang":
+				return ec.fieldContext_User_lang(ctx, field)
+			case "online":
+				return ec.fieldContext_User_online(ctx, field)
+			case "verify":
+				return ec.fieldContext_User_verify(ctx, field)
+			case "lastTime":
+				return ec.fieldContext_User_lastTime(ctx, field)
+			case "userStat":
+				return ec.fieldContext_User_userStat(ctx, field)
+			case "images":
+				return ec.fieldContext_User_images(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
+			case "md":
+				return ec.fieldContext_User_md(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_User_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_User_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeVote_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.NodeVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeVote_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeVote_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeVote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodeVote_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.NodeVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodeVote_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodeVote_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodeVote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -9540,8 +10711,16 @@ func (ec *executionContext) fieldContext_Nodedata_votes(_ context.Context, field
 				return ec.fieldContext_NodedataVote_userId(ctx, field)
 			case "nodedataId":
 				return ec.fieldContext_NodedataVote_nodedataId(ctx, field)
+			case "nodeId":
+				return ec.fieldContext_NodedataVote_nodeId(ctx, field)
+			case "nodedataUserId":
+				return ec.fieldContext_NodedataVote_nodedataUserId(ctx, field)
 			case "value":
 				return ec.fieldContext_NodedataVote_value(ctx, field)
+			case "user":
+				return ec.fieldContext_NodedataVote_user(ctx, field)
+			case "owner":
+				return ec.fieldContext_NodedataVote_owner(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_NodedataVote_createdAt(ctx, field)
 			case "updatedAt":
@@ -9653,6 +10832,10 @@ func (ec *executionContext) fieldContext_Nodedata_user(_ context.Context, field 
 				return ec.fieldContext_User_userStat(ctx, field)
 			case "images":
 				return ec.fieldContext_User_images(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
+			case "md":
+				return ec.fieldContext_User_md(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_User_createdAt(ctx, field)
 			case "updatedAt":
@@ -10087,6 +11270,10 @@ func (ec *executionContext) fieldContext_NodedataAudit_user(_ context.Context, f
 				return ec.fieldContext_User_userStat(ctx, field)
 			case "images":
 				return ec.fieldContext_User_images(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
+			case "md":
+				return ec.fieldContext_User_md(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_User_createdAt(ctx, field)
 			case "updatedAt":
@@ -10318,6 +11505,94 @@ func (ec *executionContext) fieldContext_NodedataVote_nodedataId(_ context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _NodedataVote_nodeId(ctx context.Context, field graphql.CollectedField, obj *model.NodedataVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodedataVote_nodeId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NodedataVote().NodeID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodedataVote_nodeId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodedataVote",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodedataVote_nodedataUserId(ctx context.Context, field graphql.CollectedField, obj *model.NodedataVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodedataVote_nodedataUserId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NodedataVote().NodedataUserID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodedataVote_nodedataUserId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodedataVote",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NodedataVote_value(ctx context.Context, field graphql.CollectedField, obj *model.NodedataVote) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_NodedataVote_value(ctx, field)
 	if err != nil {
@@ -10357,6 +11632,154 @@ func (ec *executionContext) fieldContext_NodedataVote_value(_ context.Context, f
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Any does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodedataVote_user(ctx context.Context, field graphql.CollectedField, obj *model.NodedataVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodedataVote_user(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.User)
+	fc.Result = res
+	return ec.marshalNUser2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodedataVote_user(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodedataVote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_User_userId(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "login":
+				return ec.fieldContext_User_login(ctx, field)
+			case "lang":
+				return ec.fieldContext_User_lang(ctx, field)
+			case "online":
+				return ec.fieldContext_User_online(ctx, field)
+			case "verify":
+				return ec.fieldContext_User_verify(ctx, field)
+			case "lastTime":
+				return ec.fieldContext_User_lastTime(ctx, field)
+			case "userStat":
+				return ec.fieldContext_User_userStat(ctx, field)
+			case "images":
+				return ec.fieldContext_User_images(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
+			case "md":
+				return ec.fieldContext_User_md(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_User_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_User_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodedataVote_owner(ctx context.Context, field graphql.CollectedField, obj *model.NodedataVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodedataVote_owner(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Owner, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.User)
+	fc.Result = res
+	return ec.marshalNUser2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodedataVote_owner(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodedataVote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_User_userId(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "login":
+				return ec.fieldContext_User_login(ctx, field)
+			case "lang":
+				return ec.fieldContext_User_lang(ctx, field)
+			case "online":
+				return ec.fieldContext_User_online(ctx, field)
+			case "verify":
+				return ec.fieldContext_User_verify(ctx, field)
+			case "lastTime":
+				return ec.fieldContext_User_lastTime(ctx, field)
+			case "userStat":
+				return ec.fieldContext_User_userStat(ctx, field)
+			case "images":
+				return ec.fieldContext_User_images(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
+			case "md":
+				return ec.fieldContext_User_md(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_User_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_User_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
 	}
 	return fc, nil
@@ -11700,8 +13123,8 @@ func (ec *executionContext) fieldContext_PaginationNode_data(_ context.Context, 
 				return ec.fieldContext_Node_my(ctx, field)
 			case "ccode":
 				return ec.fieldContext_Node_ccode(ctx, field)
-			case "like":
-				return ec.fieldContext_Node_like(ctx, field)
+			case "nodeLike":
+				return ec.fieldContext_Node_nodeLike(ctx, field)
 			case "reviews":
 				return ec.fieldContext_Node_reviews(ctx, field)
 			case "address":
@@ -11716,6 +13139,190 @@ func (ec *executionContext) fieldContext_PaginationNode_data(_ context.Context, 
 				return ec.fieldContext_Node_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Node", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginationNodeVote_total(ctx context.Context, field graphql.CollectedField, obj *model.PaginationNodeVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginationNodeVote_total(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginationNodeVote_total(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginationNodeVote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginationNodeVote_limit(ctx context.Context, field graphql.CollectedField, obj *model.PaginationNodeVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginationNodeVote_limit(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Limit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginationNodeVote_limit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginationNodeVote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginationNodeVote_skip(ctx context.Context, field graphql.CollectedField, obj *model.PaginationNodeVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginationNodeVote_skip(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Skip, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginationNodeVote_skip(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginationNodeVote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginationNodeVote_data(ctx context.Context, field graphql.CollectedField, obj *model.PaginationNodeVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginationNodeVote_data(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.NodeVote)
+	fc.Result = res
+	return ec.marshalONodeVote2ᚕᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeVote(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginationNodeVote_data(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginationNodeVote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_NodeVote_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_NodeVote_userId(ctx, field)
+			case "nodeId":
+				return ec.fieldContext_NodeVote_nodeId(ctx, field)
+			case "nodeUserId":
+				return ec.fieldContext_NodeVote_nodeUserId(ctx, field)
+			case "value":
+				return ec.fieldContext_NodeVote_value(ctx, field)
+			case "user":
+				return ec.fieldContext_NodeVote_user(ctx, field)
+			case "owner":
+				return ec.fieldContext_NodeVote_owner(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_NodeVote_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_NodeVote_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeVote", field.Name)
 		},
 	}
 	return fc, nil
@@ -12102,6 +13709,192 @@ func (ec *executionContext) fieldContext_PaginationNodedataAudit_data(_ context.
 				return ec.fieldContext_NodedataAudit_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type NodedataAudit", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginationNodedataVote_total(ctx context.Context, field graphql.CollectedField, obj *model.PaginationNodedataVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginationNodedataVote_total(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginationNodedataVote_total(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginationNodedataVote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginationNodedataVote_limit(ctx context.Context, field graphql.CollectedField, obj *model.PaginationNodedataVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginationNodedataVote_limit(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Limit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginationNodedataVote_limit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginationNodedataVote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginationNodedataVote_skip(ctx context.Context, field graphql.CollectedField, obj *model.PaginationNodedataVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginationNodedataVote_skip(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Skip, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginationNodedataVote_skip(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginationNodedataVote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginationNodedataVote_data(ctx context.Context, field graphql.CollectedField, obj *model.PaginationNodedataVote) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginationNodedataVote_data(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.NodedataVote)
+	fc.Result = res
+	return ec.marshalONodedataVote2ᚕᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodedataVote(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginationNodedataVote_data(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginationNodedataVote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_NodedataVote_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_NodedataVote_userId(ctx, field)
+			case "nodedataId":
+				return ec.fieldContext_NodedataVote_nodedataId(ctx, field)
+			case "nodeId":
+				return ec.fieldContext_NodedataVote_nodeId(ctx, field)
+			case "nodedataUserId":
+				return ec.fieldContext_NodedataVote_nodedataUserId(ctx, field)
+			case "value":
+				return ec.fieldContext_NodedataVote_value(ctx, field)
+			case "user":
+				return ec.fieldContext_NodedataVote_user(ctx, field)
+			case "owner":
+				return ec.fieldContext_NodedataVote_owner(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_NodedataVote_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_NodedataVote_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodedataVote", field.Name)
 		},
 	}
 	return fc, nil
@@ -12668,6 +14461,190 @@ func (ec *executionContext) fieldContext_PaginationTagopt_data(_ context.Context
 				return ec.fieldContext_Tagopt_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tagopt", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginationTicket_total(ctx context.Context, field graphql.CollectedField, obj *model.PaginationTicket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginationTicket_total(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginationTicket_total(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginationTicket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginationTicket_limit(ctx context.Context, field graphql.CollectedField, obj *model.PaginationTicket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginationTicket_limit(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Limit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginationTicket_limit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginationTicket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginationTicket_skip(ctx context.Context, field graphql.CollectedField, obj *model.PaginationTicket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginationTicket_skip(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Skip, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginationTicket_skip(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginationTicket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PaginationTicket_data(ctx context.Context, field graphql.CollectedField, obj *model.PaginationTicket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PaginationTicket_data(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Ticket)
+	fc.Result = res
+	return ec.marshalOTicket2ᚕᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐTicket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PaginationTicket_data(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PaginationTicket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Ticket_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_Ticket_userId(ctx, field)
+			case "title":
+				return ec.fieldContext_Ticket_title(ctx, field)
+			case "messages":
+				return ec.fieldContext_Ticket_messages(ctx, field)
+			case "progress":
+				return ec.fieldContext_Ticket_progress(ctx, field)
+			case "status":
+				return ec.fieldContext_Ticket_status(ctx, field)
+			case "user":
+				return ec.fieldContext_Ticket_user(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Ticket_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Ticket_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Ticket", field.Name)
 		},
 	}
 	return fc, nil
@@ -13657,8 +15634,8 @@ func (ec *executionContext) fieldContext_Query_osm(ctx context.Context, field gr
 				return ec.fieldContext_Node_my(ctx, field)
 			case "ccode":
 				return ec.fieldContext_Node_ccode(ctx, field)
-			case "like":
-				return ec.fieldContext_Node_like(ctx, field)
+			case "nodeLike":
+				return ec.fieldContext_Node_nodeLike(ctx, field)
 			case "reviews":
 				return ec.fieldContext_Node_reviews(ctx, field)
 			case "address":
@@ -13775,8 +15752,8 @@ func (ec *executionContext) fieldContext_Query_node(ctx context.Context, field g
 				return ec.fieldContext_Node_my(ctx, field)
 			case "ccode":
 				return ec.fieldContext_Node_ccode(ctx, field)
-			case "like":
-				return ec.fieldContext_Node_like(ctx, field)
+			case "nodeLike":
+				return ec.fieldContext_Node_nodeLike(ctx, field)
 			case "reviews":
 				return ec.fieldContext_Node_reviews(ctx, field)
 			case "address":
@@ -13801,6 +15778,68 @@ func (ec *executionContext) fieldContext_Query_node(ctx context.Context, field g
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_node_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_nodevotes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_nodevotes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Nodevotes(rctx, fc.Args["limit"].(*int), fc.Args["skip"].(*int), fc.Args["input"].(*model.FetchNodeVote))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.PaginationNodeVote)
+	fc.Result = res
+	return ec.marshalOPaginationNodeVote2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐPaginationNodeVote(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_nodevotes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "total":
+				return ec.fieldContext_PaginationNodeVote_total(ctx, field)
+			case "limit":
+				return ec.fieldContext_PaginationNodeVote_limit(ctx, field)
+			case "skip":
+				return ec.fieldContext_PaginationNodeVote_skip(ctx, field)
+			case "data":
+				return ec.fieldContext_PaginationNodeVote_data(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PaginationNodeVote", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_nodevotes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -14132,6 +16171,68 @@ func (ec *executionContext) fieldContext_Query_nodedataAudit(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_nodedataAudit_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_nodedatavotes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_nodedatavotes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Nodedatavotes(rctx, fc.Args["limit"].(*int), fc.Args["skip"].(*int), fc.Args["input"].(*model.FetchNodedataVote))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.PaginationNodedataVote)
+	fc.Result = res
+	return ec.marshalOPaginationNodedataVote2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐPaginationNodedataVote(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_nodedatavotes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "total":
+				return ec.fieldContext_PaginationNodedataVote_total(ctx, field)
+			case "limit":
+				return ec.fieldContext_PaginationNodedataVote_limit(ctx, field)
+			case "skip":
+				return ec.fieldContext_PaginationNodedataVote_skip(ctx, field)
+			case "data":
+				return ec.fieldContext_PaginationNodedataVote_data(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PaginationNodedataVote", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_nodedatavotes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -14597,6 +16698,140 @@ func (ec *executionContext) fieldContext_Query_tagopt(ctx context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_tickets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tickets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Tickets(rctx, fc.Args["limit"].(*int), fc.Args["skip"].(*int), fc.Args["input"].(*model.ParamsTicket))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.PaginationTicket)
+	fc.Result = res
+	return ec.marshalOPaginationTicket2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐPaginationTicket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tickets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "total":
+				return ec.fieldContext_PaginationTicket_total(ctx, field)
+			case "limit":
+				return ec.fieldContext_PaginationTicket_limit(ctx, field)
+			case "skip":
+				return ec.fieldContext_PaginationTicket_skip(ctx, field)
+			case "data":
+				return ec.fieldContext_PaginationTicket_data(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PaginationTicket", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tickets_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_ticket(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_ticket(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Ticket(rctx, fc.Args["input"].(*model.ParamsTicket))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Ticket)
+	fc.Result = res
+	return ec.marshalOTicket2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐTicket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_ticket(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Ticket_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_Ticket_userId(ctx, field)
+			case "title":
+				return ec.fieldContext_Ticket_title(ctx, field)
+			case "messages":
+				return ec.fieldContext_Ticket_messages(ctx, field)
+			case "progress":
+				return ec.fieldContext_Ticket_progress(ctx, field)
+			case "status":
+				return ec.fieldContext_Ticket_status(ctx, field)
+			case "user":
+				return ec.fieldContext_Ticket_user(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Ticket_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Ticket_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Ticket", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_ticket_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_user(ctx, field)
 	if err != nil {
@@ -14653,6 +16888,10 @@ func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field g
 				return ec.fieldContext_User_userStat(ctx, field)
 			case "images":
 				return ec.fieldContext_User_images(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
+			case "md":
+				return ec.fieldContext_User_md(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_User_createdAt(ctx, field)
 			case "updatedAt":
@@ -15080,6 +17319,10 @@ func (ec *executionContext) fieldContext_Review_user(_ context.Context, field gr
 				return ec.fieldContext_User_userStat(ctx, field)
 			case "images":
 				return ec.fieldContext_User_images(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
+			case "md":
+				return ec.fieldContext_User_md(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_User_createdAt(ctx, field)
 			case "updatedAt":
@@ -16637,6 +18880,10 @@ func (ec *executionContext) fieldContext_Tagopt_user(_ context.Context, field gr
 				return ec.fieldContext_User_userStat(ctx, field)
 			case "images":
 				return ec.fieldContext_User_images(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
+			case "md":
+				return ec.fieldContext_User_md(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_User_createdAt(ctx, field)
 			case "updatedAt":
@@ -16772,6 +19019,886 @@ func (ec *executionContext) fieldContext_Tagopt_updatedAt(_ context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Ticket_id(ctx context.Context, field graphql.CollectedField, obj *model.Ticket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Ticket_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Ticket().ID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Ticket_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Ticket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Ticket_userId(ctx context.Context, field graphql.CollectedField, obj *model.Ticket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Ticket_userId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Ticket().UserID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Ticket_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Ticket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Ticket_title(ctx context.Context, field graphql.CollectedField, obj *model.Ticket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Ticket_title(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Ticket_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Ticket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Ticket_messages(ctx context.Context, field graphql.CollectedField, obj *model.Ticket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Ticket_messages(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Messages, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]model.TicketMessage)
+	fc.Result = res
+	return ec.marshalOTicketMessage2ᚕgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐTicketMessage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Ticket_messages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Ticket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_TicketMessage_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_TicketMessage_userId(ctx, field)
+			case "ticketId":
+				return ec.fieldContext_TicketMessage_ticketId(ctx, field)
+			case "text":
+				return ec.fieldContext_TicketMessage_text(ctx, field)
+			case "status":
+				return ec.fieldContext_TicketMessage_status(ctx, field)
+			case "images":
+				return ec.fieldContext_TicketMessage_images(ctx, field)
+			case "user":
+				return ec.fieldContext_TicketMessage_user(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_TicketMessage_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_TicketMessage_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TicketMessage", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Ticket_progress(ctx context.Context, field graphql.CollectedField, obj *model.Ticket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Ticket_progress(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Progress, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalOInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Ticket_progress(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Ticket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Ticket_status(ctx context.Context, field graphql.CollectedField, obj *model.Ticket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Ticket_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalOInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Ticket_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Ticket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Ticket_user(ctx context.Context, field graphql.CollectedField, obj *model.Ticket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Ticket_user(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(model.User)
+	fc.Result = res
+	return ec.marshalOUser2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Ticket_user(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Ticket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_User_userId(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "login":
+				return ec.fieldContext_User_login(ctx, field)
+			case "lang":
+				return ec.fieldContext_User_lang(ctx, field)
+			case "online":
+				return ec.fieldContext_User_online(ctx, field)
+			case "verify":
+				return ec.fieldContext_User_verify(ctx, field)
+			case "lastTime":
+				return ec.fieldContext_User_lastTime(ctx, field)
+			case "userStat":
+				return ec.fieldContext_User_userStat(ctx, field)
+			case "images":
+				return ec.fieldContext_User_images(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
+			case "md":
+				return ec.fieldContext_User_md(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_User_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_User_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Ticket_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Ticket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Ticket_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Ticket_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Ticket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Ticket_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Ticket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Ticket_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Ticket_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Ticket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TicketMessage_id(ctx context.Context, field graphql.CollectedField, obj *model.TicketMessage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TicketMessage_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TicketMessage().ID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TicketMessage_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TicketMessage",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TicketMessage_userId(ctx context.Context, field graphql.CollectedField, obj *model.TicketMessage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TicketMessage_userId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TicketMessage().UserID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TicketMessage_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TicketMessage",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TicketMessage_ticketId(ctx context.Context, field graphql.CollectedField, obj *model.TicketMessage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TicketMessage_ticketId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TicketMessage().TicketID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TicketMessage_ticketId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TicketMessage",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TicketMessage_text(ctx context.Context, field graphql.CollectedField, obj *model.TicketMessage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TicketMessage_text(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Text, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TicketMessage_text(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TicketMessage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TicketMessage_status(ctx context.Context, field graphql.CollectedField, obj *model.TicketMessage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TicketMessage_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TicketMessage_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TicketMessage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TicketMessage_images(ctx context.Context, field graphql.CollectedField, obj *model.TicketMessage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TicketMessage_images(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Images, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]model.Image)
+	fc.Result = res
+	return ec.marshalOImage2ᚕgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐImage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TicketMessage_images(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TicketMessage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Image_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_Image_userId(ctx, field)
+			case "serviceId":
+				return ec.fieldContext_Image_serviceId(ctx, field)
+			case "service":
+				return ec.fieldContext_Image_service(ctx, field)
+			case "path":
+				return ec.fieldContext_Image_path(ctx, field)
+			case "ext":
+				return ec.fieldContext_Image_ext(ctx, field)
+			case "title":
+				return ec.fieldContext_Image_title(ctx, field)
+			case "dir":
+				return ec.fieldContext_Image_dir(ctx, field)
+			case "description":
+				return ec.fieldContext_Image_description(ctx, field)
+			case "user":
+				return ec.fieldContext_Image_user(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Image_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Image_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Image", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TicketMessage_user(ctx context.Context, field graphql.CollectedField, obj *model.TicketMessage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TicketMessage_user(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(model.User)
+	fc.Result = res
+	return ec.marshalOUser2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TicketMessage_user(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TicketMessage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_User_userId(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "login":
+				return ec.fieldContext_User_login(ctx, field)
+			case "lang":
+				return ec.fieldContext_User_lang(ctx, field)
+			case "online":
+				return ec.fieldContext_User_online(ctx, field)
+			case "verify":
+				return ec.fieldContext_User_verify(ctx, field)
+			case "lastTime":
+				return ec.fieldContext_User_lastTime(ctx, field)
+			case "userStat":
+				return ec.fieldContext_User_userStat(ctx, field)
+			case "images":
+				return ec.fieldContext_User_images(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
+			case "md":
+				return ec.fieldContext_User_md(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_User_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_User_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TicketMessage_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.TicketMessage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TicketMessage_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TicketMessage().CreatedAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TicketMessage_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TicketMessage",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TicketMessage_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.TicketMessage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TicketMessage_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TicketMessage().UpdatedAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TicketMessage_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TicketMessage",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -17168,28 +20295,32 @@ func (ec *executionContext) fieldContext_User_userStat(_ context.Context, field 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "Node":
-				return ec.fieldContext_UserStat_Node(ctx, field)
-			case "NodeLike":
-				return ec.fieldContext_UserStat_NodeLike(ctx, field)
-			case "NodeDLike":
-				return ec.fieldContext_UserStat_NodeDLike(ctx, field)
-			case "NodeAuthorLike":
-				return ec.fieldContext_UserStat_NodeAuthorLike(ctx, field)
-			case "NodeAuthorDLike":
-				return ec.fieldContext_UserStat_NodeAuthorDLike(ctx, field)
-			case "Nodedata":
-				return ec.fieldContext_UserStat_Nodedata(ctx, field)
-			case "NodedataLike":
-				return ec.fieldContext_UserStat_NodedataLike(ctx, field)
-			case "NodedataDLike":
-				return ec.fieldContext_UserStat_NodedataDLike(ctx, field)
-			case "NodedataAuthorLike":
-				return ec.fieldContext_UserStat_NodedataAuthorLike(ctx, field)
-			case "NodedataAuthorDLike":
-				return ec.fieldContext_UserStat_NodedataAuthorDLike(ctx, field)
-			case "Review":
-				return ec.fieldContext_UserStat_Review(ctx, field)
+			case "node":
+				return ec.fieldContext_UserStat_node(ctx, field)
+			case "nodeLike":
+				return ec.fieldContext_UserStat_nodeLike(ctx, field)
+			case "nodeDLike":
+				return ec.fieldContext_UserStat_nodeDLike(ctx, field)
+			case "nodeAuthorLike":
+				return ec.fieldContext_UserStat_nodeAuthorLike(ctx, field)
+			case "nodeAuthorDLike":
+				return ec.fieldContext_UserStat_nodeAuthorDLike(ctx, field)
+			case "nodedata":
+				return ec.fieldContext_UserStat_nodedata(ctx, field)
+			case "nodedataLike":
+				return ec.fieldContext_UserStat_nodedataLike(ctx, field)
+			case "nodedataDLike":
+				return ec.fieldContext_UserStat_nodedataDLike(ctx, field)
+			case "nodedataAuthorLike":
+				return ec.fieldContext_UserStat_nodedataAuthorLike(ctx, field)
+			case "nodedataAuthorDLike":
+				return ec.fieldContext_UserStat_nodedataAuthorDLike(ctx, field)
+			case "request":
+				return ec.fieldContext_UserStat_request(ctx, field)
+			case "country":
+				return ec.fieldContext_UserStat_country(ctx, field)
+			case "review":
+				return ec.fieldContext_UserStat_review(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserStat", field.Name)
 		},
@@ -17262,6 +20393,94 @@ func (ec *executionContext) fieldContext_User_images(_ context.Context, field gr
 				return ec.fieldContext_Image_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Image", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_roles(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_roles(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Roles, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_roles(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_md(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_md(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Md, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_md(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -17355,8 +20574,8 @@ func (ec *executionContext) fieldContext_User_updatedAt(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _UserStat_Node(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserStat_Node(ctx, field)
+func (ec *executionContext) _UserStat_node(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserStat_node(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17386,7 +20605,7 @@ func (ec *executionContext) _UserStat_Node(ctx context.Context, field graphql.Co
 	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserStat_Node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserStat_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "UserStat",
 		Field:      field,
@@ -17399,8 +20618,8 @@ func (ec *executionContext) fieldContext_UserStat_Node(_ context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _UserStat_NodeLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserStat_NodeLike(ctx, field)
+func (ec *executionContext) _UserStat_nodeLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserStat_nodeLike(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17430,7 +20649,7 @@ func (ec *executionContext) _UserStat_NodeLike(ctx context.Context, field graphq
 	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserStat_NodeLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserStat_nodeLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "UserStat",
 		Field:      field,
@@ -17443,8 +20662,8 @@ func (ec *executionContext) fieldContext_UserStat_NodeLike(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _UserStat_NodeDLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserStat_NodeDLike(ctx, field)
+func (ec *executionContext) _UserStat_nodeDLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserStat_nodeDLike(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17474,7 +20693,7 @@ func (ec *executionContext) _UserStat_NodeDLike(ctx context.Context, field graph
 	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserStat_NodeDLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserStat_nodeDLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "UserStat",
 		Field:      field,
@@ -17487,8 +20706,8 @@ func (ec *executionContext) fieldContext_UserStat_NodeDLike(_ context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _UserStat_NodeAuthorLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserStat_NodeAuthorLike(ctx, field)
+func (ec *executionContext) _UserStat_nodeAuthorLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserStat_nodeAuthorLike(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17518,7 +20737,7 @@ func (ec *executionContext) _UserStat_NodeAuthorLike(ctx context.Context, field 
 	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserStat_NodeAuthorLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserStat_nodeAuthorLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "UserStat",
 		Field:      field,
@@ -17531,8 +20750,8 @@ func (ec *executionContext) fieldContext_UserStat_NodeAuthorLike(_ context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _UserStat_NodeAuthorDLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserStat_NodeAuthorDLike(ctx, field)
+func (ec *executionContext) _UserStat_nodeAuthorDLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserStat_nodeAuthorDLike(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17562,7 +20781,7 @@ func (ec *executionContext) _UserStat_NodeAuthorDLike(ctx context.Context, field
 	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserStat_NodeAuthorDLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserStat_nodeAuthorDLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "UserStat",
 		Field:      field,
@@ -17575,8 +20794,8 @@ func (ec *executionContext) fieldContext_UserStat_NodeAuthorDLike(_ context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _UserStat_Nodedata(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserStat_Nodedata(ctx, field)
+func (ec *executionContext) _UserStat_nodedata(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserStat_nodedata(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17606,7 +20825,7 @@ func (ec *executionContext) _UserStat_Nodedata(ctx context.Context, field graphq
 	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserStat_Nodedata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserStat_nodedata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "UserStat",
 		Field:      field,
@@ -17619,8 +20838,8 @@ func (ec *executionContext) fieldContext_UserStat_Nodedata(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _UserStat_NodedataLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserStat_NodedataLike(ctx, field)
+func (ec *executionContext) _UserStat_nodedataLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserStat_nodedataLike(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17650,7 +20869,7 @@ func (ec *executionContext) _UserStat_NodedataLike(ctx context.Context, field gr
 	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserStat_NodedataLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserStat_nodedataLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "UserStat",
 		Field:      field,
@@ -17663,8 +20882,8 @@ func (ec *executionContext) fieldContext_UserStat_NodedataLike(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _UserStat_NodedataDLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserStat_NodedataDLike(ctx, field)
+func (ec *executionContext) _UserStat_nodedataDLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserStat_nodedataDLike(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17694,7 +20913,7 @@ func (ec *executionContext) _UserStat_NodedataDLike(ctx context.Context, field g
 	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserStat_NodedataDLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserStat_nodedataDLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "UserStat",
 		Field:      field,
@@ -17707,8 +20926,8 @@ func (ec *executionContext) fieldContext_UserStat_NodedataDLike(_ context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _UserStat_NodedataAuthorLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserStat_NodedataAuthorLike(ctx, field)
+func (ec *executionContext) _UserStat_nodedataAuthorLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserStat_nodedataAuthorLike(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17738,7 +20957,7 @@ func (ec *executionContext) _UserStat_NodedataAuthorLike(ctx context.Context, fi
 	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserStat_NodedataAuthorLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserStat_nodedataAuthorLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "UserStat",
 		Field:      field,
@@ -17751,8 +20970,8 @@ func (ec *executionContext) fieldContext_UserStat_NodedataAuthorLike(_ context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _UserStat_NodedataAuthorDLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserStat_NodedataAuthorDLike(ctx, field)
+func (ec *executionContext) _UserStat_nodedataAuthorDLike(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserStat_nodedataAuthorDLike(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17782,7 +21001,7 @@ func (ec *executionContext) _UserStat_NodedataAuthorDLike(ctx context.Context, f
 	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserStat_NodedataAuthorDLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserStat_nodedataAuthorDLike(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "UserStat",
 		Field:      field,
@@ -17795,8 +21014,96 @@ func (ec *executionContext) fieldContext_UserStat_NodedataAuthorDLike(_ context.
 	return fc, nil
 }
 
-func (ec *executionContext) _UserStat_Review(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserStat_Review(ctx, field)
+func (ec *executionContext) _UserStat_request(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserStat_request(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Request, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserStat_request(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserStat",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserStat_country(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserStat_country(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Country, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserStat_country(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserStat",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserStat_review(ctx context.Context, field graphql.CollectedField, obj *model.UserStat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserStat_review(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17826,7 +21133,7 @@ func (ec *executionContext) _UserStat_Review(ctx context.Context, field graphql.
 	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserStat_Review(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserStat_review(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "UserStat",
 		Field:      field,
@@ -19880,6 +23187,54 @@ func (ec *executionContext) unmarshalInputFetchImage(ctx context.Context, obj in
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputFetchNodeVote(ctx context.Context, obj interface{}) (model.FetchNodeVote, error) {
+	var it model.FetchNodeVote
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "userId", "nodeId", "nodeUserId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "userId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UserID = data
+		case "nodeId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NodeID = data
+		case "nodeUserId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeUserId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NodeUserID = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputFetchNodedata(ctx context.Context, obj interface{}) (model.FetchNodedata, error) {
 	var it model.FetchNodedata
 	asMap := map[string]interface{}{}
@@ -19984,6 +23339,54 @@ func (ec *executionContext) unmarshalInputFetchNodedataAudit(ctx context.Context
 				return it, err
 			}
 			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputFetchNodedataVote(ctx context.Context, obj interface{}) (model.FetchNodedataVote, error) {
+	var it model.FetchNodedataVote
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "userId", "nodedataId", "nodedataUserId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "userId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UserID = data
+		case "nodedataId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodedataId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NodedataID = data
+		case "nodedataUserId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodedataUserId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NodedataUserID = data
 		}
 	}
 
@@ -20320,6 +23723,40 @@ func (ec *executionContext) unmarshalInputParamsTag(ctx context.Context, obj int
 				return it, err
 			}
 			it.Description = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputParamsTicket(ctx context.Context, obj interface{}) (model.ParamsTicket, error) {
+	var it model.ParamsTicket
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "userId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "userId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UserID = data
 		}
 	}
 
@@ -22024,39 +25461,8 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "like":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Node_like(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "nodeLike":
+			out.Values[i] = ec._Node_nodeLike(ctx, field, obj)
 		case "reviews":
 			field := field
 
@@ -22437,8 +25843,242 @@ func (ec *executionContext) _NodeLike(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._NodeLike_like(ctx, field, obj)
 		case "dlike":
 			out.Values[i] = ec._NodeLike_dlike(ctx, field, obj)
-		case "ilike":
-			out.Values[i] = ec._NodeLike_ilike(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._NodeLike_status(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var nodeVoteImplementors = []string{"NodeVote"}
+
+func (ec *executionContext) _NodeVote(ctx context.Context, sel ast.SelectionSet, obj *model.NodeVote) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, nodeVoteImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NodeVote")
+		case "id":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NodeVote_id(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "userId":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NodeVote_userId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "nodeId":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NodeVote_nodeId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "nodeUserId":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NodeVote_nodeUserId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "value":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NodeVote_value(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "user":
+			out.Values[i] = ec._NodeVote_user(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "owner":
+			out.Values[i] = ec._NodeVote_owner(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "createdAt":
+			out.Values[i] = ec._NodeVote_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "updatedAt":
+			out.Values[i] = ec._NodeVote_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -23132,6 +26772,78 @@ func (ec *executionContext) _NodedataVote(ctx context.Context, sel ast.Selection
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "nodeId":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NodedataVote_nodeId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "nodedataUserId":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NodedataVote_nodedataUserId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "value":
 			field := field
 
@@ -23168,6 +26880,16 @@ func (ec *executionContext) _NodedataVote(ctx context.Context, sel ast.Selection
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "user":
+			out.Values[i] = ec._NodedataVote_user(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "owner":
+			out.Values[i] = ec._NodedataVote_owner(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "createdAt":
 			out.Values[i] = ec._NodedataVote_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -23499,6 +27221,48 @@ func (ec *executionContext) _PaginationNode(ctx context.Context, sel ast.Selecti
 	return out
 }
 
+var paginationNodeVoteImplementors = []string{"PaginationNodeVote"}
+
+func (ec *executionContext) _PaginationNodeVote(ctx context.Context, sel ast.SelectionSet, obj *model.PaginationNodeVote) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, paginationNodeVoteImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PaginationNodeVote")
+		case "total":
+			out.Values[i] = ec._PaginationNodeVote_total(ctx, field, obj)
+		case "limit":
+			out.Values[i] = ec._PaginationNodeVote_limit(ctx, field, obj)
+		case "skip":
+			out.Values[i] = ec._PaginationNodeVote_skip(ctx, field, obj)
+		case "data":
+			out.Values[i] = ec._PaginationNodeVote_data(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var paginationNodedataImplementors = []string{"PaginationNodedata"}
 
 func (ec *executionContext) _PaginationNodedata(ctx context.Context, sel ast.SelectionSet, obj *model.PaginationNodedata) graphql.Marshaler {
@@ -23560,6 +27324,48 @@ func (ec *executionContext) _PaginationNodedataAudit(ctx context.Context, sel as
 			out.Values[i] = ec._PaginationNodedataAudit_skip(ctx, field, obj)
 		case "data":
 			out.Values[i] = ec._PaginationNodedataAudit_data(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var paginationNodedataVoteImplementors = []string{"PaginationNodedataVote"}
+
+func (ec *executionContext) _PaginationNodedataVote(ctx context.Context, sel ast.SelectionSet, obj *model.PaginationNodedataVote) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, paginationNodedataVoteImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PaginationNodedataVote")
+		case "total":
+			out.Values[i] = ec._PaginationNodedataVote_total(ctx, field, obj)
+		case "limit":
+			out.Values[i] = ec._PaginationNodedataVote_limit(ctx, field, obj)
+		case "skip":
+			out.Values[i] = ec._PaginationNodedataVote_skip(ctx, field, obj)
+		case "data":
+			out.Values[i] = ec._PaginationNodedataVote_data(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -23686,6 +27492,48 @@ func (ec *executionContext) _PaginationTagopt(ctx context.Context, sel ast.Selec
 			out.Values[i] = ec._PaginationTagopt_skip(ctx, field, obj)
 		case "data":
 			out.Values[i] = ec._PaginationTagopt_data(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var paginationTicketImplementors = []string{"PaginationTicket"}
+
+func (ec *executionContext) _PaginationTicket(ctx context.Context, sel ast.SelectionSet, obj *model.PaginationTicket) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, paginationTicketImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PaginationTicket")
+		case "total":
+			out.Values[i] = ec._PaginationTicket_total(ctx, field, obj)
+		case "limit":
+			out.Values[i] = ec._PaginationTicket_limit(ctx, field, obj)
+		case "skip":
+			out.Values[i] = ec._PaginationTicket_skip(ctx, field, obj)
+		case "data":
+			out.Values[i] = ec._PaginationTicket_data(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -24016,6 +27864,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "nodevotes":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_nodevotes(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "nodedatas":
 			field := field
 
@@ -24102,6 +27969,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_nodedataAudit(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "nodedatavotes":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_nodedatavotes(ctx, field)
 				return res
 			}
 
@@ -24235,6 +28121,44 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_tagopt(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "tickets":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tickets(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "ticket":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_ticket(ctx, field)
 				return res
 			}
 
@@ -25049,6 +28973,363 @@ func (ec *executionContext) _Tagopt(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var ticketImplementors = []string{"Ticket"}
+
+func (ec *executionContext) _Ticket(ctx context.Context, sel ast.SelectionSet, obj *model.Ticket) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ticketImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Ticket")
+		case "id":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Ticket_id(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "userId":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Ticket_userId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "title":
+			out.Values[i] = ec._Ticket_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "messages":
+			out.Values[i] = ec._Ticket_messages(ctx, field, obj)
+		case "progress":
+			out.Values[i] = ec._Ticket_progress(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._Ticket_status(ctx, field, obj)
+		case "user":
+			out.Values[i] = ec._Ticket_user(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._Ticket_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Ticket_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var ticketMessageImplementors = []string{"TicketMessage"}
+
+func (ec *executionContext) _TicketMessage(ctx context.Context, sel ast.SelectionSet, obj *model.TicketMessage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ticketMessageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TicketMessage")
+		case "id":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TicketMessage_id(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "userId":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TicketMessage_userId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "ticketId":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TicketMessage_ticketId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "text":
+			out.Values[i] = ec._TicketMessage_text(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "status":
+			out.Values[i] = ec._TicketMessage_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "images":
+			out.Values[i] = ec._TicketMessage_images(ctx, field, obj)
+		case "user":
+			out.Values[i] = ec._TicketMessage_user(ctx, field, obj)
+		case "createdAt":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TicketMessage_createdAt(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "updatedAt":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TicketMessage_updatedAt(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var userImplementors = []string{"User"}
 
 func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model.User) graphql.Marshaler {
@@ -25172,6 +29453,16 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "roles":
+			out.Values[i] = ec._User_roles(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "md":
+			out.Values[i] = ec._User_md(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "createdAt":
 			out.Values[i] = ec._User_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -25216,58 +29507,68 @@ func (ec *executionContext) _UserStat(ctx context.Context, sel ast.SelectionSet,
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("UserStat")
-		case "Node":
-			out.Values[i] = ec._UserStat_Node(ctx, field, obj)
+		case "node":
+			out.Values[i] = ec._UserStat_node(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "NodeLike":
-			out.Values[i] = ec._UserStat_NodeLike(ctx, field, obj)
+		case "nodeLike":
+			out.Values[i] = ec._UserStat_nodeLike(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "NodeDLike":
-			out.Values[i] = ec._UserStat_NodeDLike(ctx, field, obj)
+		case "nodeDLike":
+			out.Values[i] = ec._UserStat_nodeDLike(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "NodeAuthorLike":
-			out.Values[i] = ec._UserStat_NodeAuthorLike(ctx, field, obj)
+		case "nodeAuthorLike":
+			out.Values[i] = ec._UserStat_nodeAuthorLike(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "NodeAuthorDLike":
-			out.Values[i] = ec._UserStat_NodeAuthorDLike(ctx, field, obj)
+		case "nodeAuthorDLike":
+			out.Values[i] = ec._UserStat_nodeAuthorDLike(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "Nodedata":
-			out.Values[i] = ec._UserStat_Nodedata(ctx, field, obj)
+		case "nodedata":
+			out.Values[i] = ec._UserStat_nodedata(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "NodedataLike":
-			out.Values[i] = ec._UserStat_NodedataLike(ctx, field, obj)
+		case "nodedataLike":
+			out.Values[i] = ec._UserStat_nodedataLike(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "NodedataDLike":
-			out.Values[i] = ec._UserStat_NodedataDLike(ctx, field, obj)
+		case "nodedataDLike":
+			out.Values[i] = ec._UserStat_nodedataDLike(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "NodedataAuthorLike":
-			out.Values[i] = ec._UserStat_NodedataAuthorLike(ctx, field, obj)
+		case "nodedataAuthorLike":
+			out.Values[i] = ec._UserStat_nodedataAuthorLike(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "NodedataAuthorDLike":
-			out.Values[i] = ec._UserStat_NodedataAuthorDLike(ctx, field, obj)
+		case "nodedataAuthorDLike":
+			out.Values[i] = ec._UserStat_nodedataAuthorDLike(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "Review":
-			out.Values[i] = ec._UserStat_Review(ctx, field, obj)
+		case "request":
+			out.Values[i] = ec._UserStat_request(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "country":
+			out.Values[i] = ec._UserStat_country(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "review":
+			out.Values[i] = ec._UserStat_review(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -25898,6 +30199,32 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
+func (ec *executionContext) unmarshalNString2ᚕstring(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstring(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOString2string(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNTag2ᚕᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐTag(ctx context.Context, sel ast.SelectionSet, v []*model.Tag) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -26414,7 +30741,7 @@ func (ec *executionContext) marshalOAmenityGroup2ᚖgithubᚗcomᚋmikalai2006�
 	return ec._AmenityGroup(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOAny2interface(ctx context.Context, v interface{}) (interface{}, error) {
+func (ec *executionContext) unmarshalOAny2interface(ctx context.Context, v interface{}) (any, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -26422,7 +30749,7 @@ func (ec *executionContext) unmarshalOAny2interface(ctx context.Context, v inter
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOAny2interface(ctx context.Context, sel ast.SelectionSet, v interface{}) graphql.Marshaler {
+func (ec *executionContext) marshalOAny2interface(ctx context.Context, sel ast.SelectionSet, v any) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -26528,6 +30855,14 @@ func (ec *executionContext) unmarshalOFetchImage2ᚖgithubᚗcomᚋmikalai2006�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalOFetchNodeVote2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐFetchNodeVote(ctx context.Context, v interface{}) (*model.FetchNodeVote, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputFetchNodeVote(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOFetchNodedata2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐFetchNodedata(ctx context.Context, v interface{}) (*model.FetchNodedata, error) {
 	if v == nil {
 		return nil, nil
@@ -26541,6 +30876,14 @@ func (ec *executionContext) unmarshalOFetchNodedataAudit2ᚖgithubᚗcomᚋmikal
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputFetchNodedataAudit(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOFetchNodedataVote2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐFetchNodedataVote(ctx context.Context, v interface{}) (*model.FetchNodedataVote, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputFetchNodedataVote(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -26850,10 +31193,6 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
-func (ec *executionContext) marshalOLike2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐLike(ctx context.Context, sel ast.SelectionSet, v model.Like) graphql.Marshaler {
-	return ec._Like(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalOLike2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐLike(ctx context.Context, sel ast.SelectionSet, v *model.Like) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -26990,11 +31329,56 @@ func (ec *executionContext) unmarshalONodeFilterTagOption2githubᚗcomᚋmikalai
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalONodeLike2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeLike(ctx context.Context, sel ast.SelectionSet, v *model.NodeLike) graphql.Marshaler {
+func (ec *executionContext) marshalONodeLike2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeLike(ctx context.Context, sel ast.SelectionSet, v model.NodeLike) graphql.Marshaler {
+	return ec._NodeLike(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalONodeVote2ᚕᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeVote(ctx context.Context, sel ast.SelectionSet, v []*model.NodeVote) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._NodeLike(ctx, sel, v)
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalONodeVote2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeVote(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalONodeVote2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodeVote(ctx context.Context, sel ast.SelectionSet, v *model.NodeVote) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._NodeVote(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalONodedata2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodedata(ctx context.Context, sel ast.SelectionSet, v model.Nodedata) graphql.Marshaler {
@@ -27228,6 +31612,54 @@ func (ec *executionContext) marshalONodedataVote2ᚕgithubᚗcomᚋmikalai2006�
 	return ret
 }
 
+func (ec *executionContext) marshalONodedataVote2ᚕᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodedataVote(ctx context.Context, sel ast.SelectionSet, v []*model.NodedataVote) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalONodedataVote2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodedataVote(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalONodedataVote2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐNodedataVote(ctx context.Context, sel ast.SelectionSet, v *model.NodedataVote) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._NodedataVote(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOPaginationAction2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐPaginationAction(ctx context.Context, sel ast.SelectionSet, v *model.PaginationAction) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -27270,6 +31702,13 @@ func (ec *executionContext) marshalOPaginationNode2ᚖgithubᚗcomᚋmikalai2006
 	return ec._PaginationNode(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOPaginationNodeVote2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐPaginationNodeVote(ctx context.Context, sel ast.SelectionSet, v *model.PaginationNodeVote) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PaginationNodeVote(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOPaginationNodedata2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐPaginationNodedata(ctx context.Context, sel ast.SelectionSet, v *model.PaginationNodedata) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -27282,6 +31721,13 @@ func (ec *executionContext) marshalOPaginationNodedataAudit2ᚖgithubᚗcomᚋmi
 		return graphql.Null
 	}
 	return ec._PaginationNodedataAudit(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOPaginationNodedataVote2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐPaginationNodedataVote(ctx context.Context, sel ast.SelectionSet, v *model.PaginationNodedataVote) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PaginationNodedataVote(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOPaginationTag2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐPaginationTag(ctx context.Context, sel ast.SelectionSet, v *model.PaginationTag) graphql.Marshaler {
@@ -27298,6 +31744,13 @@ func (ec *executionContext) marshalOPaginationTagopt2ᚖgithubᚗcomᚋmikalai20
 	return ec._PaginationTagopt(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOPaginationTicket2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐPaginationTicket(ctx context.Context, sel ast.SelectionSet, v *model.PaginationTicket) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PaginationTicket(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOParamsNode2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐParamsNode(ctx context.Context, v interface{}) (*model.ParamsNode, error) {
 	if v == nil {
 		return nil, nil
@@ -27311,6 +31764,14 @@ func (ec *executionContext) unmarshalOParamsTag2ᚖgithubᚗcomᚋmikalai2006ᚋ
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputParamsTag(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOParamsTicket2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐParamsTicket(ctx context.Context, v interface{}) (*model.ParamsTicket, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputParamsTicket(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -27584,6 +32045,99 @@ func (ec *executionContext) marshalOTagopt2ᚖgithubᚗcomᚋmikalai2006ᚋgeoin
 		return graphql.Null
 	}
 	return ec._Tagopt(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOTicket2ᚕᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐTicket(ctx context.Context, sel ast.SelectionSet, v []*model.Ticket) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOTicket2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐTicket(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOTicket2ᚖgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐTicket(ctx context.Context, sel ast.SelectionSet, v *model.Ticket) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Ticket(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOTicketMessage2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐTicketMessage(ctx context.Context, sel ast.SelectionSet, v model.TicketMessage) graphql.Marshaler {
+	return ec._TicketMessage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOTicketMessage2ᚕgithubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐTicketMessage(ctx context.Context, sel ast.SelectionSet, v []model.TicketMessage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOTicketMessage2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐTicketMessage(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
 }
 
 func (ec *executionContext) marshalOUser2githubᚗcomᚋmikalai2006ᚋgeoinfoᚑapiᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {

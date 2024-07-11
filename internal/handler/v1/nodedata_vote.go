@@ -127,10 +127,19 @@ func (h *HandlerV1) CreateOrExistNodedataVote(c *gin.Context, input *model.Noded
 		return result, nil
 	}
 
+	input.NodedataUserID = existNodedatas.Data[0].UserID
+	input.NodeID = existNodedatas.Data[0].NodeID
+
 	// check exist vote
 	existNodedataVote, err := h.services.NodedataVote.FindNodedataVote(domain.RequestParams{
 		Options: domain.Options{Limit: 1},
-		Filter:  bson.D{{"value", input.Value}, {"nodedata_id", nodedataIDPrimitive}, {"user_id", userIDPrimitive}}, // {"tag_id", input.TagID},
+		Filter: bson.D{
+			{"value", input.Value},
+			{"nodedata_id", nodedataIDPrimitive},
+			{"nodedata_user_id", input.NodedataUserID},
+			{"node_id", input.NodeID},
+			{"user_id", userIDPrimitive},
+		},
 	})
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)

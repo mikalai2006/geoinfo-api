@@ -46,7 +46,7 @@ func (r *ImageMongo) CreateImage(userID string, data *model.ImageInput) (model.I
 	// 	ServiceID = primitive.NilObjectID
 	// }
 
-	newImage := model.Image{
+	newImage := model.ImageInputMongo{
 		UserID:      userIDPrimitive,
 		Service:     data.Service,
 		ServiceID:   data.ServiceID,

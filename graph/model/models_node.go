@@ -23,6 +23,10 @@ type Node struct {
 	// Amenity   []string           `json:"amenity" bson:"amenity"`
 	Props map[string]interface{} `json:"props" bson:"props"`
 	OsmID string                 `json:"osmId" bson:"osm_id"`
+	// Status int64                  `json:"status" bson:"status"` // 1 - view, 100 - new, -1 - not view(remove)
+	// Like   int64                  `json:"like" bson:"like"`
+	// Dlike  int64                  `json:"dlike" bson:"dlike"`
+	NodeLike NodeLike `json:"nodeLike" bson:"node_like"`
 
 	Data   []Nodedata `json:"data" bson:"data,omitempty"`
 	Images []Image    `json:"images" bson:"images,omitempty"`
@@ -42,6 +46,8 @@ type NodeInputData struct {
 	CCode     string                 `json:"ccode" bson:"ccode" form:"ccode"`
 	Props     map[string]interface{} `json:"props" bson:"props" form:"props"`
 	OsmID     string                 `json:"osmId" bson:"osm_id" form:"osmId"`
+
+	NodeLike NodeLike `json:"nodeLike" bson:"node_like"`
 	// Amenity []string          `json:"amenity" bson:"amenity" form:"amenity"`
 	// Tags    []string          `json:"tags" bson:"tags" form:"tags"`
 	CreatedAt time.Time `json:"createdAt" bson:"created_at"`
@@ -49,9 +55,13 @@ type NodeInputData struct {
 }
 
 type NodeLike struct {
-	Like  int  `json:"like,omitempty"`
-	Dlike int  `json:"dlike,omitempty"`
-	Ilike Like `json:"ilike,omitempty"`
+	// Like  int  `json:"like,omitempty"`
+	// Dlike int  `json:"dlike,omitempty"`
+	// Ilike Like `json:"ilike,omitempty"`
+
+	Status int64 `json:"status" bson:"status"` // 1 - view, 100 - new, -1 - not view(remove)
+	Like   int64 `json:"like" bson:"like"`
+	Dlike  int64 `json:"dlike" bson:"dlike"`
 }
 
 type NodeFilterTagOption struct {
@@ -75,6 +85,9 @@ type NodeInput struct {
 	CCode     string                 `json:"ccode" bson:"ccode"`
 	Props     map[string]interface{} `json:"props" bson:"props"`
 	OsmID     string                 `json:"osmId" bson:"osm_id"`
-	CreatedAt time.Time              `json:"createdAt" bson:"created_at"`
-	UpdatedAt time.Time              `json:"updatedAt" bson:"updated_at"`
+
+	NodeLike NodeLike `json:"nodeLike" bson:"node_like"`
+
+	CreatedAt time.Time `json:"createdAt" bson:"created_at"`
+	UpdatedAt time.Time `json:"updatedAt" bson:"updated_at"`
 }

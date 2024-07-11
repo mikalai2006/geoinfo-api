@@ -27,7 +27,7 @@ func (r *mutationResolver) CreateNode(ctx context.Context, input model.NewNode) 
 	return &model.Node{ID: primitive.NewObjectID(), Lat: input.Lat, Lon: input.Lon, OsmID: input.OsmID}, nil
 }
 
-// ID is the resolver for the _id field.
+// ID is the resolver for the id field.
 func (r *nodeResolver) ID(ctx context.Context, obj *model.Node) (string, error) {
 	return obj.ID.Hex(), nil
 }
@@ -93,48 +93,6 @@ func (r *nodeResolver) My(ctx context.Context, obj *model.Node) (*bool, error) {
 	// }
 	my := obj.UserID.Hex() == userID
 	return &my, nil
-}
-
-// Like is the resolver for the like field.
-func (r *nodeResolver) Like(ctx context.Context, obj *model.Node) (*model.NodeLike, error) {
-	gc, err := utils.GinContextFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	userID, err := middleware.GetUID(gc)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	ilikes, err := r.Repo.Like.GqlGetLikes(domain.RequestParams{
-		Options: domain.Options{Limit: 10},
-		Filter:  bson.D{{"node_id", obj.ID}},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	l := 0
-	dl := 0
-	iamlike := model.Like{}
-	for _, like := range ilikes {
-		if like.Status == 1 {
-			l = l + 1
-		} else if like.Status == -1 {
-			dl = dl + 1
-		}
-
-		if like.UserID.Hex() == userID {
-			iamlike = *like
-		}
-	}
-
-	result := model.NodeLike{
-		Like:  l,
-		Dlike: dl,
-		Ilike: iamlike,
-	}
-
-	return &result, nil
 }
 
 // Reviews is the resolver for the reviews field.

@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/mikalai2006/geoinfo-api/graph/model"
@@ -206,7 +205,7 @@ func (r *NodedataMongo) CreateNodedata(userID string, data *model.NodedataInput)
 }
 
 func (r *NodedataMongo) GqlGetNodedatas(params domain.RequestParams) ([]*model.Nodedata, error) {
-	fmt.Println("GqlGetNodedatas", &r.i18n, params.Lang)
+	// fmt.Println("GqlGetNodedatas", &r.i18n, params.Lang)
 	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
 	defer cancel()
 
@@ -256,8 +255,33 @@ func (r *NodedataMongo) GqlGetNodedatas(params domain.RequestParams) ([]*model.N
 		"let":  bson.D{{Key: "id", Value: "$_id"}},
 		"pipeline": mongo.Pipeline{
 			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$nodedata_id", "$$id"}}}}},
+			bson.D{{"$sort", bson.D{{"updated_at", -1}}}},
+			bson.D{{"$limit", 1}},
+
+			bson.D{{Key: "$lookup", Value: bson.M{
+				"from": "users",
+				"as":   "userx",
+				"let":  bson.D{{Key: "userId", Value: "$user_id"}},
+				"pipeline": mongo.Pipeline{
+					bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$userId"}}}}},
+					bson.D{{"$limit", 1}},
+					bson.D{{
+						Key: "$lookup",
+						Value: bson.M{
+							"from": "image",
+							"as":   "images",
+							"let":  bson.D{{Key: "serviceId", Value: bson.D{{"$toString", "$_id"}}}},
+							"pipeline": mongo.Pipeline{
+								bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$service_id", "$$serviceId"}}}}},
+							},
+						},
+					}},
+				},
+			}}},
+			bson.D{{Key: "$set", Value: bson.M{"user": bson.M{"$first": "$userx"}}}},
 		},
 	}}})
+	pipe = append(pipe, bson.D{{"$sort", bson.D{{"created_at", -1}}}})
 
 	cursor, err := r.db.Collection(TblNodedata).Aggregate(ctx, pipe)
 	if err != nil {

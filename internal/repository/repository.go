@@ -127,7 +127,7 @@ type Image interface {
 	GqlGetImages(params domain.RequestParams) ([]*model.Image, error)
 }
 
-type Apps interface {
+type Lang interface {
 	CreateLanguage(userID string, data *domain.LanguageInput) (domain.Language, error)
 	GetLanguage(id string) (domain.Language, error)
 	FindLanguage(params domain.RequestParams) (domain.Response[domain.Language], error)
@@ -172,7 +172,8 @@ type Tagopt interface {
 type Ticket interface {
 	FindTicket(params domain.RequestParams) (domain.Response[model.Ticket], error)
 	GetAllTicket(params domain.RequestParams) (domain.Response[model.Ticket], error)
-	CreateTicket(userID string, tag *model.Ticket) (*model.Ticket, error)
+	CreateTicket(userID string, ticket *model.Ticket) (*model.Ticket, error)
+	CreateTicketMessage(userID string, message *model.TicketMessage) (*model.TicketMessage, error)
 	DeleteTicket(id string) (model.Ticket, error)
 	GqlGetTickets(params domain.RequestParams) ([]*model.Ticket, error)
 }
@@ -209,7 +210,7 @@ type Repositories struct {
 	Amenity
 	AmenityGroup
 	Authorization
-	Apps
+	Lang
 	Country
 	Currency
 
@@ -235,7 +236,7 @@ func NewRepositories(mongodb *mongo.Database, i18n config.I18nConfig) *Repositor
 		Amenity:       NewAmenityMongo(mongodb, i18n),
 		AmenityGroup:  NewAmenityGroupMongo(mongodb, i18n),
 		Authorization: NewAuthMongo(mongodb),
-		Apps:          NewAppsMongo(mongodb, i18n),
+		Lang:          NewLangMongo(mongodb, i18n),
 		Country:       NewCountryMongo(mongodb, i18n),
 		Currency:      NewCurrencyMongo(mongodb, i18n),
 		Image:         NewImageMongo(mongodb, i18n),

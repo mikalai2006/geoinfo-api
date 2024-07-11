@@ -59,6 +59,20 @@ func (h *HandlerV1) CreateAmenity(c *gin.Context) {
 		appG.ResponseError(http.StatusBadRequest, er, nil)
 		return
 	}
+
+	// find exist amenity.
+	existAmenity, err := h.services.Amenity.FindAmenity(domain.RequestParams{Filter: bson.D{
+		{"type", data.Type},
+	}})
+	if err != nil {
+		appG.ResponseError(http.StatusBadRequest, err, nil)
+		return
+	}
+	if len(existAmenity.Data) > 0 {
+		appG.ResponseError(http.StatusBadRequest, errors.New("exist amenity"), nil)
+		return
+	}
+
 	Amenity, err := h.services.Amenity.CreateAmenity(userID, &data)
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)

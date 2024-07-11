@@ -43,7 +43,7 @@ func (h *HandlerV1) Init(api *gin.RouterGroup) {
 
 		h.registerAmenity(v1)
 		h.registerAmenityGroup(v1)
-		h.RegisterApp(v1)
+		h.RegisterLang(v1)
 		h.RegisterCurrency(v1)
 		h.RegisterCountry(v1)
 		h.registerTag(v1)

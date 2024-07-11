@@ -38,6 +38,7 @@ const (
 	TblTag            = "tag"
 	TblTagopt         = "tagopt"
 	TblTicket         = "ticket"
+	TblTicketMessage  = "ticket_message"
 	TblLike           = "like"
 	TblAmenity        = "amenity"
 	TblAction         = "action"

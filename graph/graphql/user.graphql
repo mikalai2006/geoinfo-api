@@ -3,19 +3,21 @@
 # https://gqlgen.com/getting-started/
 
 type UserStat {
-  Node: Int!
-	NodeLike: Int!
-	NodeDLike: Int!
-	NodeAuthorLike: Int!
-	NodeAuthorDLike: Int!
+  node: Int!
+	nodeLike: Int!
+	nodeDLike: Int!
+	nodeAuthorLike: Int!
+	nodeAuthorDLike: Int!
 
-	Nodedata: Int!
-  NodedataLike: Int!
-  NodedataDLike: Int!
-  NodedataAuthorLike: Int!
-  NodedataAuthorDLike: Int!
+	nodedata: Int!
+  nodedataLike: Int!
+  nodedataDLike: Int!
+  nodedataAuthorLike: Int!
+  nodedataAuthorDLike: Int!
+  request: Int!
+  country: Int!
 
-  Review: Int!
+  review: Int!
 }
 
 type User {
@@ -31,6 +33,8 @@ type User {
   userStat: UserStat!
 
   images: [Image]!
+  roles: [String]!
+  md: Int!
 
   createdAt:Time!
   updatedAt:Time!

@@ -128,7 +128,7 @@ type Currency interface {
 	DeleteCurrency(id string) (domain.Currency, error)
 }
 
-type Apps interface {
+type Lang interface {
 	CreateLanguage(userID string, data *domain.LanguageInput) (domain.Language, error)
 	GetLanguage(id string) (domain.Language, error)
 	FindLanguage(params domain.RequestParams) (domain.Response[domain.Language], error)
@@ -154,6 +154,7 @@ type Ticket interface {
 	FindTicket(params domain.RequestParams) (domain.Response[model.Ticket], error)
 	GetAllTicket(params domain.RequestParams) (domain.Response[model.Ticket], error)
 	CreateTicket(userID string, ticket *model.Ticket) (*model.Ticket, error)
+	CreateTicketMessage(userID string, message *model.TicketMessage) (*model.TicketMessage, error)
 	DeleteTicket(id string) (model.Ticket, error)
 }
 
@@ -184,7 +185,7 @@ type Services struct {
 	Amenity
 	AmenityGroup
 	Authorization
-	Apps
+	Lang
 	Country
 	Currency
 	Image
@@ -231,7 +232,7 @@ func NewServices(cfgService *ConfigServices) *Services {
 	AmenityGroup := NewAmenityGroupService(cfgService.Repositories.AmenityGroup, cfgService.I18n)
 	User := NewUserService(cfgService.Repositories.User)
 	// Review := NewReviewService(cfgService.Repositories.Review)
-	Apps := NewAppsService(cfgService.Repositories, cfgService.I18n)
+	Lang := NewLangService(cfgService.Repositories, cfgService.I18n)
 	Country := NewCountryService(cfgService.Repositories, cfgService.I18n)
 	Currency := NewCurrencyService(cfgService.Repositories, cfgService.I18n)
 	Image := NewImageService(cfgService.Repositories.Image, cfgService.ImageService)
@@ -253,7 +254,7 @@ func NewServices(cfgService *ConfigServices) *Services {
 		Amenity:       Amenity,
 		AmenityGroup:  AmenityGroup,
 		User:          User,
-		Apps:          Apps,
+		Lang:          Lang,
 		Like:          Like,
 		Country:       Country,
 		Image:         Image,

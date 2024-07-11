@@ -41,6 +41,13 @@ type FetchImage struct {
 	UserID    *string `json:"userId,omitempty"`
 }
 
+type FetchNodeVote struct {
+	ID         *string `json:"id,omitempty"`
+	UserID     *string `json:"userId,omitempty"`
+	NodeID     *string `json:"nodeId,omitempty"`
+	NodeUserID *string `json:"nodeUserId,omitempty"`
+}
+
 type FetchNodedata struct {
 	ID       *string `json:"id,omitempty"`
 	UserID   *string `json:"userId,omitempty"`
@@ -55,6 +62,13 @@ type FetchNodedataAudit struct {
 	UserID     *string `json:"userId,omitempty"`
 	NodedataID *string `json:"nodedataId,omitempty"`
 	Value      *int    `json:"value,omitempty"`
+}
+
+type FetchNodedataVote struct {
+	ID             *string `json:"id,omitempty"`
+	UserID         *string `json:"userId,omitempty"`
+	NodedataID     *string `json:"nodedataId,omitempty"`
+	NodedataUserID *string `json:"nodedataUserId,omitempty"`
 }
 
 type FetchReview struct {
@@ -131,6 +145,13 @@ type PaginationNode struct {
 	Data  []*Node `json:"data,omitempty"`
 }
 
+type PaginationNodeVote struct {
+	Total *int        `json:"total,omitempty"`
+	Limit *int        `json:"limit,omitempty"`
+	Skip  *int        `json:"skip,omitempty"`
+	Data  []*NodeVote `json:"data,omitempty"`
+}
+
 type PaginationNodedata struct {
 	Total *int        `json:"total,omitempty"`
 	Limit *int        `json:"limit,omitempty"`
@@ -145,6 +166,13 @@ type PaginationNodedataAudit struct {
 	Data  []*NodedataAudit `json:"data,omitempty"`
 }
 
+type PaginationNodedataVote struct {
+	Total *int            `json:"total,omitempty"`
+	Limit *int            `json:"limit,omitempty"`
+	Skip  *int            `json:"skip,omitempty"`
+	Data  []*NodedataVote `json:"data,omitempty"`
+}
+
 type PaginationTag struct {
 	Total *int   `json:"total,omitempty"`
 	Limit *int   `json:"limit,omitempty"`
@@ -157,6 +185,13 @@ type PaginationTagopt struct {
 	Limit *int      `json:"limit,omitempty"`
 	Skip  *int      `json:"skip,omitempty"`
 	Data  []*Tagopt `json:"data,omitempty"`
+}
+
+type PaginationTicket struct {
+	Total *int      `json:"total,omitempty"`
+	Limit *int      `json:"limit,omitempty"`
+	Skip  *int      `json:"skip,omitempty"`
+	Data  []*Ticket `json:"data,omitempty"`
 }
 
 type ParamsNode struct {
@@ -177,6 +212,11 @@ type ParamsTag struct {
 	Type        *string `json:"type,omitempty"`
 	Title       *string `json:"title,omitempty"`
 	Description *string `json:"description,omitempty"`
+}
+
+type ParamsTicket struct {
+	ID     *string `json:"id,omitempty"`
+	UserID *string `json:"userId,omitempty"`
 }
 
 type Query struct {

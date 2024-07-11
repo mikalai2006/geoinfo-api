@@ -43,6 +43,17 @@ func (h *HandlerV1) GetUser(c *gin.Context) {
 		return
 	}
 
+	// // get auth data for user
+	// authData, err := h.services.GetAuth(user.UserID.Hex())
+	// if err != nil {
+	// 	appG.ResponseError(http.StatusUnauthorized, err, nil)
+	// 	return
+	// }
+	// if !authData.ID.IsZero() {
+	// 	user.Md = authData.MaxDistance
+	// 	user.Roles = authData.Roles
+	// }
+
 	c.JSON(http.StatusOK, user)
 }
 

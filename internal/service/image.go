@@ -10,6 +10,8 @@ import (
 	"github.com/mikalai2006/geoinfo-api/internal/domain"
 	"github.com/mikalai2006/geoinfo-api/internal/repository"
 	"github.com/mikalai2006/geoinfo-api/internal/utils"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ImageService struct {
@@ -33,7 +35,36 @@ func (s *ImageService) GetImageDirs(id string) ([]interface{}, error) {
 	return s.repo.GetImageDirs(id)
 }
 func (s *ImageService) CreateImage(userID string, image *model.ImageInput) (model.Image, error) {
-	return s.repo.CreateImage(userID, image)
+	var result model.Image
+
+	if image.Service == "user" {
+		userIDPrimitive, err := primitive.ObjectIDFromHex(userID)
+		if err != nil {
+			return result, err
+		}
+
+		existImage, err := s.repo.FindImage(domain.RequestParams{Filter: bson.D{
+			{"user_id", userIDPrimitive},
+			{"service", image.Service},
+			{"service_id", image.ServiceID},
+		}})
+		if err != nil {
+			return result, err
+		}
+
+		if len(existImage.Data) > 0 {
+			for i, _ := range existImage.Data {
+				_, _ = s.DeleteImage(existImage.Data[i].ID.Hex())
+				// if err != nil {
+				// 	return result, err
+				// }
+			}
+		}
+
+	}
+	result, err := s.repo.CreateImage(userID, image)
+
+	return result, err
 }
 
 func (s *ImageService) DeleteImage(id string) (model.Image, error) {

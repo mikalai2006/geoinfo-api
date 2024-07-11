@@ -104,6 +104,9 @@ type nodedataAuditResolver struct{ *Resolver }
 //   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
 //     it when you're done.
 //   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *nodedataAuditResolver) Owner(ctx context.Context, obj *model.NodedataAudit) (*model.User, error) {
+	panic(fmt.Errorf("not implemented: Owner - owner"))
+}
 func (r *nodedataAuditResolver) User(ctx context.Context, obj *model.NodedataAudit) (*model.User, error) {
 	panic(fmt.Errorf("not implemented: User - user"))
 }

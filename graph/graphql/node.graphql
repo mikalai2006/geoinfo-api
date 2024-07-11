@@ -22,7 +22,12 @@ type Node {
   # f: String
   # p:String
 
-  like: NodeLike
+  nodeLike: NodeLike
+  
+  # like: Int
+  # dlike:Int
+  # status: Int!
+
   reviews: [Review]
   address: Address
   reviewsInfo: ReviewInfo
@@ -35,7 +40,7 @@ type Node {
 type NodeLike {
   like: Int
   dlike: Int
-  ilike: Like
+  status: Int
 }
 
 type PaginationNode {

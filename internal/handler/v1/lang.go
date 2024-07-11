@@ -11,7 +11,7 @@ import (
 	"github.com/mikalai2006/geoinfo-api/pkg/app"
 )
 
-func (h *HandlerV1) RegisterApp(router *gin.RouterGroup) {
+func (h *HandlerV1) RegisterLang(router *gin.RouterGroup) {
 	lang := router.Group("/lang")
 	lang.POST("", h.SetUserFromRequest, h.createLanguage)
 	lang.GET("", h.findLanguage)
@@ -35,7 +35,7 @@ func (h *HandlerV1) createLanguage(c *gin.Context) {
 		return
 	}
 
-	document, err := h.services.Apps.CreateLanguage(userID, input)
+	document, err := h.services.Lang.CreateLanguage(userID, input)
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
 		return
@@ -48,7 +48,7 @@ func (h *HandlerV1) getLanguage(c *gin.Context) {
 	appG := app.Gin{C: c}
 	id := c.Param("id")
 
-	document, err := h.services.Apps.GetLanguage(id)
+	document, err := h.services.Lang.GetLanguage(id)
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
 		return
@@ -66,7 +66,7 @@ func (h *HandlerV1) findLanguage(c *gin.Context) {
 		return
 	}
 
-	documents, err := h.services.Apps.FindLanguage(params)
+	documents, err := h.services.Lang.FindLanguage(params)
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
 		return
@@ -88,7 +88,7 @@ func (h *HandlerV1) updateLanguage(c *gin.Context) {
 	}
 	// fmt.Println(data)
 
-	document, err := h.services.Apps.UpdateLanguage(id, &data)
+	document, err := h.services.Lang.UpdateLanguage(id, &data)
 	if err != nil {
 		appG.ResponseError(http.StatusInternalServerError, err, nil)
 		return
@@ -112,7 +112,7 @@ func (h *HandlerV1) deleteLanguage(c *gin.Context) {
 	// 	return
 	// }
 
-	document, err := h.services.Apps.DeleteLanguage(id) // , input
+	document, err := h.services.Lang.DeleteLanguage(id) // , input
 	if err != nil {
 		appG.ResponseError(http.StatusBadRequest, err, nil)
 		return

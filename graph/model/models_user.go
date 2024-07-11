@@ -19,6 +19,9 @@ type UserStat struct {
 	NodedataAuthorLike  int64 `json:"nodedataAuthorLike" bson:"nodedataAuthorLike"`
 	NodedataAuthorDLike int64 `json:"nodedataAuthorDLike" bson:"nodedataAuthorDLike"`
 
+	Request int64 `json:"request" bson:"request"`
+	Country int64 `json:"country" bson:"country"`
+
 	Review int64 `json:"review" bson:"review"`
 }
 
@@ -35,9 +38,10 @@ type User struct {
 	Verify   bool   `json:"verify" bson:"verify"`
 
 	UserStat UserStat `json:"userStat" bson:"user_stat"`
+	// Test     interface{} `json:"test" bson:"test"`
 
-	Roles  []string `json:"roles" bson:"-"`
-	Md     int      `json:"md" bson:"-"`
+	Roles  []string `json:"roles" bson:"roles"`
+	Md     int      `json:"md" bson:"md"`
 	Images []Image  `json:"images,omitempty" bson:"images,omitempty"`
 
 	LastTime  time.Time `json:"lastTime" bson:"last_time"`

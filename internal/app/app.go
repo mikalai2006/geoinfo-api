@@ -112,7 +112,7 @@ func Run(configPath string) {
 		// 	gocron.NewTask(
 		// 		func(a string, b int) {
 		// 			// do things
-		// 			langs, err := services.Apps.FindLanguage(domain.RequestParams{Filter: bson.D{}})
+		// 			langs, err := services.Lang.FindLanguage(domain.RequestParams{Filter: bson.D{}})
 		// 			if err != nil {
 		// 				logger.Errorf("Error gocron services: %s", err.Error())
 		// 			}

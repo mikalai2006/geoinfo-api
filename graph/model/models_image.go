@@ -23,6 +23,21 @@ type Image struct {
 	UpdatedAt   time.Time `json:"updatedAt" bson:"updated_at"`
 }
 
+type ImageInputMongo struct {
+	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	UserID    primitive.ObjectID `json:"userId" bson:"user_id"`
+	ServiceID string             `json:"serviceId" bson:"service_id"`
+	Service   string             `json:"service" bson:"service"`
+	Path      string             `json:"path" bson:"path"`
+	Ext       string             `json:"ext" bson:"ext"`
+	Title     string             `json:"title" bson:"title"`
+	Dir       string             `json:"dir" bson:"dir"`
+
+	Description string    `json:"description" bson:"description"`
+	CreatedAt   time.Time `json:"createdAt" bson:"created_at"`
+	UpdatedAt   time.Time `json:"updatedAt" bson:"updated_at"`
+}
+
 // type ImageSize struct {
 // 	Url30   string `json:"url30" bson:"url30"`
 // 	Url320  string `json:"url320" bson:"url320"`

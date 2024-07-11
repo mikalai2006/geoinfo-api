@@ -26,6 +26,10 @@ func (s *TicketService) CreateTicket(userID string, ticket *model.Ticket) (*mode
 	return s.repo.CreateTicket(userID, ticket)
 }
 
+func (s *TicketService) CreateTicketMessage(userID string, message *model.TicketMessage) (*model.TicketMessage, error) {
+	return s.repo.CreateTicketMessage(userID, message)
+}
+
 func (s *TicketService) DeleteTicket(id string) (model.Ticket, error) {
 	return s.repo.DeleteTicket(id)
 }

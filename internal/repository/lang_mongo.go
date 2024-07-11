@@ -12,16 +12,16 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type AppsMongo struct {
+type LangMongo struct {
 	db   *mongo.Database
 	i18n config.I18nConfig
 }
 
-func NewAppsMongo(db *mongo.Database, i18n config.I18nConfig) *AppsMongo {
-	return &AppsMongo{db: db, i18n: i18n}
+func NewLangMongo(db *mongo.Database, i18n config.I18nConfig) *LangMongo {
+	return &LangMongo{db: db, i18n: i18n}
 }
 
-func (r *AppsMongo) CreateLanguage(userID string, data *domain.LanguageInput) (domain.Language, error) {
+func (r *LangMongo) CreateLanguage(userID string, data *domain.LanguageInput) (domain.Language, error) {
 	var result domain.Language
 
 	collection := r.db.Collection(TblLanguage)
@@ -40,14 +40,15 @@ func (r *AppsMongo) CreateLanguage(userID string, data *domain.LanguageInput) (d
 	// newId := count + 1
 
 	newPage := domain.Language{
-		Publish:   data.Publish,
-		Flag:      data.Flag,
-		Name:      data.Name,
-		Code:      data.Code,
-		Locale:    data.Locale,
-		SortOrder: data.SortOrder,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		Publish:      data.Publish,
+		Flag:         data.Flag,
+		Name:         data.Name,
+		Code:         data.Code,
+		Locale:       data.Locale,
+		SortOrder:    data.SortOrder,
+		Localization: data.Localization,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 
 	res, err := collection.InsertOne(ctx, newPage)
@@ -63,7 +64,7 @@ func (r *AppsMongo) CreateLanguage(userID string, data *domain.LanguageInput) (d
 	return result, nil
 }
 
-func (r *AppsMongo) GetLanguage(id string) (domain.Language, error) {
+func (r *LangMongo) GetLanguage(id string) (domain.Language, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
 	defer cancel()
 
@@ -84,7 +85,7 @@ func (r *AppsMongo) GetLanguage(id string) (domain.Language, error) {
 	return result, nil
 }
 
-func (r *AppsMongo) FindLanguage(params domain.RequestParams) (domain.Response[domain.Language], error) {
+func (r *LangMongo) FindLanguage(params domain.RequestParams) (domain.Response[domain.Language], error) {
 	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
 	defer cancel()
 
@@ -127,7 +128,7 @@ func (r *AppsMongo) FindLanguage(params domain.RequestParams) (domain.Response[d
 	return response, nil
 }
 
-func (r *AppsMongo) UpdateLanguage(id string, data interface{}) (domain.Language, error) {
+func (r *LangMongo) UpdateLanguage(id string, data interface{}) (domain.Language, error) {
 	var result domain.Language
 	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
 	defer cancel()
@@ -154,7 +155,7 @@ func (r *AppsMongo) UpdateLanguage(id string, data interface{}) (domain.Language
 	return result, nil
 }
 
-func (r *AppsMongo) DeleteLanguage(id string) (domain.Language, error) {
+func (r *LangMongo) DeleteLanguage(id string) (domain.Language, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), MongoQueryTimeout)
 	defer cancel()
 

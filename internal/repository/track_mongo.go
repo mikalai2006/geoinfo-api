@@ -115,11 +115,16 @@ func (r *TrackMongo) CreateTrack(userID string, track *domain.Track) (*domain.Tr
 		return nil, err
 	}
 
+	createdAt := time.Now()
+	if !track.CreatedAt.IsZero() {
+		createdAt = track.CreatedAt
+	}
+
 	newTrack := domain.Track{
 		Lon:       track.Lon,
 		Lat:       track.Lat,
 		UserID:    userIDPrimitive,
-		CreatedAt: time.Now(),
+		CreatedAt: createdAt,
 		UpdatedAt: time.Now(),
 	}
 

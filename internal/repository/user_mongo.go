@@ -115,6 +115,25 @@ func (r *UserMongo) GetUser(id string) (model.User, error) {
 			},
 		},
 	}})
+	// add populate.
+	pipe = append(pipe, bson.D{{
+		Key: "$lookup",
+		Value: bson.M{
+			"from": TblAuth,
+			"as":   "authsx",
+			// "localField":   "_id",
+			// "foreignField": "service_id",
+			"let": bson.D{{Key: "userId", Value: "$user_id"}},
+			"pipeline": mongo.Pipeline{
+				bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$userId"}}}}},
+				bson.D{{"$limit", 1}},
+			},
+		},
+	}})
+
+	pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"test": bson.M{"$first": "$authsx"}}}})
+	pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"md": "$test.max_distance"}}})
+	pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"roles": "$test.roles"}}})
 
 	// // add stat user tag vote.
 	// pipe = append(pipe, bson.D{{

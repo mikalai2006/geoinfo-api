@@ -60,6 +60,29 @@ func (r *NodeVoteMongo) FindNodeVote(params domain.RequestParams) (domain.Respon
 	}}})
 	pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"user": bson.M{"$first": "$usera"}}}})
 
+	// get owner node.
+	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"from": "users",
+		"as":   "usero",
+		"let":  bson.D{{Key: "nodeUserId", Value: "$node_user_id"}},
+		"pipeline": mongo.Pipeline{
+			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$nodeUserId"}}}}},
+			bson.D{{"$limit", 1}},
+			bson.D{{
+				Key: "$lookup",
+				Value: bson.M{
+					"from": "image",
+					"as":   "images",
+					"let":  bson.D{{Key: "serviceId", Value: bson.D{{"$toString", "$_id"}}}},
+					"pipeline": mongo.Pipeline{
+						bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$service_id", "$$serviceId"}}}}},
+					},
+				},
+			}},
+		},
+	}}})
+	pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"owner": bson.M{"$first": "$usero"}}}})
+
 	cursor, err := r.db.Collection(TblNodeVote).Aggregate(ctx, pipe)
 	// fmt.Println("filter NodeVote:::", pipe)
 	if err != nil {
@@ -120,9 +143,10 @@ func (r *NodeVoteMongo) CreateNodeVote(userID string, data *model.NodeVote) (*mo
 
 	if (existVote == model.NodeVoteInput{}) {
 		newNodeVote := model.NodeVoteInput{
-			UserID: userIDPrimitive,
-			NodeID: data.NodeID,
-			Value:  data.Value,
+			UserID:     userIDPrimitive,
+			NodeID:     data.NodeID,
+			Value:      data.Value,
+			NodeUserID: data.NodeUserID,
 			// Status:     100, //data.Status,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),

@@ -65,6 +65,52 @@ func (r *NodedataVoteMongo) FindNodedataVote(params domain.RequestParams) (domai
 	// cursor, err := r.db.Collection(TblNodedataVote).Find(ctx, filter, opts)
 	pipe, err := CreatePipeline(params, &r.i18n)
 
+	// fmt.Println(pipe)
+	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"from": "users",
+		"as":   "userb",
+		"let":  bson.D{{Key: "userId", Value: "$user_id"}},
+		"pipeline": mongo.Pipeline{
+			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$userId"}}}}},
+			bson.D{{"$limit", 1}},
+			bson.D{{
+				Key: "$lookup",
+				Value: bson.M{
+					"from": "image",
+					"as":   "images",
+					"let":  bson.D{{Key: "serviceId", Value: bson.D{{"$toString", "$_id"}}}},
+					"pipeline": mongo.Pipeline{
+						bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$service_id", "$$serviceId"}}}}},
+					},
+				},
+			}},
+		},
+	}}})
+	pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"user": bson.M{"$first": "$userb"}}}})
+
+	// get owner nodedata.
+	pipe = append(pipe, bson.D{{Key: "$lookup", Value: bson.M{
+		"from": "users",
+		"as":   "usero",
+		"let":  bson.D{{Key: "nodedataUserId", Value: "$nodedata_user_id"}},
+		"pipeline": mongo.Pipeline{
+			bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$_id", "$$nodedataUserId"}}}}},
+			bson.D{{"$limit", 1}},
+			bson.D{{
+				Key: "$lookup",
+				Value: bson.M{
+					"from": "image",
+					"as":   "images",
+					"let":  bson.D{{Key: "serviceId", Value: bson.D{{"$toString", "$_id"}}}},
+					"pipeline": mongo.Pipeline{
+						bson.D{{Key: "$match", Value: bson.M{"$expr": bson.M{"$eq": [2]string{"$service_id", "$$serviceId"}}}}},
+					},
+				},
+			}},
+		},
+	}}})
+	pipe = append(pipe, bson.D{{Key: "$set", Value: bson.M{"owner": bson.M{"$first": "$usero"}}}})
+
 	if err != nil {
 		return response, err
 	}
@@ -173,9 +219,11 @@ func (r *NodedataVoteMongo) CreateNodedataVote(userID string, data *model.Nodeda
 
 	// if (existVote == model.NodedataVote{}) {
 	newNodedataVote := model.NodedataVoteMongo{
-		UserID:     userIDPrimitive,
-		NodedataID: nodedataIDPrimitive,
-		Value:      data.Value,
+		UserID:         userIDPrimitive,
+		NodedataID:     nodedataIDPrimitive,
+		NodedataUserID: data.NodedataUserID,
+		NodeID:         data.NodeID,
+		Value:          data.Value,
 		// Status:     100, //data.Status,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),

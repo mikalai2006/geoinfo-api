@@ -178,7 +178,7 @@ func setFromEnv(cfg *Config) {
 
 func setDefaultConfigs(cfg *Config) {
 	cfg.Oauth.VkAuthURI = "https://oauth.vk.com/authorize"
-	cfg.Oauth.VkRedirectURI = "https://storydata.ru/api/v1/oauth/vk/me"
+	cfg.Oauth.VkRedirectURI = "https://poihub.ru/api/v1/oauth/vk/me"
 	cfg.Oauth.VkScopes = []string{"account"}
 	cfg.Oauth.VkTokenURI = "https://oauth.vk.com/access_token"
 	cfg.Oauth.VkUserinfoURI = "https://api.vk.com/method/users.get"

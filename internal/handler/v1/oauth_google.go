@@ -225,6 +225,7 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 	fmt.Println("h.auth.NameCookieRefresh=", h.auth.NameCookieRefresh)
 	fmt.Println("h.auth.RefreshTokenTTL.Seconds()=", h.auth.RefreshTokenTTL.Seconds())
 	fmt.Println("c.Request.URL.Hostname()=", c.Request.URL)
+	fmt.Println("pathRequest host=", pathRequest.Host)
 
 	if len(clientURL) == 0 || clientURL == "http://localhost:8081/" {
 		parameters.Add("rt", tokens.RefreshToken)

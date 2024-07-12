@@ -50,12 +50,13 @@ func (h *HandlerV1) OAuthGoogle(c *gin.Context) {
 	parameters.Add("client_id", h.oauth.GoogleClientID)
 	parameters.Add("redirect_uri", h.oauth.GoogleRedirectURI)
 	parameters.Add("scope", scope)
+	parameters.Add("prompt", "select_account+consent")
 	parameters.Add("response_type", "code")
 	parameters.Add("state", urlReferer)
 	fmt.Println("client URL(state): ", urlReferer)
 
 	pathRequest.RawQuery = parameters.Encode()
-	fmt.Println("Google auth1::: ", pathRequest.String())
+	// fmt.Println("Google auth1::: ", pathRequest.String())
 	c.Redirect(http.StatusFound, pathRequest.String())
 }
 
@@ -159,7 +160,7 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 		GoogleID:    bodyResponse.Sub,
 		MaxDistance: 100,
 	}
-	fmt.Println("Google auth2::: ", input)
+	// fmt.Println("Google auth2::: ", input)
 
 	user, err := h.services.Authorization.ExistAuth(input)
 	if err != nil {

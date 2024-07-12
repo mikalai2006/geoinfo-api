@@ -50,7 +50,7 @@ func (h *HandlerV1) OAuthGoogle(c *gin.Context) {
 	parameters.Add("client_id", h.oauth.GoogleClientID)
 	parameters.Add("redirect_uri", h.oauth.GoogleRedirectURI)
 	parameters.Add("scope", scope)
-	parameters.Add("prompt", "select_account+consent")
+	parameters.Add("prompt", "select_account") // +consent
 	parameters.Add("response_type", "code")
 	parameters.Add("state", urlReferer)
 	fmt.Println("client URL(state): ", urlReferer)

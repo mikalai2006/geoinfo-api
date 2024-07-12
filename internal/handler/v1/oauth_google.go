@@ -224,14 +224,14 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 	fmt.Println("tokens.RefreshToken=", tokens.RefreshToken)
 	fmt.Println("h.auth.NameCookieRefresh=", h.auth.NameCookieRefresh)
 	fmt.Println("h.auth.RefreshTokenTTL.Seconds()=", h.auth.RefreshTokenTTL.Seconds())
-	fmt.Println("c.Request.URL.Hostname()=", c.Request.URL)
-	fmt.Println("pathRequest host=", pathRequest.Host)
+	fmt.Println("c.Request.URL.Hostname()=", c.Request.URL.Hostname())
+	fmt.Println("pathRequest host=", pathRequest.Hostname())
 
 	if len(clientURL) == 0 || clientURL == "http://localhost:8081/" {
 		parameters.Add("rt", tokens.RefreshToken)
 		parameters.Add("exp", strconv.FormatInt(tokens.ExpiresIn, 10))
 	}
 	pathRequest.RawQuery = parameters.Encode()
-	c.SetCookie(h.auth.NameCookieRefresh, tokens.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", c.Request.URL.Hostname(), false, true)
+	c.SetCookie(h.auth.NameCookieRefresh, tokens.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", pathRequest.Hostname(), false, true)
 	c.Redirect(http.StatusFound, pathRequest.String())
 }

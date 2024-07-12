@@ -227,10 +227,10 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 	fmt.Println("c.Request.URL.Hostname()=", c.Request.URL.Hostname())
 	fmt.Println("pathRequest host=", pathRequest.Hostname())
 
-	if len(clientURL) == 0 || clientURL == "http://localhost:8081/" {
-		parameters.Add("rt", tokens.RefreshToken)
-		parameters.Add("exp", strconv.FormatInt(tokens.ExpiresIn, 10))
-	}
+	// if len(clientURL) == 0 || clientURL == "http://localhost:8081/" {
+	// }
+	parameters.Add("rt", tokens.RefreshToken)
+	parameters.Add("exp", strconv.FormatInt(tokens.ExpiresIn, 10))
 	pathRequest.RawQuery = parameters.Encode()
 	c.SetCookie(h.auth.NameCookieRefresh, tokens.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", pathRequest.Hostname(), false, true)
 	c.Redirect(http.StatusFound, pathRequest.String())

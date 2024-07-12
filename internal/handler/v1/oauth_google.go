@@ -52,10 +52,10 @@ func (h *HandlerV1) OAuthGoogle(c *gin.Context) {
 	parameters.Add("scope", scope)
 	parameters.Add("response_type", "code")
 	parameters.Add("state", urlReferer)
-	// fmt.Println("client URL(state): ", urlReferer)
+	fmt.Println("client URL(state): ", urlReferer)
 
 	pathRequest.RawQuery = parameters.Encode()
-	// fmt.Println("Google auth1::: ", pathRequest.String())
+	fmt.Println("Google auth1::: ", pathRequest.String())
 	c.Redirect(http.StatusFound, pathRequest.String())
 }
 
@@ -224,7 +224,7 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 	fmt.Println("tokens.RefreshToken=", tokens.RefreshToken)
 	fmt.Println("h.auth.NameCookieRefresh=", h.auth.NameCookieRefresh)
 	fmt.Println("h.auth.RefreshTokenTTL.Seconds()=", h.auth.RefreshTokenTTL.Seconds())
-	fmt.Println("c.Request.URL.Hostname()=", c.Request.URL.Hostname())
+	fmt.Println("c.Request.URL.Hostname()=", c.Request.URL)
 
 	if len(clientURL) == 0 || clientURL == "http://localhost:8081/" {
 		parameters.Add("rt", tokens.RefreshToken)

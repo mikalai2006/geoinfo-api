@@ -219,6 +219,14 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 		return
 	}
 
+	// TODO.
+	if clientURL == "https://poihub.ru/" {
+		clientURL = "https://poihub.ru/app"
+	} else {
+
+	}
+	fmt.Println("clientURL: ", clientURL)
+
 	pathRequest, err = url.Parse(clientURL)
 	if err != nil {
 		// c.AbortWithError(http.StatusBadRequest, err)
@@ -227,7 +235,6 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 	}
 	parameters = url.Values{}
 	parameters.Add("token", tokens.AccessToken)
-	fmt.Println("clientURL: ", clientURL)
 	// if len(clientURL) == 0 || clientURL == "http://localhost:8081/" {
 	// }
 	parameters.Add("rt", tokens.RefreshToken)

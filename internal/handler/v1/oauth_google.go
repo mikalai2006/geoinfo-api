@@ -57,7 +57,7 @@ func (h *HandlerV1) OAuthGoogle(c *gin.Context) {
 	if urlReferer == "" {
 		urlReferer = "file:///android_asset/auth.html"
 	} else {
-		urlReferer = fmt.Sprintf("%s%s", urlReferer, "/app")
+		urlReferer = fmt.Sprintf("%s%s", urlReferer, "app")
 	}
 	fmt.Println("urlReferer= ", urlReferer)
 
@@ -227,6 +227,7 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 	}
 	parameters = url.Values{}
 	parameters.Add("token", tokens.AccessToken)
+	fmt.Println("clientURL: ", clientURL)
 	// if len(clientURL) == 0 || clientURL == "http://localhost:8081/" {
 	// }
 	parameters.Add("rt", tokens.RefreshToken)

@@ -69,7 +69,7 @@ func UploadResizeMultipleFile(c *gin.Context, info *model.ImageInput, nameField 
 			Name:    filenameOriginal,
 			Ext:     fileExt,
 			Resize:  true,
-			Size:    600,
+			Size:    1200,
 		})
 
 		// // add adaptive.

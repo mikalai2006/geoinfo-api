@@ -36,8 +36,6 @@ func (h *HandlerV1) registerGoogleOAuth(router *gin.RouterGroup) {
 func (h *HandlerV1) OAuthGoogle(c *gin.Context) {
 	appG := app.Gin{C: c}
 
-	fmt.Println("c.Request.Referer()=", c.Request.Referer())
-
 	urlReferer := c.Request.Referer()
 	scope := strings.Join(h.oauth.GoogleScopes, " ")
 
@@ -52,10 +50,10 @@ func (h *HandlerV1) OAuthGoogle(c *gin.Context) {
 	parameters.Add("client_id", h.oauth.GoogleClientID)
 	parameters.Add("redirect_uri", h.oauth.GoogleRedirectURI)
 	parameters.Add("scope", scope)
-	parameters.Add("prompt", "select_account") // +consent
 	parameters.Add("response_type", "code")
+	parameters.Add("prompt", "select_account")
 	parameters.Add("state", urlReferer)
-	fmt.Println("client URL(state): ", urlReferer)
+	// fmt.Println("client URL(state): ", urlReferer)
 
 	pathRequest.RawQuery = parameters.Encode()
 	// fmt.Println("Google auth1::: ", pathRequest.String())
@@ -162,7 +160,7 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 		GoogleID:    bodyResponse.Sub,
 		MaxDistance: 100,
 	}
-	// fmt.Println("Google auth2::: ", input)
+	fmt.Println("Google auth2::: ", input)
 
 	user, err := h.services.Authorization.ExistAuth(input)
 	if err != nil {
@@ -223,18 +221,11 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 	}
 	parameters = url.Values{}
 	parameters.Add("token", tokens.AccessToken)
-
-	// fmt.Println("tokens.RefreshToken=", tokens.RefreshToken)
-	// fmt.Println("h.auth.NameCookieRefresh=", h.auth.NameCookieRefresh)
-	// fmt.Println("h.auth.RefreshTokenTTL.Seconds()=", h.auth.RefreshTokenTTL.Seconds())
-	// fmt.Println("c.Request.URL.Hostname()=", c.Request.URL.Hostname())
-	// fmt.Println("pathRequest host=", pathRequest.Hostname())
-
 	// if len(clientURL) == 0 || clientURL == "http://localhost:8081/" {
 	// }
 	parameters.Add("rt", tokens.RefreshToken)
 	parameters.Add("exp", strconv.FormatInt(tokens.ExpiresIn, 10))
 	pathRequest.RawQuery = parameters.Encode()
-	c.SetCookie(h.auth.NameCookieRefresh, tokens.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", pathRequest.Hostname(), false, true)
+	c.SetCookie(h.auth.NameCookieRefresh, tokens.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", c.Request.URL.Hostname(), false, true)
 	c.Redirect(http.StatusFound, pathRequest.String())
 }

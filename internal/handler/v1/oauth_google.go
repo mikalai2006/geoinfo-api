@@ -36,7 +36,7 @@ func (h *HandlerV1) registerGoogleOAuth(router *gin.RouterGroup) {
 func (h *HandlerV1) OAuthGoogle(c *gin.Context) {
 	appG := app.Gin{C: c}
 
-	urlReferer := c.Request.Referer()
+	urlReferer := c.Request.URL.Path
 	scope := strings.Join(h.oauth.GoogleScopes, " ")
 
 	pathRequest, err := url.Parse(h.oauth.GoogleAuthURI)

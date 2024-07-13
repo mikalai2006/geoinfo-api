@@ -54,12 +54,12 @@ func (h *HandlerV1) OAuthGoogle(c *gin.Context) {
 	parameters.Add("prompt", "select_account")
 	parameters.Add("state", urlReferer)
 	fmt.Println("client URL(state): ", urlReferer)
-	if urlReferer == "" {
-		urlReferer = "file:///android_asset/auth.html"
-	} else {
-		urlReferer = fmt.Sprintf("%s%s", urlReferer, "app")
-	}
-	fmt.Println("urlReferer= ", urlReferer)
+	// if urlReferer == "" {
+	// 	urlReferer = "file:///android_asset/auth.html"
+	// } else {
+	// 	urlReferer = fmt.Sprintf("%s%s", urlReferer, "app")
+	// }
+	// fmt.Println("urlReferer= ", urlReferer)
 
 	pathRequest.RawQuery = parameters.Encode()
 	// fmt.Println("Google auth1::: ", pathRequest.String())
@@ -220,7 +220,7 @@ func (h *HandlerV1) MeGoogle(c *gin.Context) {
 	}
 
 	// TODO.
-	if clientURL == "https://poihub.ru/" {
+	if clientURL == "" {
 		clientURL = "https://poihub.ru/app"
 	} else {
 
